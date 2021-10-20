@@ -60,7 +60,7 @@
 #' df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1)
 #'
 #'#lastly, actually run fvs
-#' fvs_run(df_keys, cluster = clus1)
+#' fvs_run(df_keys, cluster = clus1, db_merge = "FVS_AllRunsB.db")
 #'
 #' parallel::stopCluster(clus1)
 #'
@@ -117,8 +117,6 @@ fvs_run = function(
   if(merge_dbs){
 
     unq_db = unique(key_df$output_db)
-
-
 
     #make database for all
     dir_dbAll = file.path(dirname(unq_db[1]),db_merge)
