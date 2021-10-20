@@ -35,7 +35,7 @@ remotes::install_local("c:\\temp\\RForInvt.zip")
 
 Package usage is also fairly simple
 
-# RForBio FVS example
+# RForInvt FVS example
 ``` 
   #load required packages
     require(RForInvt)
