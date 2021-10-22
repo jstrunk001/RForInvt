@@ -68,7 +68,7 @@ key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)
 df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1)
 
 #lastly, actually run fvs
-fvs_run(df_keys, cluster = clus1)
+fvs_run(df_keys, cluster = clus1, db_merge = "FVS_AllRunsB.db")
 
 parallel::stopCluster(clus1)
 
