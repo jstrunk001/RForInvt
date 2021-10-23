@@ -38,9 +38,10 @@
 #' stand_data = data.frame(stand=1:10, year=2000:2009)#'
 #' df_params = fvs_protype_params()
 #' df_params[1:nrow(stand_data),]=NA
-#' df_params[,"cn"] = stand_data$stand
+#' df_params[,"stand_id"] = stand_data$stand
+#' df_params[,"stand_cn"] = stand_data$stand
 #' df_params[,"invyr"] = stand_data$year
-#' df_params[,"timint"] = 1
+#' df_params[,"timeint"] = 1
 #' df_params[,"numcycle"] = 1
 #' df_params[,"input_db"] = "c:/temp/fordata.db"
 #' df_params[,"fvs_path"] = "C:/FVSbin/FVSca.exe"
