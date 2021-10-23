@@ -43,6 +43,13 @@
 #'
 #'@examples
 #'
+#'         #look up volume equations
+#'          library(RSForInvt)
+#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
+#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
+#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
+#'          NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
+#'
 #'         #grab list of species
 #'         if(!"dfSpp" %in% ls()){
 #'           library(RSQLite)
@@ -53,7 +60,7 @@
 #'         }
 #'
 #'         #build a fake tree list
-#'         if(!"dfSpp" %in% ls()){
+#'         if("df_fake" %in% ls()){
 #'           set.seed=111
 #'           nfake=length(unique(dfCoeff$species_code))
 #'
