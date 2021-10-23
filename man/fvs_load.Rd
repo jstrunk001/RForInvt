@@ -36,9 +36,8 @@ Revision History
 }
 \examples{
 
-#this should happen automatically when the package loads
-fvs_load()
-
+#this brings in functions to run FVS inside R
+ fvs_load()
 
 
 

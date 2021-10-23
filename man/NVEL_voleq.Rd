@@ -63,7 +63,8 @@ Revision History
 }
 \examples{
 
-        library(RSForInvt)
+        #look up volume equations
+         library(RSForInvt)
          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
