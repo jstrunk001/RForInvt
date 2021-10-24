@@ -116,7 +116,7 @@ fvs_run = function(
   #merge multiple databases into single database
   if(merge_dbs){
 
-    unq_db = unique(key_df$output_db)
+    unq_db = noquote(unique(key_df$output_db))
 
     #make database for all
     dir_dbAll = file.path(dirname(unq_db[1]),db_merge)
