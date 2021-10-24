@@ -42,34 +42,33 @@
 #'@examples
 #'
 #'#FVS EXAMPLE
-#' clus1 = parallel::makeCluster(4)
 #'
-#'#assume a typical inventory dataset and prepare fvs parameters
-#' stand_data = data.frame(stand=1:10, year=2000:2009)#'
-#' df_params = fvs_protype_params()
-#' df_params[1:nrow(stand_data),]=NA
-#' df_params[,"stand_id"] = stand_data$stand
-#' df_params[,"stand_cn"] = stand_data$stand
-#' df_params[,"invyr"] = stand_data$year
-#' df_params[,"timeint"] = 1
-#' df_params[,"numcycle"] = 1
-#' df_params[,"input_db"] = "c:/temp/fordata.db"
-#' df_params[,"fvs_path"] = "C:/FVSbin/FVSca.exe"
-#' df_params[,"tree_table"] = "fvs_treeinit"
-#' df_params[,"stand_table"] = "fvs_standinit"
-#' df_params
+#'           clus1 = parallel::makeCluster(4)
 #'
-#'#prepare prototype key file
-#' key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)
+#'           #assume a typical inventory dataset and prepare fvs parameters
+#'           stand_data = data.frame(stand=1:10, year=2000:2009)#'
+#'           df_params = fvs_protype_params()
+#'           df_params[1:nrow(stand_data),]=NA
+#'           df_params[,"cn"] = stand_data$stand
+#'           df_params[,"invyr"] = stand_data$year
+#'           df_params[,"timeint"] = 1
+#'           df_params[,"numcycle"] = 1
+#'           df_params[,"input_db"] = "c:/temp/fordata.db"
+#'           df_params[,"fvs_path"] = "C:/FVSbin/FVSca.exe"
+#'           df_params[,"tree_table"] = "fvs_treeinit"
+#'           df_params[,"stand_table"] = "fvs_standinit"
+#'           df_params
 #'
-#'#convert prototype key file into series of key files associated with each cn
-#' df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1)
+#'           #prepare prototype key file
+#'           key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)
 #'
-#'#lastly, actually run fvs
-#' fvs_run(df_keys, cluster = clus1)
+#'           #convert prototype key file into series of key files associated with each cn
+#'           df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1, id="cn")
 #'
-#' parallel::stopCluster(clus1)
-#'
+#'           #lastly, actually run fvs
+#'           fvs_run(df_keys, cluster = clus1)
+#'           parallel::stopCluster(clus1)
+#' #'
 #'
 #'#NVEL EXAMPLE
 #'

@@ -38,8 +38,7 @@
 #' stand_data = data.frame(stand=1:10, year=2000:2009)#'
 #' df_params = fvs_protype_params()
 #' df_params[1:nrow(stand_data),]=NA
-#' df_params[,"stand_id"] = stand_data$stand
-#' df_params[,"stand_cn"] = stand_data$stand
+#' df_params[,"cn"] = stand_data$stand
 #' df_params[,"invyr"] = stand_data$year
 #' df_params[,"timeint"] = 1
 #' df_params[,"numcycle"] = 1
@@ -53,7 +52,7 @@
 #' key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)
 #'
 #'#convert prototype key file into series of key files associated with each cn
-#' df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1)
+#' df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1, id="cn")
 #'
 #'#lastly, actually run fvs
 #' fvs_run(df_keys, cluster = clus1)
@@ -76,8 +75,11 @@ fvs_make_keyfiles = function(
   ,clear_db = T
   ,clear_keys = T
   ,cluster = NA
-  ,id=c("plt_id","plt_cn")
+  ,id=c("cn","plt_id","plt_cn")
 ){
+
+  #add quotes to input/output paths
+  param_df[,"input_db_q"] = shQuote(param_df[,"input_db"])
 
   if(!dir.exists(processing_dir)) dir.create(processing_dir,recursive=T)
 
@@ -87,9 +89,6 @@ fvs_make_keyfiles = function(
   dir_outdb = paste0(processing_dir,"/fvs_out/")
   key_dir = paste0(processing_dir,"/keyfiles/")
 
-  ###copy input dbs to better locale
-  #sapply(unique(param_df$input_db),file.copy, dir_indb)
-
   ###prepare number of clusters
   n_cluster = length(cluster)
   if(n_cluster>1){
@@ -97,7 +96,7 @@ fvs_make_keyfiles = function(
     param_df$cluster = clus_n[1:nrow(param_df)]
   }
   param_df$output_db = paste0(dir_outdb,"db",param_df$cluster,".db")
-  #param_df$input_db = paste0(dir_indb,basename(param_df$input_db))
+  param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
 
   ###create directories if they don't exits
   for(this_dir in c(processing_dir,dir_outdb,key_dir)){
@@ -154,8 +153,11 @@ fvs_make_keyfiles = function(
   this_proto = key_proto_in
   ##these are the values that are substituted in the key file
   this_parm_list = names(this_line)
-  for(this_parm in this_parm_list){
-    this_proto = gsub(paste0("@",this_parm,'@'),this_line[[this_parm]],this_proto)
+  #for(this_parm in this_parm_list){
+  for(i in 1:length(this_parm_list)){
+    this_parm = this_parm_list[i]
+    this_sub = gsub("\\\\","/",this_line[[this_parm ]])
+    this_proto = gsub(paste0("@",this_parm,'@'),this_sub,this_proto)
   }
   writeLines(this_proto,this_line$key_path)
   return(this_line$key_path)
