@@ -43,7 +43,7 @@ Package usage is also fairly simple
     require(RSQLite)
 
   #in this case supply the path to your sqlite fvs database with tables FVS_StandInit, and FVS_TreeInit
-    dir_fvs_in = "c:/temp/fvs_test/fVS_db_in.db"
+    dir_fvs_in = system.file("extdata", "FIADB_RI.db", package = "RForInvt")
     dir_fvs_out =  "c:/temp/fvs_test/fVS_db_out.db"
     
   #create cluster with 4 nodes  
