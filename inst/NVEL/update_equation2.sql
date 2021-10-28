@@ -1,0 +1,4 @@
+--update BM_eqForms2 set equation2 = replace(equation2,"ln","log");
+--update BM_eqForms2 set equation2 = lower(equation2);
+--update BM_eqForms2 set equation2 = replace(equation2,"biomass = ","");
+--update BM_eqForms2 set equation2 = replace(equation2,"biomass= ","");
