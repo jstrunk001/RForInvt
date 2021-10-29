@@ -6,10 +6,9 @@
 \usage{
 fvs_run(
   key_df,
-  cluster = NA,
-  clear_db = T,
+  db_merge = "FVSOut.db",
   merge_dbs = T,
-  db_merge = "c:/temp/RForInvt/FVS/FVS_out/FVS_AllRuns.db",
+  cluster = NA,
   delete_temp_db = T,
   append = F
 )
@@ -17,11 +16,15 @@ fvs_run(
 \arguments{
 \item{key_df}{input dataframe with key file parameters}
 
+\item{db_merge}{merge output parallel databases}
+
+\item{merge_dbs}{T/F should temp dbs be merged into a single databse}
+
 \item{cluster}{optional parallel cluster object}
 
-\item{clear_db}{T/F wipe output databases}
+\item{delete_temp_db}{T/F delete temp db's used for parallel processing}
 
-\item{merge}{merge output parallel databases}
+\item{append}{T/F if the output db already exists, should it be appended or wiped}
 }
 \description{
 run fvs after preparing key files
