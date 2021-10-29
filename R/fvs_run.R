@@ -28,8 +28,10 @@
 #'
 #'@param key_df input dataframe with key file parameters
 #'@param cluster optional parallel cluster object
-#'@param clear_db T/F wipe output databases
-#'@param merge merge output parallel databases
+#'@param db_merge merge output parallel databases
+#'@param merge_dbs T/F should temp dbs be merged into a single databse
+#'@param delete_temp_db T/F delete temp db's used for parallel processing
+#'@param append T/F if the output db already exists, should it be appended or wiped
 #'
 #'@return
 #'  NULL
@@ -75,10 +77,9 @@
 
 fvs_run = function(
   key_df
-  ,cluster=NA
-  ,clear_db = T
+  ,db_merge = "FVSOut.db"
   ,merge_dbs= T
-  ,db_merge = "c:/temp/RForInvt/FVS/FVS_out/FVS_AllRuns.db"
+  ,cluster=NA
   ,delete_temp_db = T
   ,append=F
 ){
@@ -86,6 +87,8 @@ fvs_run = function(
   t1 = Sys.time()
   print(paste("FVS runs started at",t1))
   ##clear output DBs if specified
+
+  if(merge_dbs) out_db = file.path(dirname(key_df$output_db[1]), db_merge)
 
   if(clear_db){
     sapply(unique(key_df$output_db),function(x){
@@ -112,7 +115,6 @@ fvs_run = function(
   ###run in parallel but split so each cluster uses the same DB in series
   if(!is.na(cluster[1])){
     res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, system)
-    clusterEvalQ(cluster,{closeAllConnections();gc()})
   }
 
   #merge multiple databases into single database
@@ -121,8 +123,8 @@ fvs_run = function(
     unq_db = noquote(unique(key_df$output_db))
 
     #make database for all
-    if(!append) unlink(db_merge)
-    con_dbmrg =  RSQLite::dbConnect( RSQLite::SQLite(),db_merge)
+    if(!append) unlink(out_db)
+    con_dbmrg =  RSQLite::dbConnect( RSQLite::SQLite(),out_db)
 
     for(i in 1:length(unq_db)){
 

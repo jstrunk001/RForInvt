@@ -6,7 +6,7 @@
 \usage{
 fvs_prototype_keyfile(
   title = "!!title: FVS key prototype - RForBio",
-  std_id = "@std_id@               Run 1",
+  std_id = "@std_id@",
   std_cn = "@std_id@",
   mgmt_id = "A001",
   invyr = "InvYear       @invyr@",
@@ -18,6 +18,7 @@ fvs_prototype_keyfile(
   treelist = "Treelist       0                   0",
   cutlist = "Cutlist        0                   0",
   compute = "COMPUTE           0",
+  where_std = c("WHERE Stand_ID = '\%StandID\%'", "WHERE Stand_CN = '\%Stand_CN\%'")[1],
   other_keywords = c(NULL)
 )
 }

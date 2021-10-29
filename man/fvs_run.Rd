@@ -9,8 +9,9 @@ fvs_run(
   cluster = NA,
   clear_db = T,
   merge_dbs = T,
-  db_merge = "FVS_AllRuns.db",
-  delete_temp_db = T
+  db_merge = "c:/temp/RForInvt/FVS/FVS_out/FVS_AllRuns.db",
+  delete_temp_db = T,
+  append = F
 )
 }
 \arguments{
