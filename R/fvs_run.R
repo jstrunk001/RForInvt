@@ -30,6 +30,7 @@
 #'@param cluster optional parallel cluster object
 #'@param db_merge merge output parallel databases
 #'@param merge_dbs T/F should temp dbs be merged into a single databse
+#'@param clear_db T/F delete all old inputs
 #'@param delete_temp_db T/F delete temp db's used for parallel processing
 #'@param append T/F if the output db already exists, should it be appended or wiped
 #'
@@ -80,6 +81,7 @@ fvs_run = function(
   ,db_merge = "FVSOut.db"
   ,merge_dbs= T
   ,cluster=NA
+  ,clear_db=T
   ,delete_temp_db = T
   ,append=F
 ){
