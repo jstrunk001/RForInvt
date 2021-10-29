@@ -6,13 +6,13 @@
 \usage{
 fvs_make_keyfiles(
   param_df,
-  processing_dir = "c:\\\\temp\\\\RForBio\\\\fvs",
+  processing_dir = "c:\\\\temp\\\\RForInvt\\\\fvs",
   path_key_proto = NA,
   key_proto = NA,
   clear_db = T,
   clear_keys = T,
   cluster = NA,
-  id = c("plt_id", "plt_cn")
+  id = c("plt_id")
 )
 }
 \arguments{
