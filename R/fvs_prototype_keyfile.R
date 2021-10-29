@@ -72,7 +72,7 @@
 
 fvs_prototype_keyfile = function(
   title = "!!title: FVS key prototype - RForBio"
-  ,std_id = "@std_id@               Run 1"
+  ,std_id = "@std_id@"
   ,std_cn = "@std_id@"
   ,mgmt_id = "A001"
   ,invyr = "InvYear       @invyr@"
@@ -84,6 +84,7 @@ fvs_prototype_keyfile = function(
   ,treelist =    "Treelist       0                   0"
   ,cutlist = "Cutlist        0                   0"
   ,compute =    "COMPUTE           0"
+  ,where_std = c("WHERE Stand_ID = '%StandID%'","WHERE Stand_CN = '%Stand_CN%'")[1]
   ,other_keywords = c(NULL)
 ){
   return(
@@ -125,12 +126,12 @@ fvs_prototype_keyfile = function(
         ,"DSNIn"
         ,"@input_db_q@"
         ,"StandSQL"
-        ,"SELECT * FROM FVS_StandInit"
-        ,"WHERE Stand_ID= '%StandID%'"
+        ,"SELECT * FROM @stand_table@"
+        ,where_std
         ,"EndSQL"
         ,"TreeSQL"
-        ,"SELECT * FROM FVS_TreeInit"
-        ,"WHERE Stand_ID= '%StandID%'"
+        ,"SELECT * FROM @tree_table@"
+        ,where_std
         ,"EndSQL"
         ,"END"
         ,"SPLabel"
