@@ -1,0 +1,145 @@
+---
+title: "FVS Example"
+author: "Jacob Strunk"
+date: "10/26/2021"
+output: html_document
+---
+
+## (optional) helpful functions and some options setup
+
+```{r, environment}
+
+#prevent printing of scientific notation
+options(scipen = 10E6)
+
+#prevent storing strings as factors
+options(stringsAsFactors = F)
+
+#helper for writing paths to clipboard 
+writeClipboard2 = function(x) writeClipboard(charToRaw(paste0(x, ' ')))
+
+#generic function to slash direction from clipboard
+reslash<- function(x=NA, slash=c("back","forward")){
+  if(is.na(x)) x = readClipboard()
+  if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
+  if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
+  writeClipboard2(path)
+  return(path)
+}
+
+#backslash a path on clipboard
+bs=function(x=NA){reslash(x,slash="back")}
+
+#forwardslash a path on clipboard
+fs=function(x=NA){reslash(x,slash="forward")}
+
+#get the names of a data.frame as a quoted string vector
+nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
+
+```
+
+# RForInvt FVS example
+
+```{r}
+
+  #load required packages
+  
+    require(RForInvt)
+    require(parallel)
+    require(RSQLite)
+
+  #create cluster with 4 nodes  
+    clus1=makeCluster(4)
+
+  #in this case supply the path to your sqlite fvs database with tables FVS_StandInit, and FVS_TreeInit
+    dir_fvs_in = system.file("extdata", "FIADB_RI.db", package = "RForInvt")
+
+  #load FVS data - but limit to the first 50 plots, it is always a good idea to start with a small dataset
+  # Note that in the FVS ready data, plots are treated as stands with 4 plots
+  
+    conSQL = DBI::dbConnect( RSQLite::SQLite() , dbname= dir_fvs_in )
+      dbListTables(conSQL)
+      fvs_stands = dbGetQuery( conSQL , "select * from FVS_STANDINIT_PLOT where INV_YEAR > 2010")
+      fvs_trees = dbGetQuery( conSQL , "select * from FVS_TREEINIT_PLOT where STAND_limit 500")
+    dbDisconnect( conSQL )
+
+  #assume a typical inventory dataset and prepare fvs parameters
+  #the fvs_make_keyfiles will take this list of parameters and make a
+  #separate key file for each record in the FVS_StandInit table
+  
+    df_params = fvs_protype_params()
+    df_params[1:nrow(fvs_stands),]=NA
+    df_params[,"std_cn"] = fvs_stands$STAND_CN
+    df_params[,"std_id"] = fvs_stands$STAND_ID
+    df_params[,"invyr"] = fvs_stands$INV_YEAR
+    df_params[,"timeint"] = 10
+    df_params[,"numcycle"] = 1
+    df_params[,"input_db"] = dir_fvs_in
+    df_params[,"fvs_path"] = "C:/FVSbin/FVSne.exe"
+    df_params[,"tree_table"] = "FVS_TREEINIT_PLOT"
+    df_params[,"stand_table"] = "FVS_STANDINIT_PLOT"
+    df_params
+    
+  #prepare prototype key file - the fvs_prototype_keyfile function just puts together a 
+  #series of text strings. Some common keywords are suggested (e.g. notriple, nodgl, and dgstdev). 
+  #If the parameter is NULL, then the keyword is not included, and other keywords can be supplied with "other_keywords" parameter
+    
+    #here we override the defualt to used std_id and use std_cn instead
+    key_proto = fvs_prototype_keyfile(
+                             notriple="NoTriple"
+                            , std_id = "@std_cn@"
+                            , std_cn = "@std_cn@"
+                            , where_std = "WHERE Stand_CN = '%Stand_CN%'"
+                            )
+
+  #convert prototype key file into series of key files associated with each stand_id
+    df_keys = fvs_make_keyfiles(df_params[2:10,], key_proto = key_proto, cluster = clus1 , id="std_cn" , clear_db = T, clear_keys = T)
+  
+  #make sure to look at a few keyword files to see that they are  (especially the db paths)
+    df_keys
+  
+  #lastly, actually run fvs - if processing in parallel this function creates multiple output dbs, by default these are merged and temp files deleted
+    fvs_run(df_keys, cluster = NA, merge_dbs=T, db_merge="c:/temp/RForInvt/fvs/fVS_out_RI.db" , append=F)
+  
+  #release resources assigned to cluster  
+    parallel::stopCluster(clus1);rm(clus1)
+
+
+```
+
+## read in some FVS grown data
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```

@@ -78,8 +78,9 @@ fvs_run = function(
   ,cluster=NA
   ,clear_db = T
   ,merge_dbs= T
-  ,db_merge = "FVS_AllRuns.db"
+  ,db_merge = "c:/temp/RForInvt/FVS/FVS_out/FVS_AllRuns.db"
   ,delete_temp_db = T
+  ,append=F
 ){
 
   t1 = Sys.time()
@@ -103,14 +104,15 @@ fvs_run = function(
 
   ##run in series
   if(is.na(cluster[1])){
-    lapply(fvs_runs,function(x){
+    res_fvs = lapply(fvs_runs,function(x){
       system(x)
     })
   }
 
   ###run in parallel but split so each cluster uses the same DB in series
   if(!is.na(cluster[1])){
-    parallel::parLapplyLB(cluster,fvs_runs, system)
+    res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, system)
+    clusterEvalQ(cluster,{closeAllConnections();gc()})
   }
 
   #merge multiple databases into single database
@@ -119,26 +121,25 @@ fvs_run = function(
     unq_db = noquote(unique(key_df$output_db))
 
     #make database for all
-    dir_dbAll = file.path(dirname(unq_db[1]),db_merge)
-    file.copy(unq_db[1], dir_dbAll )
-    dbAll_con =  RSQLite::dbConnect( RSQLite::SQLite(),dir_dbAll)
+    if(!append) unlink(db_merge)
+    con_dbmrg =  RSQLite::dbConnect( RSQLite::SQLite(),db_merge)
 
-    for(i in 2:length(unq_db)){
+    for(i in 1:length(unq_db)){
 
-      #connect and get list from first db
+      #connect and get lists from dbs
       unq_db_i = unq_db[i]
-      dbi_con =  RSQLite::dbConnect( RSQLite::SQLite(),unq_db_i)
-      tbs_i = dbListTables(dbi_con)
+      con_dbi =  RSQLite::dbConnect( RSQLite::SQLite(),unq_db_i)
+      tbs_i = dbListTables(con_dbi)
 
       #iterate through tables and write to merge db
       for(j in 1:length(tbs_i)){
-        tbj = dbReadTable(dbi_con ,tbs_i[j])
-        dbWriteTable(dbAll_con,tbs_i[j], tbj , append=T )
+        tbj = dbReadTable(con_dbi ,tbs_i[j])
+        dbWriteTable(con_dbmrg,tbs_i[j], tbj ,append=T )
       }
-      RSQLite::dbDisconnect( dbi_con)
+      RSQLite::dbDisconnect( con_dbi)
 
     }
-    RSQLite::dbDisconnect( dbAll_con)
+    RSQLite::dbDisconnect( con_dbmrg)
 
   }
 
