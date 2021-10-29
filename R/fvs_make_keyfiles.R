@@ -33,7 +33,6 @@
 #'@examples
 #'
 #'
-#'
 #' clus1 = parallel::makeCluster(4)
 #'
 #'#assume a typical inventory dataset and prepare fvs parameters
@@ -80,7 +79,7 @@ fvs_make_keyfiles = function(
   ,cluster = NA
   ,id=c("plt_id")
 ){
-browser()
+
   #add quotes to input/output paths
   param_df[,"input_db_q"] = shQuote(param_df[,"input_db"])
 
@@ -138,7 +137,7 @@ browser()
 
   ##add input_db to param_df
   ##add the keyfile path
-  param_df$key_path = paste0(key_dir,"/",gsub("(\\\\,//)",".", param_df[,id[1]]),".key")
+  param_df$key_path = paste0(key_dir,"/",gsub("(\\\\|/)",".", param_df[,id[1]]),".key")
 
   ##read the key prototype
   if(!is.na(path_key_proto)) key_proto_in = readLines(path_key_proto)
