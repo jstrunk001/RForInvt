@@ -20,7 +20,6 @@
 #'@param param_df parameters substituted into keyfile
 #'@param processing_dir where do keyfiles and output data go
 #'@param path_key_proto (optional) template key file - e.g. use FVS gui
-#'@param clear_db T/F delete all old inputs
 #'@param clear_keys T/F delete all old key files
 #'@param cluster (Optional) parallel cluster object
 #'@param id select column to use as id field - column should be present in param_df
