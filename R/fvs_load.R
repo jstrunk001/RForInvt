@@ -1,6 +1,6 @@
 #'@title
 #'load rFVS scripts maintained on https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/
-#'should be loaded automatically by package
+#'
 #'
 #'@description
 #'load rFVS scripts using source
