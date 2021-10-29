@@ -1,0 +1,91 @@
+---
+title: "Untitled"
+author: "Jacob Strunk"
+date: "8/5/2021"
+output: html_document
+---
+## This is an alternative document template for RStudio 
+ Simply drop this file in the templates folder for Rstudio and replace the existing document.RMD
+ Feel free to make any other changes, like placing helpful functions in the first chunk or 
+ preparing some canned code for reading data, connecting to databases, etc. or simply remove 
+ what is here 
+
+
+```{r, environment}
+
+#turn off scientific notation and prevent strings being read as factors
+options(scipen = 10E6, stringsAsFactors = F)
+
+```
+
+
+## helpful functions and some options setup
+
+```{r, helpers}
+
+writeClipboard2 = function(x) writeClipboard(charToRaw(paste0(x, ' ')))
+reslash<- function(x=NA, slash=c("back","forward")){
+  if(is.na(x)) x = readClipboard()
+  if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
+  if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
+  writeClipboard2(path)
+  return(path)
+}
+bs=function(x=NA){reslash(x,slash="back")}
+fs=function(x=NA){reslash(x,slash="forward")}
+nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
+
+
+```
+
+## load data
+
+```{r}
+
+
+
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
