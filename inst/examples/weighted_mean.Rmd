@@ -1,0 +1,83 @@
+---
+title: "weighted_mean"
+author: "Jacob Strunk"
+date: "8/5/2021"
+output: html_document
+---
+## multivariate aggregation
+
+https://stackoverflow.com/questions/3367190/aggregate-and-weighted-mean-in-r
+
+# plyr approach
+
+```{r}
+library(plyr)
+
+#prep data
+  set.seed(42)   # fix seed so that you get the same results
+  n=10
+  m=5
+  dat = data.frame(plot=sort(rep(1:m,n)),baf=30,dbh = abs(rnorm(n*m)*10)+5) 
+  dat$ba = 0.005454*dat$dbh^2
+  dat$tpa = dat$baf / dat$ba
+
+#aggregate - compute QMD using tpa weights
+ddply(dat, .(plot), function(x) data.frame(qmd=sqrt(weighted.mean(x$dbh^2, x$tpa)) ))
+
+#weighted mean diameter
+ddply(dat, .(plot), function(x) data.frame(db_mn=weighted.mean(x$dbh, x$tpa) ))
+
+
+```
+
+# data.table approach
+
+```{r, helpers}
+
+library(data.table)
+DT <- data.table(dat)
+DT[,list(qmd = sqrt(weighted.mean(dbh^2,tpa))),by=plot]
+DT[,list(mn_dbh = weighted.mean(dbh,tpa)),by=plot]
+
+```
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
