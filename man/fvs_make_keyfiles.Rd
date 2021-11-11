@@ -22,8 +22,6 @@ fvs_make_keyfiles(
 
 \item{path_key_proto}{(optional) template key file - e.g. use FVS gui}
 
-\item{clear_db}{T/F delete all old inputs}
-
 \item{clear_keys}{T/F delete all old key files}
 
 \item{cluster}{(Optional) parallel cluster object}

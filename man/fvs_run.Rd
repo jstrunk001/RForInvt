@@ -9,6 +9,7 @@ fvs_run(
   db_merge = "FVSOut.db",
   merge_dbs = T,
   cluster = NA,
+  clear_db = T,
   delete_temp_db = T,
   append = F
 )
@@ -21,6 +22,8 @@ fvs_run(
 \item{merge_dbs}{T/F should temp dbs be merged into a single databse}
 
 \item{cluster}{optional parallel cluster object}
+
+\item{clear_db}{T/F delete all old inputs}
 
 \item{delete_temp_db}{T/F delete temp db's used for parallel processing}
 

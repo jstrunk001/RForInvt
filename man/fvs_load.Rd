@@ -2,8 +2,7 @@
 % Please edit documentation in R/fvs_load.R
 \name{fvs_load}
 \alias{fvs_load}
-\title{load rFVS scripts maintained on https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/
-should be loaded automatically by package}
+\title{load rFVS scripts maintained on https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/}
 \usage{
 fvs_load(
  
