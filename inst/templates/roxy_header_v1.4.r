@@ -22,7 +22,7 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Some Body <some.body@@somewhere.com>
 #'
 #'@param
 #'@param
@@ -55,17 +55,29 @@
 #
 #'@seealso \code{\link{another_function}}\cr \code{\link{yet_another_function}}\cr
 
-#Desired upgrades to this function:
+#the code below with a single comment symbol is not part of the official roxygen code
 #
+#Desired upgrades to this function (keep track of planned updates):
+#1.
+#2.
+#3.
+#4.
 #
 
-# x = function(x){}
-
-#copy function arguments and use this code to format arguments
+#Help to set up param documentation above
+# 1. Select function parameters, in this example case just "x,y,...", arguments should be on separate line
+# 2. select the code starting with writeClipboard(...) below without comment (hash symbol) and run
+# 3. paste parameters into @param section above
+#
 # writeClipboard(paste(gsub("^[[:space:]]*[,]*","#'@param ",gsub("=.*"," ?",readClipboard())),collapse="\n"))
-#
-#various helpers:
-# bs<- function(){path <- shQuote(gsub("\\", "\\\\", readClipboard(), fixed = TRUE)); writeClipboard(path); return(path)}
-# fs<- function(){path <- shQuote(gsub("\\", "/", readClipboard(), fixed = TRUE)); writeClipboard(path); return(path)}
-# nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep="");writeClipboard(x);return(x)}
 
+
+#rename function and add guts
+this_fun = function(x
+                    ,y
+                    ,...
+                    ){
+
+  #place code here
+
+  }

@@ -1,0 +1,104 @@
+---
+title: "multipanel plot"
+author: "Jacob Strunk"
+date: "9/8/2021"
+output: pdf_document
+---
+
+---
+title: "Untitled"
+author: "Jacob Strunk"
+date: "6/7/2021"
+output: html_document
+---
+
+## helpful functions and some options setup
+
+```{r, environment}
+
+writeClipboard2 = function(x) writeClipboard(charToRaw(paste0(x, ' ')))
+reslash<- function(slash=c("back","forward")){
+  if(slash[1]=="back") path <- shQuote(gsub("\\", "\\\\", readClipboard(), fixed = TRUE))
+  if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", readClipboard(), fixed = TRUE))
+  writeClipboard2(path)
+  return(path)
+}
+bs=function(){reslash(slash="back")}
+fs=function(){reslash(slash="forward")}
+nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
+
+options(scipen = 10E6, stringsAsFactors = F)
+
+```
+
+## example graph with 
+
+```{r}
+
+
+    jpeg(paste("c:\\temp\\some_graph.jpg",sep=""),height=10,width=8, units="in",res=600 )
+    
+    par(mfrow=c(3,2))
+    par(mar=c(0,0,0,0))
+    par(oma=c(4,4,4,4))
+
+    plot(1:5,1:5, xaxt="n")
+    plot(1:5,1:5, xaxt="n",yaxt="n")
+    plot(1:5,1:5, xaxt="n")
+    plot(1:5,1:5, xaxt="n",yaxt="n")
+    plot(1:5,1:5)
+    plot(1:5,1:5,yaxt="n")
+    
+    mtext(c("DBH (cm)"), side = 1, outer = TRUE, cex = 1, line = 2.5, col = 1)
+    mtext(c("Volume RMSE%"), side = 2, outer = TRUE, cex = 1, line = 2.5, col = 1)
+    mtext(c("Plot", "Stand"), at = c(.25,.75), side = 3, outer = TRUE, cex = 1, line = 1, col = 1)
+    mtext(c("SW","HW","HS"), at = c(1/6,1/2, 5/6), side = 4, outer = TRUE, cex = 1, line = 1, col = 1,las=2)
+      
+    
+    dev.off()
+    
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```
+
+## 
+
+```{r, eval=FALSE}
+
+```

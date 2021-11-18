@@ -1,0 +1,14 @@
+---
+title: "example expression"
+output: html_document
+---
+
+#https://stackoverflow.com/questions/10628547/use-superscripts-in-r-axis-labels
+
+```{r setup, include=FALSE}
+
+
+  plot(0,main=expression(paste('(SOC[',kgm^-2,'])'^0.25,sep='')))
+
+
+```
