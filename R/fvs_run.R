@@ -90,8 +90,9 @@ fvs_run = function(
   print(paste("FVS runs started at",t1))
   ##clear output DBs if specified
 
-  if(merge_dbs) out_db = file.path(dirname(key_df$output_db[1]), db_merge)
-
+  if(merge_dbs & db_merge == basename(db_merge) ) out_db = file.path(dirname(key_df$output_db[1]), db_merge)
+  else out_db = db_merge
+    
   if(clear_db){
     sapply(unique(key_df$output_db),function(x){
       output_con =  RSQLite::dbConnect( RSQLite::SQLite(),x)
@@ -125,8 +126,8 @@ fvs_run = function(
     unq_db = noquote(unique(key_df$output_db))
 
     #make database for all
-    if(!append) unlink(out_db)
-    con_dbmrg =  RSQLite::dbConnect( RSQLite::SQLite(),out_db)
+    if(!append & file.exists(out_db)) unlink(out_db)
+    con_dbmrg =  DBI::dbConnect( RSQLite::SQLite(),out_db)
 
     for(i in 1:length(unq_db)){
 
