@@ -27,7 +27,7 @@
 #'@param nodgl item in keyword file to replace
 #'@param dgstdev item in keyword file to replace
 #'@param treelist item in keyword file to replace
-#'@param compute item in keyword file to replace
+#@param compute item in keyword file to replace
 #'@param other_keywords add additional keyword as separate strings, e.g, other_keywords = c("thiskey 1","thatkey 0")
 #'
 #'@return
@@ -83,7 +83,7 @@ fvs_prototype_keyfile = function(
   ,dgstdev =   NULL #"DGSTDEV           0"
   ,treelist =    "Treelist       0                   0"
   ,cutlist = "Cutlist        0                   0"
-  ,compute =    "COMPUTE           0"
+  #,compute =    "COMPUTE           0"
   ,where_std = c("WHERE Stand_ID = '%StandID%'","WHERE Stand_CN = '%Stand_CN%'")[1]
   ,other_keywords = c(NULL)
 ){

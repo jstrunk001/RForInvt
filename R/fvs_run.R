@@ -106,7 +106,7 @@ fvs_run = function(
   }
 
   #prepare fvs commands
-  fvs_runs = paste0(key_df$fvs_path," --keywordfile=",gsub("/","\\\\",key_df$key_path))
+  fvs_runs = paste0(key_df$fvs_path," --keywordfile=",gsub("\\\\\\\\", "\\\\",gsub("/","\\\\",key_df$key_path)  ) ) 
 
   ##run in series
   if(is.na(cluster[1])){
