@@ -1,7 +1,7 @@
 Package: RForInvt
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0
+Version: 0.2.0
 Author: Jacob Strunk
 Maintainer: Jacob Strunk <strunky@gmail.com>
 Description: A collection of data processing tools and helpers primarily motivated by forest inventory estimation. A companion packages to
