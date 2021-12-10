@@ -23,6 +23,7 @@
 #'@param clear_keys T/F delete all old key files
 #'@param cluster (Optional) parallel cluster object
 #'@param id select column to use as id field - column should be present in param_df
+#'@param quotes_db T/F - recent versions of FVS variants don't accept quotes around db names in key files
 #'
 #'@return
 #'  NULL
@@ -77,11 +78,13 @@ fvs_make_keyfiles = function(
   ,clear_keys = T
   ,cluster = NA
   ,id=c("plt_id")
+  ,quotes_db = F
 ){
 
   #add quotes to input/output paths
-  param_df[,"input_db_q"] = shQuote(param_df[,"input_db"])
-
+  if(quotes_db) param_df[,"input_db_q"] = shQuote(param_df[,"input_db"])
+  if(!quotes_db) param_df[,"input_db_q"] = param_df[,"input_db"]
+  
   if(!dir.exists(processing_dir)) dir.create(processing_dir,recursive=T)
 
   ##divide by cluster if necessary
@@ -97,8 +100,10 @@ fvs_make_keyfiles = function(
     param_df$cluster = clus_n[1:nrow(param_df)]
   }
   param_df$output_db = paste0(dir_outdb,"db",param_df$cluster,".db")
-  param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
-
+  if(quotes_db) param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
+  if(!quotes_db) param_df$output_db_q = paste0(dir_outdb,"db",param_df$cluster,".db")
+  #param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
+  
   ###create directories if they don't exits
   for(this_dir in c(processing_dir,dir_outdb,key_dir)){
     if(!dir.exists(this_dir)){
