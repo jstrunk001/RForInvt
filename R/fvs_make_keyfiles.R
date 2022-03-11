@@ -99,7 +99,9 @@ fvs_make_keyfiles = function(
     clus_n = rep(1:n_cluster,times=(trunc(nrow(param_df)/n_cluster) + 1))
     param_df$cluster = clus_n[1:nrow(param_df)]
   }
+  param_df$output_dir = dir_outdb
   param_df$output_db = paste0(dir_outdb,"db",param_df$cluster,".db")
+  
   if(quotes_db) param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
   if(!quotes_db) param_df$output_db_q = paste0(dir_outdb,"db",param_df$cluster,".db")
   #param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
