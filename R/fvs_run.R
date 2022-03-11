@@ -79,6 +79,7 @@
 fvs_run = function(
   key_df
   ,db_merge = "FVSOut.db"
+  ,fvs_commands = "FVS_commands.txt"
   ,merge_dbs= T
   ,cluster=NA
   ,clear_db=T
@@ -107,7 +108,16 @@ fvs_run = function(
 
   #prepare fvs commands
   fvs_runs = paste0(key_df$fvs_path," --keywordfile=",gsub("\\\\\\\\", "\\\\",gsub("/","\\\\",key_df$key_path)  ) ) 
-
+  if(!is.na(fvs_commands) ){
+    browser()
+    dir_cmds = file.path(key_df$output_dir, "commands"))
+    dir.create(dir_cmds)
+    dir_cmds_file = file.path(dir_cmds, paste0(,",csv"))
+    writeLines(fvs_runs, file.path() )
+    
+  }
+    
+    
   ##run in series
   if(is.na(cluster[1])){
     res_fvs = lapply(fvs_runs,function(x){
@@ -136,6 +146,8 @@ fvs_run = function(
       con_dbi =  RSQLite::dbConnect( RSQLite::SQLite(),unq_db_i)
       tbs_i = dbListTables(con_dbi)
 
+      if(length(tbs_i) == 0) stop("input db empty, nothing to merge")
+      
       #iterate through tables and write to merge db
       for(j in 1:length(tbs_i)){
         tbj = dbReadTable(con_dbi ,tbs_i[j])
@@ -149,7 +161,7 @@ fvs_run = function(
   }
 
   #remove temporary dbs
-  sapply(unq_db,unlink)
+  if(delete_temp_db) sapply(unq_db,unlink)
 
   t2 = Sys.time()
   print(paste("FVS runs finished at",t2))
