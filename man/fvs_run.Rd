@@ -7,6 +7,7 @@
 fvs_run(
   key_df,
   db_merge = "FVSOut.db",
+  fvs_commands = "FVS_commands.txt",
   merge_dbs = T,
   cluster = NA,
   clear_db = T,

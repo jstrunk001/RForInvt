@@ -67,7 +67,7 @@ filestamp = function(
                       stamp = format(Sys.time(), "%Y%m%d%H%M%S")
                       ,prefix = "c:/temp/somefile_V"
                       ,suffix = ".csv"
-                      ,quiet = F
+                      ,quiet = T
                       )
 {
   timestamp(stamp=stamp, prefix=prefix,suffix = suffix, quiet=quiet)

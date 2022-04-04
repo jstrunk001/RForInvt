@@ -93,7 +93,7 @@ fvs_run = function(
 
   if(merge_dbs & db_merge == basename(db_merge) ) out_db = file.path(dirname(key_df$output_db[1]), db_merge)
   else out_db = db_merge
-    
+
   if(clear_db){
     sapply(unique(key_df$output_db),function(x){
       output_con =  RSQLite::dbConnect( RSQLite::SQLite(),x)
@@ -107,17 +107,17 @@ fvs_run = function(
   }
 
   #prepare fvs commands
-  fvs_runs = paste0(key_df$fvs_path," --keywordfile=",gsub("\\\\\\\\", "\\\\",gsub("/","\\\\",key_df$key_path)  ) ) 
-  if(!is.na(fvs_commands) & F ){
-    browser()
-    dir_cmds = file.path(key_df$output_dir, "commands")
-    dir.create(dir_cmds)
-    dir_cmds_file = file.path(dir_cmds, paste0( format(Sys.time() ,  ",csv")))
-    writeLines(fvs_runs, file.path() )
-    
+  fvs_runs = paste0(key_df$fvs_path," --keywordfile=",gsub("\\\\\\\\", "\\\\",gsub("/","\\\\",key_df$key_path)  ) )
+  if(!is.na(fvs_commands)  ){
+
+    dir_cmds = file.path(key_df$fvs_dir[1], "commands")
+    err_in = try(dir.create(dir_cmds) , silent = T)
+    dir_cmds_file = filestamp(prefix = file.path(dir_cmds,"fvs_commands_v") , suffix = ".txt")
+    writeLines(fvs_runs,dir_cmds_file )
+
   }
-    
-    
+
+
   ##run in series
   if(is.na(cluster[1])){
     res_fvs = lapply(fvs_runs,function(x){
@@ -147,7 +147,7 @@ fvs_run = function(
       tbs_i = dbListTables(con_dbi)
 
       if(length(tbs_i) == 0) stop("input db empty, nothing to merge")
-      
+
       #iterate through tables and write to merge db
       for(j in 1:length(tbs_i)){
         tbj = dbReadTable(con_dbi ,tbs_i[j])

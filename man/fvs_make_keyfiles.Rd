@@ -12,7 +12,8 @@ fvs_make_keyfiles(
   clear_db = T,
   clear_keys = T,
   cluster = NA,
-  id = c("plt_id")
+  id = c("plt_id"),
+  quotes_db = F
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ fvs_make_keyfiles(
 \item{cluster}{(Optional) parallel cluster object}
 
 \item{id}{select column to use as id field - column should be present in param_df}
+
+\item{quotes_db}{T/F - recent versions of FVS variants don't accept quotes around db names in key files}
 }
 \description{
 make keyfiles for each row in the input data frame
