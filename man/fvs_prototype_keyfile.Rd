@@ -17,7 +17,6 @@ fvs_prototype_keyfile(
   dgstdev = NULL,
   treelist = "Treelist       0                   0",
   cutlist = "Cutlist        0                   0",
-  compute = "COMPUTE           0",
   where_std = c("WHERE Stand_ID = '\%StandID\%'", "WHERE Stand_CN = '\%Stand_CN\%'")[1],
   other_keywords = c(NULL)
 )
@@ -38,8 +37,6 @@ fvs_prototype_keyfile(
 \item{dgstdev}{item in keyword file to replace}
 
 \item{treelist}{item in keyword file to replace}
-
-\item{compute}{item in keyword file to replace}
 
 \item{other_keywords}{add additional keyword as separate strings, e.g, other_keywords = c("thiskey 1","thatkey 0")}
 }
