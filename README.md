@@ -87,7 +87,7 @@ Package usage is also fairly simple
   
     df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1 , id="std_id")
   
-  #make sure to look at a few keyword files to see that they are  (especially the db paths)
+  #make sure to look at a few keyword files to see that they are formulated correctly  (especially the db paths)
   
     df_keys
   
