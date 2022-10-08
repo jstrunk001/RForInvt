@@ -1,8 +1,8 @@
 #'@title
-#'  create a date versioned file name, just a wrapper for timestamp
+#'  create a date versioned file name, mostly a wrapper for timestamp
 #'
 #'@description
-#'  create a date versioned file name leveragin timestamp function and data format codes
+#'  create a date versioned file name leveraging timestamp function and data format codes
 #'
 #'@details
 #'
@@ -34,7 +34,7 @@
 #'  character string with some new d
 #'
 #'@examples
-#'  
+#'
 #' filestamp()
 #' filestamp(format(Sys.time(), "%Y_%m_%d_%H%M%S"))
 #' filestamp("1.1")
@@ -64,13 +64,14 @@
 
 #rename function and add guts
 filestamp = function(
-                      stamp = format(Sys.time(), "%Y%m%d%H%M%S")
-                      ,prefix = "c:/temp/somefile_V"
-                      ,suffix = ".csv"
+                      path = tempdir()
+                      ,stamp = format(Sys.time(), "%Y%m%d%H%M%S")
+                      ,prefix = "logfile_V"
+                      ,suffix = ".txt"
                       ,quiet = T
                       )
 {
-  timestamp(stamp=stamp, prefix=prefix,suffix = suffix, quiet=quiet)
+  file.path(path, timestamp(stamp=stamp, prefix=prefix,suffix = suffix, quiet=quiet))
 }
 
 
