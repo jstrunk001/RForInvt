@@ -19,16 +19,16 @@ reslash<- function(x=NA, slash=c("back","forward")){
 }
 bs=function(x=NA){reslash(x,slash="back")}
 fs=function(x=NA){reslash(x,slash="forward")}
-nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
+nv=nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
 
 
 ```
 
-## load data
+## examples
 
 ```{r}
 
-#examples
+#load data
 if(F){ 
 	
   library(RSQLite)
@@ -79,12 +79,46 @@ if(F){
   
 }
 
+#parallel processing example
+if(F){
+  library(foreach)
+  library(parallel)
+  library(doParallel)
+  
+  #set up sock cluster and set output message file directory
+  #then register with doParallel
+  if( !"cl_this" %in% ls() | F){
+    cl_this = makeCluster(45,outfile="c:/temp/this_out.txt")
+    registerDoParallel(cl_this)
+  }
+  
+  #constants / function in global environment
+  mult = 5
+  fn_test = function(x)sqrt(sum(abs(x)))
+  
+  #run parallel and show that global environment loads to threads (careful)
+  res = foreach(j = 1:5000, .combine=c) %dopar% {  
+    
+    #do some work
+    fn_test( mult*rnorm(500) )
+    
+  }
+  
+  #clean up threads
+  if(T){ try(stopCluster(cl_this)); try(rm(cl_this));try(closeAllConnections()) ; gc()  }
+
+  
+}
+
 
 ```
 
-## 
+## set up parallel processing
 
 ```{r, eval=FALSE}
+
+
+
 
 ```
 

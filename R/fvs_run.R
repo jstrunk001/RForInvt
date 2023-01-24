@@ -91,8 +91,8 @@ fvs_run = function(
   print(paste("FVS runs started at",t1))
   ##clear output DBs if specified
 
-  if(merge_dbs & db_merge == basename(db_merge) ) out_db = file.path(dirname(key_df$output_db[1]), db_merge)
-  else out_db = db_merge
+  if(merge_dbs & db_merge == basename(db_merge) ){ out_db = file.path(dirname(key_df$output_db[1]), db_merge)
+  }else out_db = db_merge
 
   if(clear_db){
     sapply(unique(key_df$output_db),function(x){
@@ -111,8 +111,8 @@ fvs_run = function(
   if(!is.na(fvs_commands)  ){
 
     dir_cmds = file.path(key_df$fvs_dir[1], "commands")
-    err_in = try(dir.create(dir_cmds) , silent = T)
-    dir_cmds_file = filestamp(prefix = file.path(dir_cmds,"fvs_commands_v") , suffix = ".txt")
+    if(!file.exists(dir_cmds)) err_in = try(dir.create(dir_cmds) , silent = T)
+    dir_cmds_file = filestamp(path = dir_cmds, prefix = "fvs_commands_v" , suffix = ".txt")
     writeLines(fvs_runs,dir_cmds_file )
 
   }
