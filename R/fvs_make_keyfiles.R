@@ -31,8 +31,6 @@
 #'@examples
 #'
 #'@examples
-#'
-#'
 #' clus1 = parallel::makeCluster(4)
 #'
 #'#assume a typical inventory dataset and prepare fvs parameters
@@ -84,7 +82,7 @@ fvs_make_keyfiles = function(
   #add quotes to input/output paths
   if(quotes_db) param_df[,"input_db_q"] = shQuote(param_df[,"input_db"])
   if(!quotes_db) param_df[,"input_db_q"] = param_df[,"input_db"]
-  
+
   if(!dir.exists(processing_dir)) dir.create(processing_dir,recursive=T)
 
   ##divide by cluster if necessary
@@ -101,11 +99,11 @@ fvs_make_keyfiles = function(
   }
   param_df$fvs_dir = processing_dir
   param_df$output_db = paste0(dir_outdb,"db",param_df$cluster,".db")
-  
+
   if(quotes_db) param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
   if(!quotes_db) param_df$output_db_q = paste0(dir_outdb,"db",param_df$cluster,".db")
   #param_df$output_db_q = shQuote(paste0(dir_outdb,"db",param_df$cluster,".db"))
-  
+
   ###create directories if they don't exits
   for(this_dir in c(processing_dir,dir_outdb,key_dir)){
     if(!dir.exists(this_dir)){
