@@ -121,13 +121,13 @@ fvs_run = function(
   ##run in series
   if(is.na(cluster[1])){
     res_fvs = lapply(fvs_runs,function(x){
-      system(x)
+      try(system(x))
     })
   }
 
   ###run in parallel but split so each cluster uses the same DB in series
   if(!is.na(cluster[1])){
-    res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, system)
+    res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, function(x)try(system(x)) )
   }
 
   #merge multiple databases into single database
