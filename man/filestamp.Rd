@@ -2,21 +2,24 @@
 % Please edit documentation in R/filestamp.R
 \name{filestamp}
 \alias{filestamp}
-\title{create a date versioned file name, just a wrapper for timestamp}
+\title{create a date versioned file name, mostly a wrapper for timestamp}
 \usage{
 filestamp(
+  path = tempdir(),
   stamp = format(Sys.time(), "\%Y\%m\%d\%H\%M\%S"),
-  prefix = "c:/temp/somefile_V",
-  suffix = ".csv",
+  prefix = "logfile_V",
+  suffix = ".txt",
   quiet = T
 )
 }
 \arguments{
+\item{path}{location for file, defaults to tempfile()}
+
 \item{stamp}{how to label file - default is a custom format time}
 
-\item{prefix}{file path or other}
+\item{prefix}{some sort of label like function name or analysis}
 
-\item{suffix}{file extesion}
+\item{suffix}{file extension or other details}
 
 \item{quiet}{If TRUE, suppress printing filestamp to the console}
 }
@@ -24,7 +27,7 @@ filestamp(
 character string with some new d
 }
 \description{
-create a date versioned file name leveragin timestamp function and data format codes
+create a date versioned file name leveraging timestamp function and data format codes
 }
 \details{
 create a date versioned file name leveraging existing timestamp function and data format codes
@@ -43,7 +46,7 @@ Revision History
 }
 }
 \examples{
- 
+
 filestamp()
 filestamp(format(Sys.time(), "\%Y_\%m_\%d_\%H\%M\%S"))
 filestamp("1.1")
@@ -52,7 +55,7 @@ filestamp("V1.1",prefix = "c:/temp/project1/myfile_",suffix=".RDS")
 
 }
 \seealso{
-\code{\link{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr
+\code{\link{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr \code{\link{tempfile}}\cr
 }
 \author{
 Some Body <some.body@somewhere.com>

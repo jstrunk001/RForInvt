@@ -25,9 +25,10 @@
 #'
 #'Some Body <some.body@@somewhere.com>
 #'
+#'@param path  location for file, defaults to tempfile()
 #'@param stamp  how to label file - default is a custom format time
-#'@param prefix  file path or other
-#'@param suffix  file extesion
+#'@param prefix  some sort of label like function name or analysis
+#'@param suffix  file extension or other details
 #'@param quiet  If TRUE, suppress printing filestamp to the console
 #'
 #'@return
@@ -43,7 +44,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr
+#'@seealso \code{\link{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr \code{\link{tempfile}}\cr
 
 #the code below with a single comment symbol is not part of the official roxygen code
 #
