@@ -85,6 +85,7 @@ fvs_run = function(
   ,clear_db=T
   ,delete_temp_db = T
   ,append=F
+  ,skip_empty = T
 ){
 
   t1 = Sys.time()
@@ -146,14 +147,21 @@ fvs_run = function(
       con_dbi =  RSQLite::dbConnect( RSQLite::SQLite(),unq_db_i)
       tbs_i = dbListTables(con_dbi)
 
-      if(length(tbs_i) == 0) stop("input db empty, nothing to merge")
+      if((length(tbs_i) == 0) & !skip_empty) stop("input db empty, nothing to merge")
+      if((length(tbs_i) == 0) & !skip_empty) RSQLite::dbDisconnect( con_dbi)
 
-      #iterate through tables and write to merge db
-      for(j in 1:length(tbs_i)){
-        tbj = dbReadTable(con_dbi ,tbs_i[j])
-        dbWriteTable(con_dbmrg,tbs_i[j], tbj ,append=T )
+      if((length(tbs_i) > 0) ){
+
+        #iterate through tables and write to merge db
+        for(j in 1:length(tbs_i)){
+          tbj = dbReadTable(con_dbi ,tbs_i[j])
+          if(nrow(tbj)>0) dbWriteTable(con_dbmrg,tbs_i[j], tbj ,append=T )
+        }
+        #disconnect
+        RSQLite::dbDisconnect( con_dbi)
+
       }
-      RSQLite::dbDisconnect( con_dbi)
+
 
     }
     RSQLite::dbDisconnect( con_dbmrg)

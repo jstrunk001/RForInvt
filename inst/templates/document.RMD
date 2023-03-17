@@ -3,53 +3,65 @@
 
 # setup and environment
 
-```{r, environment}
+```{r}
 
-#turn off scientific notation and prevent strings being read as factors
-options(scipen = 10E6, stringsAsFactors = F)
+#helpful environment modificatins
+
+  #turn off scientific notation 
+  options(scipen = 10E6)
+  
+  #prevent strings being read as factors
+  options(stringsAsFactors = F)
 
 # helpful functions
-writeClipboard2 = function(x) writeClipboard(charToRaw(paste0(x, ' ')))
-reslash<- function(x=NA, slash=c("back","forward")){
-  if(is.na(x)) x = readClipboard()
-  if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
-  if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
-  writeClipboard2(path)
-  return(path)
-}
-bs=function(x=NA){reslash(x,slash="back")}
-fs=function(x=NA){reslash(x,slash="forward")}
-nv=nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
 
+  #convenience function for more usable version of writeClipboard - overcomes newline issues
+  writeClipboard2 = function(x) writeClipboard(charToRaw(paste0(x, ' ')))
+  
+  #generic file path editing function - forwards or backwards
+  reslash<- function(x=NA, slash=c("back","forward")){
+    if(is.na(x)) x = readClipboard()
+    if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
+    if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
+    writeClipboard2(path)
+    return(path)
+  }
 
+  #correctly escape back slashes and quote path - a parameterized version o f   
+  bs=function(x=NA){reslash(x,slash="back")}
+  
+  #correctly escape back slashes and quote path   
+  fs=function(x=NA){reslash(x,slash="forward")}
+  
+  #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
+  nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
+
+  #mse and rmse functions
+  mse = function(err,na.rm=T){mean(err^2,na.rm=na.rm)} 
+  rmse = function(err,na.rm=T){sqrt(mean(err^2,na.rm=na.rm))}   
+  
 ```
 
-## examples
+## load data - some examples of ways to load various data types. 
 
 ```{r}
 
-#load data
+#examples
 if(F){ 
 	
   library(RSQLite)
   library(DBI)
-	library(sf)
 	
-	#create versioned files
-	this_version = "v1_20220818"
+	#create versioned files names
+	this_version = "v1_20220502"
 	file_csv = file.path("c:/temp",paste0("some_plots_",this_version,".csv"))
 	file_rds = file.path("c:/temp",paste0("some_plots_",this_version,".RDS"))
 	file_db = file.path("c:/temp",paste0("some_plots_",this_version,".db") )
-	file_shp = file.path("c:/temp",paste0("some_plots_",this_version,".shp") )
-		
-		aoi_boundary_HARV <- st_read(
-  "data/NEON-DS-Site-Layout-Files/HARV/HarClip_UTMZ18.shp")
 	
 	#simulate / write small simulated table of data
 	
 		#simulate
-		test_dat = data.frame(plot=1:5,some_x=rnorm(5), some_y=rnorm(5))
-		test_dat_sf = st_as_sf(test_dat, coords=c("some_x","some_y"))
+		test_dat = data.frame(plot=1:5,some_y=rnorm(5))
 		
 		#write csv
 		write.csv(test_dat,  file_csv )
@@ -62,62 +74,48 @@ if(F){
 	  	dbWriteTable( con_this , "pldat" , test_dat , overwrite = T )
 	  dbDisconnect(con_this)  
 	
-	  #write to shapefile
-	  st_write(test_dat_sf, file_shp, "layer1")
-	  
-	#read data
+	#read data csv/rds
 	dat_csv = read.csv(file_csv)
 	dat_rds = readRDS(file_rds)
 	
-	#load sqlite data
+	#read sqlite data
   con_this = dbConnect(RSQLite::SQLite(), file_db )
   	dat_db = dbReadTable(con_this ,"pldat" )
   dbDisconnect(con_this)  
-  
-  #load spatial data
-  dat_sf = st_read(file_shp)
-  
-}
-
-#parallel processing example
-if(F){
-  library(foreach)
-  library(parallel)
-  library(doParallel)
-  
-  #set up sock cluster and set output message file directory
-  #then register with doParallel
-  if( !"cl_this" %in% ls() | F){
-    cl_this = makeCluster(45,outfile="c:/temp/this_out.txt")
-    registerDoParallel(cl_this)
-  }
-  
-  #constants / function in global environment
-  mult = 5
-  fn_test = function(x)sqrt(sum(abs(x)))
-  
-  #run parallel and show that global environment loads to threads (careful)
-  res = foreach(j = 1:5000, .combine=c) %dopar% {  
-    
-    #do some work
-    fn_test( mult*rnorm(500) )
-    
-  }
-  
-  #clean up threads
-  if(T){ try(stopCluster(cl_this)); try(rm(cl_this));try(closeAllConnections()) ; gc()  }
-
   
 }
 
 
 ```
 
-## set up parallel processing
+## example of how to save figures to tiff and pdf
 
 ```{r, eval=FALSE}
 
+if(F){ 
 
+	#create versioned files names
+	this_version = "v1_20220502"
+	file_tif = file.path("c:/temp",paste0("some_plots_",this_version,".csv"))
+	file_pdf = file.path("c:/temp",paste0("some_plots_",this_version,".RDS"))
+
+	#simulate / write small simulated table of data
+	
+		#simulate
+		test_dat1 = data.frame( plot=1:5,y=rnorm(5), x=rnorm(5) )
+		
+		#save tif - show how to combine exponent with regular text
+		tiff(file_tif , width = 6, height = 4, units = "in", res = 600)
+		  plot(y~x, data = test_dat1 , main = "test_dat1", xlab=expression(paste("bigfoot height ",cm^2)), ylab="ft")
+		dev.off()
+		
+		#save pdf - show how to save 2 figures in same file
+		pdf(file_pdf , width = 6, height = 4, units = "in", res = 600)
+		  plot(y~x, data = test_dat1 , main = "test_dat1", xlab=expression(paste("bigfoot height ",cm^2)), ylab="ft")
+		  plot(y~x, data = test_dat1 , main = "test_dat1", xlab=expression(paste("bigfoot height ",cm^2)), ylab="ft")
+		dev.off()
+  
+}
 
 
 ```
