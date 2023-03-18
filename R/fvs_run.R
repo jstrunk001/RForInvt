@@ -155,15 +155,19 @@ fvs_run = function(
         #iterate through tables and write to merge db
         for(j in 1:length(tbs_i)){
           tbj = dbReadTable(con_dbi ,tbs_i[j])
+
+          #write records if there are any
           if(nrow(tbj)>0) dbWriteTable(con_dbmrg,tbs_i[j], tbj ,append=T )
+
         }
-        #disconnect
+        #disconnect from intermediate database
         RSQLite::dbDisconnect( con_dbi)
 
       }
 
 
     }
+    #disconnect from merge database
     RSQLite::dbDisconnect( con_dbmrg)
 
   }
