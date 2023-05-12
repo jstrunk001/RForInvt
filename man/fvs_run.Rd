@@ -12,7 +12,8 @@ fvs_run(
   cluster = NA,
   clear_db = T,
   delete_temp_db = T,
-  append = F
+  append = F,
+  skip_empty = T
 )
 }
 \arguments{
