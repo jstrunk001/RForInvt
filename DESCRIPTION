@@ -1,6 +1,6 @@
 Package: RForInvt
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Forest Inventory Data Compilation and FVS Growth Projections
 Version: 0.2.0
 Author: Jacob Strunk
 Maintainer: Jacob Strunk <strunky@gmail.com>
@@ -35,5 +35,7 @@ Depends:
         ,RODBC
         ,RSQLite
         ,sqldf
+        ,stringr
         ,survey
+        ,tools
         ,yaImpute
