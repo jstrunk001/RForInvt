@@ -26,6 +26,10 @@ Revision History
 1.0 \tab 2023 May 12 Created\cr
 }
 }
+\examples{
+
+
+}
 \seealso{
 \code{\link{duplicated}}\cr
 }

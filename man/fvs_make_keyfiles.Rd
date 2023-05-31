@@ -44,6 +44,7 @@ Revision History
 }
 }
 \examples{
+
 clus1 = parallel::makeCluster(4)
 
 #assume a typical inventory dataset and prepare fvs parameters
