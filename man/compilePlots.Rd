@@ -9,11 +9,12 @@
 \usage{
 compilePlots(
   dfTree = data.frame(PLT_CN = 1, year = 2020, dbh = NA, spcd = NA, ac = 0.1),
-  dfPlot = list(NA, data.frame(PLT_CN = c(1, 2), PLOT = 1, YEAR = 2020, STATE = 1, COUNTY
-    = 1, PROJECT = "Test"))[1],
+  dfPlot = list(NA, data.frame(PLT_CN = c(1, 2), PLOT = 1, YEAR = 2020, STATE = 1,
+    COUNTY = 1, PROJECT = "Test"))[1],
   dfTreeNms = list(plotIDs = c("PLOT", "YEAR"), trIDs = c("tr_cn"), dbh = "DIA", ht =
     "HT", spcd = "SPCD", trWt = "TPA"),
-  dfPlotNms = list(plotIDs = c("STATE", "COUNTY", "PROJECT", "PLOT", "YEAR"), pltWt = NA),
+  dfPlotNms = list(plotIDs = c("STATE", "COUNTY", "PROJECT", "PLOT", "YEAR"), pltWt =
+    NA),
   plot_filter = c(NA,
     "select * from dfPlot where YEAR = 2018 and STATE = 'WA' and CONDITION = 1"),
   tree_filter = c(NA, "select * from dfTree where dbh > 2 "),
