@@ -53,9 +53,9 @@
 #' @param increment T/F should function increment to new version
 #' @param note (optional) string giving details of increment - only with increment =T
 #' @param return_all_versions (optional) return a data.frame with all versions and details
-#' @param test_increment T/F verify that previous version was written before increment ?
 #'
 #' @param DEFAULTS: (the following are defaults and wouldn't usually be changed)
+#' @param purge_missing_versions T/F Delete version information if there is no accompanying files
 #' @param version_markers (optional)
 #' @param version_sep  (optional)
 #' @param version_digits  (optional)
@@ -103,16 +103,13 @@ file_version = function(
     , note = ""
     , return_all_versions = F
 
-    , test_increment = F
-
+    , purge_missing_versions = ifelse(increment,T,F)
     , version_markers = c(version="VS",date="DT")
     , version_sep = "_"
     , version_digits= 4
     , version_stamp = format(Sys.time(), "%Y%m%d_%H%M%S")
 
   ){
-
-    warning("file_version is in beta mode")
 
     # check if storage exists and create a new one if not
       exist_file = dir.exists(path)
@@ -144,7 +141,7 @@ file_version = function(
                                 , markers = version_markers
                                 , sep = version_sep
                                 , all_versions = return_all_versions
-                                , test = test_increment
+                                , purge = purge_missing_versions
                                )
 
     # return version
@@ -207,7 +204,7 @@ file_version = function(
 
 }
 
-.tracking_get = function( path_file , version,   increment , note , digits = 4 , stamp , markers  , sep , all_versions , test ){
+.tracking_get = function( path_file , version,   increment , note , digits = 4 , stamp , markers  , sep , all_versions , purge ){
 
   #build path to trackign file
   path_trk = file.path(path_file,"_tracking.csv")
@@ -215,17 +212,24 @@ file_version = function(
   #get tracking file, if exists
   if(file.exists(path_trk)){
 
-   warning("test_increment logic is a little hokey - refuses to increment if previous increment was not used")
-    warning("a better ")
-
     trk_in = read.csv(path_trk)
-    last_id = max(trk_in$id)
 
-    if(test){
-      last_exist = file.exists(trk_in[last_id,"version"])
-      if(!last_exist) increment = F
+    #purge unused versions and overwrite
+    if(purge){
+
+      versions_exist = file.exists(trk_in[,"version"])
+      trk_in = trk_in[versions_exist,]
+      last_id = max(trk_in$id)
+
+      write.csv(trk_in, path_trk , row.names=F)
+
     }
 
+    #get previous max id
+    if(nrow(trk_in) > 0 ) last_id = max(trk_in$id)
+    if(nrow(trk_in) == 0 ){
+      last_id = 0
+    }
 
   }
 
@@ -254,6 +258,7 @@ file_version = function(
     df_increment = data.frame(
           file = path_file
         , version = this_version
+        , exist = F
         , id = this_id
         , date = stamp
         , npad = digits
@@ -266,6 +271,7 @@ file_version = function(
 
     #combine with previous
     trk_update = plyr::rbind.fill( df_increment , trk_in )
+    trk_update$exist = file.exists(trk_update$version)
 
     #write to file
     err = try(write.csv(trk_update, path_trk,row.names=F))
@@ -284,24 +290,34 @@ file_version = function(
 
 
 
-#experiment
-if(F){
+#Testing code
+
+if(T){
 
   #reset for experimenting
   if(F){
     unlink("c:/temp/dataNoIncrement.txt",recursive = T)
     unlink("c:/temp/dataIncrement.txt",recursive = T)
   }
-  #edit on the same file over and over
-  vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
-  writeLines(letters,vs_test1)
-  file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
 
+  if(F){
 
-  #update version every time
-  vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
-  writeLines(letters,vs_test2)
-  file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
+    #edit on the same file over and over
+    vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
+    writeLines(letters,vs_test1)
+    file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
+  }
+  if(T){
 
+    #update version every time
+    vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
+    writeLines(letters,vs_test2)
+    file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T , purge_missing_versions = T)
+    vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
+    vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T, purge_missing_versions = F); vs_test2
+    writeLines(letters,vs_test2)
+    file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T , purge_missing_versions = F)
+
+  }
 
 }
