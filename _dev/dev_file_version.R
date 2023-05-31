@@ -52,11 +52,15 @@
 #' @param path name of data file
 #' @param increment T/F should function increment to new version
 #' @param note (optional) string giving details of increment - only with increment =T
+#' @param return_all_versions (optional) return a data.frame with all versions and details
+#' @param test_increment T/F verify that previous version was written before increment ?
+#'
+#' @param DEFAULTS: (the following are defaults and wouldn't usually be changed)
 #' @param version_markers (optional)
 #' @param version_sep  (optional)
 #' @param version_digits  (optional)
 #' @param version_stamp  (optional)
-#' @param return_all_versions  (optional)
+#'
 #'
 #'@return
 #'  There are two possibilities
@@ -65,13 +69,17 @@
 #'
 #'@examples
 #'
-#'    #continue revisions on same data file
-#'      vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , increment=F); vs_test1
-#'      writeLines(letters,vs_test1)
 #'
-#'    #update version every time
-#'      vs_test2 = file_version("c:/temp/dataIncrement.txt" , increment=T); vs_test2
-#'      writeLines(letters,vs_test2)
+#'  #edit on the same file over and over
+#'  vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
+#'  writeLines(letters,vs_test1)
+#'  file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
+#'
+#'
+#'  #update version every time
+#'  vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
+#'  writeLines(letters,vs_test2)
+#'  file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
 #'
 #'
 #'@export
@@ -83,8 +91,9 @@
 #Desired upgrades to this function (keep track of planned updates):
 #1. Add version tracking spreadsheet
 # A. Enable writing a comment for each version to spreadsheet
-#2.Integrate better with filestamp
-#3.
+#2. Integrate better with filestamp
+#3. Add option to wipe versions
+#4. Add better logic to test_increment including new note, wipe old increment, new date
 
 
 
@@ -92,16 +101,18 @@ file_version = function(
       path
     , increment = F
     , note = ""
+    , return_all_versions = F
+
+    , test_increment = F
 
     , version_markers = c(version="VS",date="DT")
     , version_sep = "_"
     , version_digits= 4
     , version_stamp = format(Sys.time(), "%Y%m%d_%H%M%S")
 
-    , return_all_versions = F
-    #, return_tracking = F
-
   ){
+
+    warning("file_version is in beta mode")
 
     # check if storage exists and create a new one if not
       exist_file = dir.exists(path)
@@ -124,11 +135,20 @@ file_version = function(
       #version_in = .version_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions)
 
     # get / make / update tracking spreadsheet
-      version_in = .tracking_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions )
-      warning("tracking spreadsheet not yet implemented")
+      version_in = .tracking_get(
+                                path_file = path
+                                , increment = increment
+                                , note = note
+                                , digits = version_digits
+                                , stamp = version_stamp
+                                , markers = version_markers
+                                , sep = version_sep
+                                , all_versions = return_all_versions
+                                , test = test_increment
+                               )
 
     # return version
-      return(tracking_in)
+      return(version_in)
 
 }
 
@@ -187,22 +207,35 @@ file_version = function(
 
 }
 
-.tracking_get = function( path_file , version,   increment , note , digits = 4 , stamp , markers  , sep , all_versions = F ){
+.tracking_get = function( path_file , version,   increment , note , digits = 4 , stamp , markers  , sep , all_versions , test ){
 
   #build path to trackign file
   path_trk = file.path(path_file,"_tracking.csv")
 
   #get tracking file, if exists
   if(file.exists(path_trk)){
+
+   warning("test_increment logic is a little hokey - refuses to increment if previous increment was not used")
+    warning("a better ")
+
     trk_in = read.csv(path_trk)
     last_id = max(trk_in$id)
+
+    if(test){
+      last_exist = file.exists(trk_in[last_id,"version"])
+      if(!last_exist) increment = F
+    }
+
+
   }
+
   #initiate tracking file for new file
   if(!file.exists(path_trk)){
     increment = T
     last_id = 0
     trk_in = read.csv(text="file")
   }
+
   #increment if desired - must increment for new file
   if(increment){
 
@@ -238,29 +271,37 @@ file_version = function(
     err = try(write.csv(trk_update, path_trk,row.names=F))
     if(class(err) == "try-error") warning("please close ", path_trk, " before creating a new version")
 
+    #update internal tracking object
+    trk_in = trk_update
   }
 
   #return version
-  if(all_versions) return(trk_update)
+  if(all_versions) return(trk_in)
   #return full versioning information
-  if(!all_versions) return(trk_update[which.max(trk_update$id),"version"])
+  if(!all_versions) return(trk_in[which.max(trk_in$id),"version"])
 
 }
 
-   #unlink("c:/temp/dataNoIncrement.txt",recursive = T)
-   vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , increment=F); vs_test1
-   writeLines(letters,vs_test1)
 
 
 #experiment
 if(F){
 
-   #continue revisions on same data file
-     vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , increment=F); vs_test1
-     writeLines(letters,vs_test1)
+  #reset for experimenting
+  if(F){
+    unlink("c:/temp/dataNoIncrement.txt",recursive = T)
+    unlink("c:/temp/dataIncrement.txt",recursive = T)
+  }
+  #edit on the same file over and over
+  vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
+  writeLines(letters,vs_test1)
+  file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
 
-   #update version every time
-     vs_test2 = file_version("c:/temp/dataIncrement.txt" , increment=T); vs_test2
-     writeLines(letters,vs_test2)
+
+  #update version every time
+  vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
+  writeLines(letters,vs_test2)
+  file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
+
 
 }
