@@ -146,18 +146,16 @@
 
     x_names=names(coef(reg_obj,bic_id[rank]))[-1]
 
-    if(!is.null(reg_obj[["reorder"]])) {
-
-      #leaps fails if "reorder" is necessary
-      x_id = reg_obj[["xnames"]][reg_obj[["reorder"]]] %in% x_names
-      x_names = reg_obj[["xnames"]][x_id]
+    if(!is.null(reg_obj[["reorder"]])) {     #leaps fails if "reorder" is necessary
+      x_id=reg_obj[["xnames"]][reg_obj[["reorder"]]] %in% x_names
+      x_names=reg_obj[["xnames"]][x_id]
     }
 
     model=paste(names(dat_yx)[1],"~",paste(x_names,collapse=" + "),collapse="")
     l_min=lm(as.formula(model),data=dat_yx,x=T)
 
-    l_min$call = call("lm",formula=as.formula(model),data=getCall(reg_obj)$data,x=T)
-    l_min$summary = summary(lm(as.formula(model),data=dat_yx))
+    l_min$call=call("lm",formula=as.formula(model),data=getCall(reg_obj)$data,x=T)
+    l_min$summary=summary(lm(as.formula(model),data=dat_yx))
     l_min
 }
 

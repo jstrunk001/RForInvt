@@ -51,6 +51,7 @@
 #'
 #' @param path name of data file
 #' @param increment T/F should function increment to new version
+#' @param note (optional) string giving details of increment - only with increment =T
 #' @param version_markers (optional)
 #' @param version_sep  (optional)
 #' @param version_digits  (optional)
@@ -58,7 +59,9 @@
 #' @param return_all_versions  (optional)
 #'
 #'@return
-#'  <Delete and Replace>
+#'  There are two possibilities
+#'  1. a character string giving the path to a new file name
+#'  2. a data.frame with all versioning details in the version tracking sheet
 #'
 #'@examples
 #'
@@ -88,6 +91,7 @@
 file_version = function(
       path
     , increment = F
+    , note = ""
 
     , version_markers = c(version="VS",date="DT")
     , version_sep = "_"
@@ -117,13 +121,14 @@ file_version = function(
       }
 
     # get / make current version
-      version_in = .version_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions)
+      #version_in = .version_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions)
 
     # get / make / update tracking spreadsheet
+      version_in = .tracking_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions )
       warning("tracking spreadsheet not yet implemented")
 
     # return version
-      return(version_in)
+      return(tracking_in)
 
 }
 
@@ -141,7 +146,7 @@ file_version = function(
 }
 
 #.version_name("c:/temp/test_version.txt")
-
+#deprecated, not used
 .version_get = function( path_file ,  increment , digits = 4 ,  stamp="some_date" , markers =c(version="VS",date="DT") , sep ="_" , all_versions = F){
 
   ext_in = tools::file_ext(path_file)
@@ -182,55 +187,70 @@ file_version = function(
 
 }
 
-.tracking_get = function( path_file , version,   increment , note ,  stamp="some_date" , markers =c(version="VS",date="DT") , sep ="_" , all_versions = F ){
+.tracking_get = function( path_file , version,   increment , note , digits = 4 , stamp , markers  , sep , all_versions = F ){
 
+  #build path to trackign file
   path_trk = file.path(path_file,"_tracking.csv")
 
+  #get tracking file, if exists
   if(file.exists(path_trk)){
-
     trk_in = read.csv(path_trk)
-
+    last_id = max(trk_in$id)
   }
-
+  #initiate tracking file for new file
   if(!file.exists(path_trk)){
-
-    df_increment = data.frame(
-          file = path_file
-        , version = version
-        , id = trk_in
-        , date =
-        , npad =
-        , pad =
-        , markerVS =
-        , markerDT =
-        , sep =
-        , note = note
-      )
-    increment = F
+    increment = T
+    last_id = 0
+    trk_in = read.csv(text="file")
   }
-
+  #increment if desired - must increment for new file
   if(increment){
 
+    #update version
+    this_id = last_id + 1
+    this_version = .version_name(
+                                path_file
+                                , v_num = this_id
+                                , digits = digits
+                                , stamp = stamp
+                                , markers = markers
+                                , sep = sep
+                                  )
+
+    #build record for single increment
     df_increment = data.frame(
           file = path_file
-        , version = version
-        , id = trk_in
-        , date =
-        , npad =
-        , pad =
-        , markerVS =
-        , markerDT =
-        , sep =
+        , version = this_version
+        , id = this_id
+        , date = stamp
+        , npad = digits
+        , pad = "0"
+        , markerVS = markers[["version"]]
+        , markerDT = markers[["date"]]
+        , sep = sep
         , note = note
       )
 
-    trk_update = plyr::rbind.fill( trk_in , )
+    #combine with previous
+    trk_update = plyr::rbind.fill( df_increment , trk_in )
 
-    write.csv(trk_update, path_trk)
+    #write to file
+    err = try(write.csv(trk_update, path_trk,row.names=F))
+    if(class(err) == "try-error") warning("please close ", path_trk, " before creating a new version")
 
   }
 
+  #return version
+  if(all_versions) return(trk_update)
+  #return full versioning information
+  if(!all_versions) return(trk_update[which.max(trk_update$id),"version"])
+
 }
+
+   #unlink("c:/temp/dataNoIncrement.txt",recursive = T)
+   vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , increment=F); vs_test1
+   writeLines(letters,vs_test1)
+
 
 #experiment
 if(F){
