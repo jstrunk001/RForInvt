@@ -49,17 +49,15 @@
 #'Some Body <some.body@@somewhere.com>
 #'
 #' @param path name of data file
-#' @param increment T/F should function increment to new version
+#' @param increment (optional) T/F should function increment to new version
 #' @param note (optional) string giving details of increment - only with increment =T
 #' @param return_all_versions (optional) return a data.frame with all versions and details
-#'
-#' @param DEFAULTS: (the following are defaults and wouldn't usually be changed)
-#' @param purge_missing_versions T/F Delete version information if there is no accompanying files
-#' @param version_markers (optional)
-#' @param version_sep  (optional)
-#' @param version_digits  (optional)
-#' @param version_stamp  (optional)
-#' @param internal_simple  (optional) label internal object using only the version to shorten file length
+#' @param purge_missing_versions (optional) T/F Delete version information if there is no accompanying files
+#' @param version_markers (optional) names to use for version number and date in verion
+#' @param version_sep  (optional) character to use in separating version components
+#' @param version_digits  (optional) number of zeros to pad version id
+#' @param version_stamp  (optional) data stamp format codes (or other) to use in version
+#' @param internal_simple  (optional) T/F label internal object using only the version to shorten file length
 #'
 #'@return
 #'  There are two possibilities
@@ -109,8 +107,6 @@
 #2. Integrate better with filestamp
 #3. Add option to wipe versions
 #4. Add better logic to test_increment including new note, wipe old increment, new date
-
-
 
 file_version = function(
       path
