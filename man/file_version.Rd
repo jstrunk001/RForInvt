@@ -7,17 +7,25 @@
 file_version(
   path,
   increment = F,
+  note = "",
+  return_all_versions = F,
+  purge_missing_versions = ifelse(increment, T, F),
   version_markers = c(version = "VS", date = "DT"),
   version_sep = "_",
   version_digits = 4,
-  version_stamp = format(Sys.time(), "\%Y\%m\%d_\%H\%M\%S"),
-  return_all_versions = F
+  version_stamp = format(Sys.time(), "\%Y\%m\%d_\%H\%M\%S")
 )
 }
 \arguments{
 \item{path}{name of data file}
 
 \item{increment}{T/F should function increment to new version}
+
+\item{note}{(optional) string giving details of increment - only with increment =T}
+
+\item{return_all_versions}{(optional) return a data.frame with all versions and details}
+
+\item{purge_missing_versions}{T/F Delete version information if there is no accompanying files}
 
 \item{version_markers}{(optional)}
 
@@ -27,10 +35,12 @@ file_version(
 
 \item{version_stamp}{(optional)}
 
-\item{return_all_versions}{(optional)}
+\item{DEFAULTS:}{(the following are defaults and wouldn't usually be changed)}
 }
 \value{
-<Delete and Replace>
+There are two possibilities
+ 1. a character string giving the path to a new file name
+ 2. a data.frame with all versioning details in the version tracking sheet
 }
 \description{
 Create versioned file names for data
@@ -73,18 +83,22 @@ Revision History
 }
 \examples{
 
-   #continue revisions on same data file
-     vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , increment=F); vs_test1
-     writeLines(letters,vs_test1)
 
-   #update version every time
-     vs_test2 = file_version("c:/temp/dataIncrement.txt" , increment=T); vs_test2
-     writeLines(letters,vs_test2)
+ #edit on the same file over and over
+ vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
+ writeLines(letters,vs_test1)
+ file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
+
+
+ #update version every time
+ vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
+ writeLines(letters,vs_test2)
+ file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
 
 
 }
 \seealso{
-\code{\link{another_function}}\cr \code{\link{yet_another_function}}\cr
+\code{\link{filestamp}}\cr
 }
 \author{
 Some Body <some.body@somewhere.com>
