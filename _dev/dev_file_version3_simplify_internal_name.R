@@ -59,7 +59,7 @@
 #' @param version_sep  (optional)
 #' @param version_digits  (optional)
 #' @param version_stamp  (optional)
-#' @param internal_simple  (optional) label internal object using only the version to shorten file length
+#' @param internal_version_only  (optional) simplify name for internal naming to shorten path
 #'
 #'@return
 #'  There are two possibilities
@@ -88,8 +88,8 @@
 #' dir.create(vs_test2)
 #' writeLines(letters,file.path(vs_test2,"letters.txt"))
 #'
-#' #second time, but use simple internal naming convention
-#' vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
+#' #second time
+#' vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
 #' dir.create(vs_test2)
 #' writeLines(letters,file.path(vs_test2,"letters.txt"))
 #'
@@ -123,7 +123,7 @@ file_version = function(
     , version_sep = "_"
     , version_digits = 3
     , version_stamp = format(Sys.time(), "%Y%m%d%H%M%S")
-    , internal_simple = F
+    , internal_version_only = F
 
   ){
 
@@ -158,7 +158,7 @@ file_version = function(
                                 , sep = version_sep
                                 , all_versions = return_all_versions
                                 , purge = purge_missing_versions
-                                , nm_simple = internal_simple
+                                , nm_simple = internal_version_only
                                )
 
     # return version
@@ -276,7 +276,7 @@ file_version = function(
 
 
 #Testing code
-if(F){
+if(T){
 
   #reset for experimenting
   if(F){
@@ -321,14 +321,14 @@ if(F){
   }
 
   #only label file with version
-  if(F){
+  if(T){
 
     #update version every time
-    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
+    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
     dir.create(vs_test2)
     writeLines(letters,file.path(vs_test2,"letters.txt"))
 
-    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
+    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
     dir.create(vs_test2)
     writeLines(letters,file.path(vs_test2,"letters.txt"))
 
