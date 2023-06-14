@@ -1,6 +1,4 @@
-#'@title
-#'helper functions - path slashes and data.frame name vectors
-#'
+#'@title help with path slashes and data.frame name vectors
 #'
 #'@description
 #'helper functions - path slashes and data.frame name vectors

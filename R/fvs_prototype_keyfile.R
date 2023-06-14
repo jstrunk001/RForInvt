@@ -33,7 +33,6 @@
 #'@return
 #'  a single updated keyword prototype
 #'
-#'@examples
 #'
 #'@examples
 #'
@@ -54,6 +53,7 @@
 #' df_params[,"tree_table"] = "fvs_treeinit"
 #' df_params[,"stand_table"] = "fvs_standinit"
 #' df_params
+#'
 #'
 #'#prepare prototype key file
 #' key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)

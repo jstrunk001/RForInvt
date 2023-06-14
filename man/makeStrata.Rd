@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeStrata.R
 \name{makeStrata}
 \alias{makeStrata}
-\title{Make and assign strata based on two input columns, typically at least one is numeric}
+\title{Make and assign strata based on two input columns}
 \usage{
 makeStrata(
   data,

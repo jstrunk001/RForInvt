@@ -1,6 +1,4 @@
-#'@title
-#'load rFVS scripts maintained on https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/
-#'
+#'@title load FVS scripts from subversion project
 #'
 #'@description
 #'load rFVS scripts using source

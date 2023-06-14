@@ -25,7 +25,7 @@
 #'  vector of duplicates
 #'
 #'@examples
-#'
+#' something
 #'
 #'@export
 #
