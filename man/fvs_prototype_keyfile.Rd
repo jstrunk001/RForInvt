@@ -61,7 +61,6 @@ Revision History
 
 
 
-
 clus1 = parallel::makeCluster(4)
 
 #assume a typical inventory dataset and prepare fvs parameters
@@ -77,6 +76,7 @@ df_params[,"fvs_path"] = "C:/FVSbin/FVSca.exe"
 df_params[,"tree_table"] = "fvs_treeinit"
 df_params[,"stand_table"] = "fvs_standinit"
 df_params
+
 
 #prepare prototype key file
 key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)

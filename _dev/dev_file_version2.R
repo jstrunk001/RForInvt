@@ -40,7 +40,7 @@
 #'Revision History
 #' \tabular{ll}{
 #'1.0 \tab 5/30/2023 created / implemented \cr
-#'1.1 \tab 6/14/2023 add support for folder versioning \cr
+#'1.1 \tab 6/14/2023 add support for folder version \cr
 #1.2 \tab date and revisions.. \cr
 #'}
 #'
@@ -81,22 +81,6 @@
 #'  file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
 #'
 #'
-#' #create folder version instead of file version
-#' #update every time - into new folder
-#' #first time
-#' vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
-#' dir.create(vs_test2)
-#' writeLines(letters,file.path(vs_test2,"letters.txt"))
-#'
-#' #second time
-#' vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
-#' dir.create(vs_test2)
-#' writeLines(letters,file.path(vs_test2,"letters.txt"))
-#'
-#' #view results
-#' file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_missing_versions = F)
-#'
-#'
 #'@export
 #
 #'@seealso \code{\link{filestamp}}\cr
@@ -123,6 +107,7 @@ file_version = function(
     , version_sep = "_"
     , version_digits= 4
     , version_stamp = format(Sys.time(), "%Y%m%d_%H%M%S")
+    , folder_version = F
 
   ){
 
@@ -316,7 +301,8 @@ file_version = function(
 
 
 #Testing code
-if(F){
+
+if(T){
 
   #reset for experimenting
   if(F){
@@ -345,7 +331,7 @@ if(F){
   }
 
   #increment folder instead of file
-  if(F){
+  if(T){
 
     #update version every time
     vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2

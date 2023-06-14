@@ -1,6 +1,4 @@
-#'@title
-#'  Make and assign strata based on two input columns, typically at least one is numeric
-#'
+#'@title Make and assign strata based on two input columns
 #'
 #'@description
 #'  Make and assign strata based on two input attributes and some parameters

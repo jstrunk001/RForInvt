@@ -27,7 +27,7 @@ Revision History
 }
 }
 \examples{
-
+something
 
 }
 \seealso{

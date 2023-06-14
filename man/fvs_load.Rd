@@ -2,11 +2,11 @@
 % Please edit documentation in R/fvs_load.R
 \name{fvs_load}
 \alias{fvs_load}
-\title{load rFVS scripts maintained on https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/}
+\title{load FVS scripts from subversion project}
 \usage{
 fvs_load(
- 
-    webpath = c("https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/open-fvs-code-r3840-rFVS-R.zip"),
+  webpath =
+    c("https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/open-fvs-code-r3840-rFVS-R.zip"),
   package = "RForBio",
   force_update = F
 )
