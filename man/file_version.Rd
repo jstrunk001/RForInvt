@@ -10,10 +10,11 @@ file_version(
   note = "",
   return_all_versions = F,
   purge_missing_versions = ifelse(increment, T, F),
-  version_markers = c(version = "VS", date = "DT"),
+  version_markers = c(version = "VS", date = ""),
   version_sep = "_",
-  version_digits = 4,
-  version_stamp = format(Sys.time(), "\%Y\%m\%d_\%H\%M\%S")
+  version_digits = 3,
+  version_stamp = format(Sys.time(), "\%Y\%m\%d\%H\%M\%S"),
+  internal_simple = F
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ file_version(
 \item{version_digits}{(optional)}
 
 \item{version_stamp}{(optional)}
+
+\item{internal_simple}{(optional) label internal object using only the version to shorten file length}
 
 \item{DEFAULTS:}{(the following are defaults and wouldn't usually be changed)}
 }
@@ -78,7 +81,7 @@ A convenient / simple way to track versions of data files. Simply
 Revision History
 \tabular{ll}{
 1.0 \tab 5/30/2023 created / implemented \cr
-1.1 \tab date and revisions.. \cr
+1.1 \tab 6/14/2023 add support for folder versioning \cr
 }
 }
 \examples{
@@ -94,6 +97,22 @@ Revision History
  vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
  writeLines(letters,vs_test2)
  file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
+
+
+#create folder version instead of file version
+#update every time - into new folder
+#first time
+vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
+dir.create(vs_test2)
+writeLines(letters,file.path(vs_test2,"letters.txt"))
+
+#second time, but use simple internal naming convention
+vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
+dir.create(vs_test2)
+writeLines(letters,file.path(vs_test2,"letters.txt"))
+
+#view results
+file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_missing_versions = F)
 
 
 }
