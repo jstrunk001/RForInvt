@@ -20,25 +20,23 @@ file_version(
 \arguments{
 \item{path}{name of data file}
 
-\item{increment}{T/F should function increment to new version}
+\item{increment}{(optional) T/F should function increment to new version}
 
 \item{note}{(optional) string giving details of increment - only with increment =T}
 
 \item{return_all_versions}{(optional) return a data.frame with all versions and details}
 
-\item{purge_missing_versions}{T/F Delete version information if there is no accompanying files}
+\item{purge_missing_versions}{(optional) T/F Delete version information if there is no accompanying files}
 
-\item{version_markers}{(optional)}
+\item{version_markers}{(optional) names to use for version number and date in verion}
 
-\item{version_sep}{(optional)}
+\item{version_sep}{(optional) character to use in separating version components}
 
-\item{version_digits}{(optional)}
+\item{version_digits}{(optional) number of zeros to pad version id}
 
-\item{version_stamp}{(optional)}
+\item{version_stamp}{(optional) data stamp format codes (or other) to use in version}
 
-\item{internal_simple}{(optional) label internal object using only the version to shorten file length}
-
-\item{DEFAULTS:}{(the following are defaults and wouldn't usually be changed)}
+\item{internal_simple}{(optional) T/F label internal object using only the version to shorten file length}
 }
 \value{
 There are two possibilities
