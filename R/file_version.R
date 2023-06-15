@@ -171,7 +171,7 @@ file_version = function(
   version_in = paste0(markers[["version"]] , stringr::str_pad(v_num, width = digits, pad= "0"), sep, markers[["date"]],as.character(stamp))
 
   #make path
-  file_in = paste0(gsub(gsub(".","[.]",paste0(ext_in,"$"),fixed=T) , "", basename(path_file)),sep)
+  file_in = paste0( gsub(paste0("[.]",ext_in,"$") , "", basename(path_file)) , sep )
   if(nm_simple)   file_in = ""
 
   #make final version
@@ -272,7 +272,7 @@ file_version = function(
 
 
 #Testing code
-if(F){
+if(T){
 
   #reset for experimenting
   if(F){
@@ -287,7 +287,7 @@ if(F){
     writeLines(letters,vs_test1)
     file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
   }
-  if(F){
+  if(T){
 
     #update version every time
     vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
