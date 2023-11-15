@@ -49,10 +49,18 @@ pred_multi(
   se_fit = TRUE,
   return = FALSE,
   fix_outliers = T,
-  outlier_fun = function(y0, yhat, yhat_se) {     large = yhat > max(y0) * 1.5    
-    small = yhat < 0     yhat[small] = 0     yhat[large] = quantile(y0, 0.99) * 1.5    
-    yhat_se[large] = max(yhat_se[!large & !small])     yhat_se[small] =
-    max(yhat_se[!large & !small])     data.frame(fit = yhat, se_fit = yhat_se) }
+  outlier_fun = function(y0, yhat, yhat_se) {
+     large = yhat > max(y0) * 1.5
+    
+    small = yhat < 0
+     yhat[small] = 0
+     yhat[large] = quantile(y0, 0.99) * 1.5
+   
+     yhat_se[large] = max(yhat_se[!large & !small])
+     yhat_se[small] =
+    max(yhat_se[!large & !small])
+     data.frame(fit = yhat, se_fit = yhat_se)
+ }
 )
 
 multi_bs(mods, n_boot = 50, n_clus, lm_boot)
