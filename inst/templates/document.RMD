@@ -5,7 +5,10 @@
 
 ```{r}
 
-#helpful environment modificatins
+#helpful environment modifications
+
+  #(optional) set number of columns to display in "View()" function to 1000 - revert to 50 if you don't like the behavior
+  if(F) rstudioapi::writeRStudioPreference("data_viewer_max_columns", 1000L)
 
   #turn off scientific notation 
   options(scipen = 10E6)
@@ -16,7 +19,7 @@
 # helpful functions
 
   #convenience function for more usable version of writeClipboard - overcomes newline issues
-  writeClipboard2 = function(x) writeClipboard(charToRaw(paste0(x, ' ')))
+  writeClipboard2 = function(x) cat(x, file="clipboard")
   
   #generic file path editing function - forwards or backwards
   reslash<- function(x=NA, slash=c("back","forward")){
