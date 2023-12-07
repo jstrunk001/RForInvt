@@ -15,6 +15,7 @@
 #' \tabular{ll}{
 #'1.0 \tab 5/19/2020 Implemented \cr
 #'1.1 \tab 5/21/2020 Add biomass and weight factors \cr
+#'1.2 \tab 12/05/2023 Add lates NVEL and fix paths to dlls \cr
 #'}
 #'
 #'@author
@@ -74,7 +75,7 @@
 #'@examples
 #'
 #'         #look up volume equations
-#'          library(RSForInvt)
+#'          library(RForInvt)
 #'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
 #'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
 #'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
@@ -83,7 +84,7 @@
 #'         #grab list of species
 #'         if(!"dfSpp" %in% ls()){
 #'           library(RSQLite)
-#'           db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RSForInvt"))
+#'           db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RForInvt"))
 #'           dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
 #'           dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
 #'           dbDisconnect(db0)
@@ -159,8 +160,8 @@ NVEL_volume=function(
 
   ,vol2biomass = T
 
-  ,dll_64 = 'lib/vollib-64bits/vollib.dll'
-  ,dll_32 = 'lib/vollib-32bits/vollib.dll'
+  ,dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
+  ,dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
   ,load_dll = T
 
   ,dll_func_vol = "vollib_r"
@@ -172,7 +173,7 @@ NVEL_volume=function(
 
   options(stringsAsFactors = F)
   #load dll if needed
-  if(load_dll) .load_dll(dll_64,dll_32,dll_func )
+  if(load_dll) .load_dll(dll_64,dll_32,dll_func_vol )
 
   #test for existence of voleq
   get_voleq = T
@@ -294,8 +295,8 @@ NVEL_volume=function(
   arch_in = R.Version()$arch
   loaded_dlls_in = names(getLoadedDLLs())
   dll_loaded = "vollib" %in% loaded_dlls_in
-  if(arch_in == "x86_64" & !dll_loaded) dyn.load(system.file(dll_64, package="RSForInvt"))
-  if(arch_in == "x86_32" & !dll_loaded) dyn.load(system.file(dll_32, package="RSForInvt"))
+  if(arch_in == "x86_64" & !dll_loaded) dyn.load(dll_64)
+  if(arch_in == "x86_32" & !dll_loaded) dyn.load(dll_32)
 
 }
 
@@ -466,12 +467,12 @@ NVEL_biomass = function(){
 #Testing
 if(F){
 
-  library(RSForInvt)
+  #library(RForInvt)
 
   if(!"dfSpp" %in% ls()){
 
     library(RSQLite)
-    db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RSForInvt"))
+    db0 = dbConnect(RSQLite::SQLite(), system.file("/NVEL/BiomassEqns.db", package="RForInvt"))
     dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
     dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
     dbDisconnect(db0)
@@ -491,6 +492,9 @@ if(F){
 
   }
 
-  NVEL_volume( dfTL = df_fake )
+  NVEL_volume( dfTL = df_fake
+  # ,dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
+  # ,dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
+   )
 
 }

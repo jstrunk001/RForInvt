@@ -112,8 +112,8 @@ NVEL_biomass=function(
   ,htPrd2Nm = c("htPrd2")
   ,cv4Nm = "cv4"
 
-  ,dll_64 = 'lib/vollib-64bits/vollib.dll'
-  ,dll_32 = 'lib/vollib-32bits/vollib.dll'
+  ,dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
+  ,dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
   ,load_dll = T
 
   ,dll_func_bio = "biomasslib_r"
@@ -186,8 +186,8 @@ NVEL_biomass=function(
   arch_in = R.Version()$arch
   loaded_dlls_in = names(getLoadedDLLs())
   dll_loaded = "vollib" %in% loaded_dlls_in
-  if(arch_in == "x86_64" & !dll_loaded) dyn.load(system.file(dll_64, package="RSForInvt"))
-  if(arch_in == "x86_32" & !dll_loaded) dyn.load(system.file(dll_32, package="RSForInvt"))
+  if(arch_in == "x86_64" & !dll_loaded) dyn.load(dll_64)
+  if(arch_in == "x86_32" & !dll_loaded) dyn.load(dll_32)
 
 }
 
