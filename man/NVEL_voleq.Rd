@@ -15,8 +15,8 @@ NVEL_voleq(
   forestNm = "forest",
   districtNm = "district",
   spcdNm = "spcd",
-  dll_64 = "lib/vollib-64bits/vollib.dll",
-  dll_32 = "lib/vollib-32bits/vollib.dll",
+  dll_64 = "lib/VolLibDll20231106/vollib-64bits/vollib.dll",
+  dll_32 = "lib/VolLibDll20231106/vollib-32bits/vollib.dll",
   dll_func_voleq = "getvoleq_r",
   load_dll = T
 )
