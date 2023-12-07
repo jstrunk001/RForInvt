@@ -1,0 +1,36 @@
+
+                           VOLUME ESTIMATOR LIBRARY BULLETIN
+                                      Issued By: Yingfang Wang
+
+                        MENSURATION AND SYSTEMS DEVELOPMENT SECTION
+                             FOREST MANAGEMENT SERVICE CENTER
+                                     FT. COLLINS, CO
+
+      BULLETIN NO: V0199_20231106
+     
+      DATE: 11-06-2023
+
+      ROUTINE(S): 
+
+	Modified routines:
+		nsvb.f
+		calcdia.f
+		getvoleq.f
+		ht2topd.f
+		volinit.f
+		vollibcs.f
+		vernum.f
+		wdbkwtdata.inc
+
+	New routines:
+		
+            
+     MAIN TOPIC: 
+	(1)	Changes on nsvb.f related with test comparsion with FIADB results
+
+     RESULT/IMPACT: 
+         
+
+     Getting downloads:
+
+	https://github.com/FMSC-Measurements/VolumeLibrary

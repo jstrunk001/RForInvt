@@ -28,8 +28,10 @@ NVEL_volume(
   dbtbhNm = c("dbtbh"),
   btrNm = c("btr"),
   vol2biomass = T,
-  dll_64 = "lib/vollib-64bits/vollib.dll",
-  dll_32 = "lib/vollib-32bits/vollib.dll",
+  dll_64 = system.file("lib/VolLibDll20231106/vollib-64bits/vollib.dll", package =
+    "RForInvt"),
+  dll_32 = system.file("lib/VolLibDll20231106/vollib-32bits/vollib.dll", package =
+    "RForInvt"),
   load_dll = T,
   dll_func_vol = "vollib_r",
   dll_func_voleq = "getvoleq_r"
@@ -128,12 +130,13 @@ Revision History
 \tabular{ll}{
 1.0 \tab 5/19/2020 Implemented \cr
 1.1 \tab 5/21/2020 Add biomass and weight factors \cr
+1.2 \tab 12/05/2023 Add lates NVEL and fix paths to dlls \cr
 }
 }
 \examples{
 
         #look up volume equations
-         library(RSForInvt)
+         library(RForInvt)
          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
@@ -142,7 +145,7 @@ Revision History
         #grab list of species
         if(!"dfSpp" \%in\% ls()){
           library(RSQLite)
-          db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RSForInvt"))
+          db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RForInvt"))
           dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
           dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
           dbDisconnect(db0)

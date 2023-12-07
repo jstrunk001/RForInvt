@@ -13,8 +13,10 @@ NVEL_wtfactor(
   regionNm = "region",
   forestNm = "forest",
   spcdNm = "spcd",
-  dll_64 = "lib/vollib-64bits/vollib.dll",
-  dll_32 = "lib/vollib-32bits/vollib.dll",
+  dll_64 = system.file("lib/VolLibDll20231106/vollib-64bits/vollib.dll", package =
+    "RForInvt"),
+  dll_32 = system.file("lib/VolLibDll20231106/vollib-32bits/vollib.dll", package =
+    "RForInvt"),
   dll_func_wtfactor = "getwtfactor_r",
   load_dll = T
 )
