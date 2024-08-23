@@ -125,6 +125,7 @@ compileTrees=function(
     ,sppY
     ,dbclSppY
   )
+  ,do_debug=F
 
   ,...
 
@@ -134,6 +135,8 @@ compileTrees=function(
 
   #iterate through computers and assign names or use internal DF names
   for(i in 1:length(fnCompute)){
+
+    if(do_debug) print(paste("starting aggregate function number",i))
 
     fni = fnCompute[[i]]
     tlDF_in = fni(tlDF_in,...)

@@ -19,6 +19,8 @@
 #'Revision History
 #' \tabular{ll}{
 #'1.0 \tab 6/12/2020 Created \cr
+#'1.1 \tab 8/23/2024 Modify checks on data.frame inputs to be more generic (e.g., allow tibbles) \cr
+#'1.1 \tab 8/23/2024 Add more debug checks \cr
 #'}
 #'
 #'@author
@@ -151,12 +153,14 @@ compilePlots=function(
 ){
 
   #initial setup
-  no_dfTree = !class(dfTree) == "data.frame"
-  no_dfPlot = !class(dfPlot) == "data.frame"
+  no_dfTree = !"data.frame" %in% class(dfTree)
+  no_dfPlot = !"data.frame" %in% class(dfPlot)
 	if(no_dfTree) stop("Must include \"dfTree\" table - \"dfTree\" was not found")
 	if(no_dfPlot) warning("\"dfPlot\" table not found.\nIf only \"dfTree\" table is provided, please make sure their are NA dfTree records for plots with no trees on them.\n"
 																			 ,"If plots without trees are omitted, you will have biased (too high) landscape estimates typically.\nA clearcut is an example of a"
 																			 ,"'Forest' plot without any trees on it.")
+
+  if(doDebug) print("completed test function arguments")
 
 	#make sure only one out directory is provided
   dir_out = dir_out[1]
@@ -175,6 +179,8 @@ compilePlots=function(
   	if(mean(pl_ids_ok) < 1 ) stop(paste("dfPlot does not have some plotIDs:",dfPlotNms[["plotIDs"]][!pl_ids_ok]))
 	}
 
+	if(doDebug) print("completed test for agreement between plot and tree tables")
+
 	#subset data before compilation
 	if(!is.na(plot_filter[1]) & !no_dfPlot){
 		dfPlot_in = sqldf(plot_filter, envir=as.environment(data))
@@ -189,6 +195,8 @@ compilePlots=function(
 		dfTree_in = dfTree
 	}
 
+	if(doDebug) print("completed sql subset queries on data")
+
 	#merge trees and plots
 	if(("dfPlot_in" %in% ls()) & ("dfTree_in" %in% ls())){
 		dat_in = merge(x=dfPlot, y = dfTree, by = plotIDs_in, all.x=T, all.y=T)
@@ -200,12 +208,16 @@ compilePlots=function(
 		rm("dfTree_in");gc()
 	}
 
+	if(doDebug) print("completed merge of plots with trees")
+
 	#get unique id fields
 	if(length(plotIDs_in) > 1) ids_uniq = unique(dat_in[,plotIDs_in])
 	if(length(plotIDs_in) == 1){
 		ids_uniq = data.frame(X=unique(dat_in[,plotIDs_in]))
 		names(ids_uniq) = plotIDs_in
 	}
+
+	if(doDebug) print("completed grab unique trees")
 
 	#stub
 	#to do - update code to not compile plots with bad tree ids ?
@@ -215,11 +227,18 @@ compilePlots=function(
 	# 	dat_tree = dat_in[!no_tr,]
 	# }
 
+	if(doDebug){  print("completed -unimplemented - filter / fail trees with no plots") }
+
 	spl_IDs = split(ids_uniq,1:nrow(ids_uniq),drop=T)
-	if(doDebug) spl_IDs = spl_IDs[sample( length(spl_IDs),1000)]
+	if( doDebug && length(spl_IDs) > 1000 ) spl_IDs = spl_IDs[sample( length(spl_IDs) , 1000)]
+
+	if(doDebug) print("completed - split trees by plots, on debug use at most 1000 plots ")
 
 	if(nclus == 1){
 		res_i = lapply(spl_IDs , .compile_1plot , trs = dat_in,  trNms = dfTreeNms , plotNms = dfPlotNms, fnCompute = fnCompute , ... )
+
+		if(doDebug) print("completed - process tree lists by plot in linear mode (not parallel) ")
+
 	}
 	if(nclus >1){
 
@@ -232,10 +251,15 @@ compilePlots=function(
 
 		parallel::stopCluster(clus_in)
 		closeAllConnections()
+
+		if(doDebug) print("completed - process tree lists by plot in parallel")
+
 	}
 
 	#bind plots after compilation
 	res_in = plyr::rbind.fill(res_i[sapply(res_i,is.data.frame)])
+
+	if(doDebug) print("completed - merge compile plots using rbind.fill")
 
 	if(!is.na(dir_out)){
 		out_csv = file.path(dir_out,paste(nm_out,".csv",sep=""))
@@ -243,6 +267,8 @@ compilePlots=function(
 		write.csv(res_in,out_csv)
 		saveRDS(res_in,out_rds)
 	}
+
+	if(doDebug) print("completed - write csv to file")
 	gc()
 	if(return) return(res_in)
 
@@ -387,33 +413,33 @@ sppYplot = function(
 ){
 
   require("reshape2")
-  
+
   #remove trees without ID fields
   bad_ids = apply(is.na(trs[,trNms[["plotIDs"]],drop=F]),1,function(x) TRUE %in% x )
   if(sum(bad_ids) > 0){
     warning("some records have bad plotIDs fields:", unique(trs[bad_ids,trNms[["plotIDs"]]]) )
   }
   tr_in = trs[!bad_ids,]
-  
+
   #correct for NA weights
   tr_in[is.na(tr_in[,trNms[["dbh"]]]),trNms[["dbh"]]] = 0
   tr_in[is.na(tr_in[,trNms[["trWt"]]]),trNms[["trWt"]]] = 0
-  
+
   #get data holder for results
   res_in = tr_in[1,trNms[["plotIDs"]],drop=F]
 
   #iterate across response fields
   for(i in 1:length(trNms[["domSppY"]])){
-    
+
     #compute weighted values
     if(!is.na(trNms[["trWt"]])) tr_in[,trNms[["domSppY"]][i]] = tr_in[,trNms[["domSppY"]][i]] * tr_in[,trNms[["trWt"]]]
-    
+
     #cast and aggregate
     mi = reshape2::melt( tr_in[,c(trNms[["plotIDs"]],trNms[["spcd"]],trNms[["domSppY"]][i]) ] , id.vars = c(trNms[["plotIDs"]],trNms[["spcd"]]) )
     fi = as.formula(paste("variable  + ", paste(trNms[["plotIDs"]],collapse = "+")," ~ ",trNms[["spcd"]], sep=""))
     dfi = reshape2::dcast( mi , formula =  fi , fun.aggregate = sum )[,-1]
     dfi1=dfi
-    
+
     #get dominant species by y
     n_dom = min(ncol(dfi1)-1, nDomSpp)
     dom_order = order(dfi1[,-1] , decreasing = T)
@@ -421,15 +447,15 @@ sppYplot = function(
     nmsMx = paste("dom", trNms[["spcd"]], trNms[["domSppY"]][i],1:n_dom, sep="_")
     nmsMxProp = paste("dom_prop", trNms[["spcd"]], trNms[["domSppY"]][i],1:n_dom, sep="_")
     dfi[,nmsMx] = spp_nms[dom_order][1:n_dom]
-    
-    #get proportion by species 
+
+    #get proportion by species
     nmsMx_p = paste(spp_nms, trNms[["domSppY"]][i],"p", sep="_")
     y_ord_ndom = dfi1[,-1][dom_order][1:n_dom]
     dfi[,nmsMx_p] = y_ord_ndom / sum(y_ord_ndom)
-    
+
     #merge data
     res_in = merge(res_in, dfi[,c(trNms[["plotIDs"]],nmsMx,nmsMx_p)] , by=trNms[["plotIDs"]])
-    
+
   }
   return(res_in)
 }
