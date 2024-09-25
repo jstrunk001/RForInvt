@@ -99,8 +99,8 @@ NVEL_voleq = function(
   ,districtNm = "district"
   ,spcdNm = "spcd"
 
-  ,dll_64 = 'lib/VolLibDll20231106/vollib-64bits/vollib.dll'
-  ,dll_32 = 'lib/VolLibDll20231106/vollib-32bits/vollib.dll'
+  ,dll_64 =  system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
+  ,dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
   ,dll_func_voleq = "getvoleq_r"
   ,load_dll = T
 
@@ -156,7 +156,6 @@ NVEL_voleq = function(
 #Testing
 if(F){
 
-
   library(RForInvt)
 
   NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
@@ -166,7 +165,7 @@ if(F){
 
   if(!"dfSpp" %in% ls()){
     library(RSQLite)
-    db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RSForInvt"))
+    db0 = dbConnect(RSQLite::SQLite(), system.file("NVEL/BiomassEqns.db", package="RForInvt"))
     dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
     dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
     dbDisconnect(db0)
