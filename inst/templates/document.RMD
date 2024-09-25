@@ -1,7 +1,17 @@
-# Analysis overview
+  document.RMD template - Version 1 - 5/6/2024 
+  
+  Note: to replace the current rstudio templatejust rename your current "document.RMD" and copy this one into "C:\Program Files\RStudio\resources\app\resources\templates" or your install directory 
+  
+  - feel free to add in any other helpful formatting, functions etc.
+  - also delete this template header
 
 
-# setup and environment
+
+# Analysis overview 
+
+
+
+# setup and environment including helpful function fs() to "forwardslash" paths on your clipboard
 
 ```{r}
 
@@ -55,52 +65,64 @@ if(F){
   library(RSQLite)
   library(DBI)
 	
-	#create versioned files names
-	this_version = "v1_20220502"
-	file_csv = file.path("c:/temp",paste0("some_plots_",this_version,".csv"))
-	file_rds = file.path("c:/temp",paste0("some_plots_",this_version,".RDS"))
-	file_db = file.path("c:/temp",paste0("some_plots_",this_version,".db") )
-	
-	#simulate / write small simulated table of data
-	
-		#simulate
-		test_dat = data.frame(plot=1:5,some_y=rnorm(5))
-		
-		#write csv
-		write.csv(test_dat,  file_csv )
-		
-		#save R binary format
-		saveRDS(test_dat, file_rds)
-		
-		#save to database
-	  con_this = dbConnect(RSQLite::SQLite(), file_db )
-	  	dbWriteTable( con_this , "pldat" , test_dat , overwrite = T )
-	  dbDisconnect(con_this)  
-	
-	#read data csv/rds
-	dat_csv = read.csv(file_csv)
-	dat_rds = readRDS(file_rds)
-	
-	#read sqlite data
-  con_this = dbConnect(RSQLite::SQLite(), file_db )
-  	dat_db = dbReadTable(con_this ,"pldat" )
-  dbDisconnect(con_this)  
+	#Example make some fake data and write to versioned files 
   
+  	#create new output file paths for this version - increment = T  
+    dir_temp = "c:/temp"
+  	file_csv = RForInvt::file_increment(file.path(dir_temp,"some_data.csv"), increment=T)
+  	file_rds = RForInvt::file_increment(file.path(dir_temp,"some_data.RDS"), increment=T)
+  	file_db = RForInvt::file_increment(file.path(dir_temp,"some_data.sqlite"), increment=T)
+  	
+  	#simulate / write small simulated table of data
+  	
+  		#simulate
+  		test_dat = data.frame(plot=1:5,some_y=rnorm(5))
+  		
+  		#write csv
+  		write.csv(test_dat,  file_csv )
+  		
+  		#save R binary format
+  		saveRDS(test_dat, file_rds)
+  		
+  		#save to database
+  	  con_this = dbConnect(RSQLite::SQLite(), file_db )
+  	  	dbWriteTable( con_this , "pldat" , test_dat , overwrite = T )
+  	  dbDisconnect(con_this)  
+	
+	#grab latest versions of data - increment = F
+	  
+	  #prep file names
+    dir_temp = "c:/temp"
+  	file_csv = RForInvt::file_increment(file.path(dir_temp,"some_data.csv"), increment=F)
+  	file_rds = RForInvt::file_increment(file.path(dir_temp,"some_data.RDS"), increment=F)
+  	file_db = RForInvt::file_increment(file.path(dir_temp,"some_data.sqlite"), increment=F)
+  	
+  	#read data csv/rds
+  	dat_csv = read.csv(file_csv)
+  	dat_rds = readRDS(file_rds)
+  	
+  	#read sqlite data
+    con_this = dbConnect(RSQLite::SQLite(), file_db )
+    	dat_db = dbReadTable(con_this ,"pldat" )
+    dbDisconnect(con_this)  
+    
+    #add sf::st_write example
+    
+    #add terra::writeRaster example
+    
 }
 
 
 ```
 
-## example of how to save figures to tiff and pdf
+## example of how to save versions figures to tiff and pdf
 
 ```{r, eval=FALSE}
 
-if(F){ 
-
 	#create versioned files names
-	this_version = "v1_20220502"
-	file_tif = file.path("c:/temp",paste0("some_plots_",this_version,".csv"))
-	file_pdf = file.path("c:/temp",paste0("some_plots_",this_version,".RDS"))
+  dir_temp = "c:/temp"
+	file_tif = RForInvt::file_increment(file.path(dir_temp,"some_plots.tif"), increment=T)
+	file_pdf = RForInvt::file_increment(file.path(dir_temp,"some_plots.pdf"), increment=T)
 
 	#simulate / write small simulated table of data
 	
@@ -117,8 +139,7 @@ if(F){
 		  plot(y~x, data = test_dat1 , main = "test_dat1", xlab=expression(paste("bigfoot height ",cm^2)), ylab="ft")
 		  plot(y~x, data = test_dat1 , main = "test_dat1", xlab=expression(paste("bigfoot height ",cm^2)), ylab="ft")
 		dev.off()
-  
-}
+
 
 
 ```
