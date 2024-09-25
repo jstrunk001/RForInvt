@@ -176,9 +176,9 @@ NVEL_volume=function(
   if(load_dll) .load_dll(dll_64,dll_32,dll_func_vol )
 
   #test for existence of voleq
-  get_voleq = T
-  if(!is.na(voleq)) get_voleq = F
-  if(!is.na(voleqNm)[1]) if((voleqNm)[1] %in% names(dfTL)) if( sum(sapply(dfTL[,voleqNm],nchar)==0 ) == 0 ) get_voleq = F
+  #get_voleq = T
+  #if(!is.na(voleq)) get_voleq = F
+  #if(!is.na(voleqNm)[1]) if((voleqNm)[1] %in% names(dfTL)) if( sum(sapply(dfTL[,voleqNm],nchar)==0 ) == 0 ) get_voleq = F
 
   #deal with column names, add all columns / rename
   dfTL0_in = .formatTL2NVEL(
@@ -480,21 +480,30 @@ if(F){
     set.seed=111
     nfake=length(unique(dfCoeff$species_code))
 
+    dbhs = runif(nfake, 8,20 )
     df_fake = data.frame(
       trid=1:(nfake)
       ,region = 6
       ,forest = "01"
       ,district = "01"
-      ,dbh=10*abs(rnorm(nfake))
-      ,ht=100*abs(rnorm(nfake))
+      ,dbh=dbhs
+      ,ht=70*(dbhs/12)
       ,spcd = unique(dfCoeff$species_code)# sample(c("a","b","c","d") , nfake , T)
     )
 
+    #get FIA volumes equations
+    df_fake1 =   NVEL_nvbeq( dfTL = df_fake )
+
+    #get standard volume equations
+    df_fake2 =   NVEL_voleq( dfTL = df_fake )
+
   }
 
-  NVEL_volume( dfTL = df_fake
-  # ,dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
-  # ,dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
-   )
+  #FIA volume
+  NVEL_volume( dfTL = df_fake1 )
+
+  #standard volume equations - both should be the same below
+  NVEL_volume( dfTL = df_fake )
+  NVEL_volume( dfTL = df_fake2 )
 
 }
