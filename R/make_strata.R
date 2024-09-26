@@ -2,7 +2,7 @@
 #'
 #'@description
 #'  Make and assign strata based on two input attributes and some parameters
-#'  functions are makeStrata and assignStrata
+#'  functions are make_strata and assign_strata
 #'
 #'@details
 #'  <Delete and Replace>
@@ -16,7 +16,7 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <Jstrunk@@fs.fed.us>
+#'Jacob Strunk <jacob@@some.domain>
 #'
 #'@param data input data
 #'@param x1 name of input x field
@@ -33,8 +33,8 @@
 #'
 #'
 #'@return
-#'  makeStrata returns a data.frame of strata boundaries
-#'  assignStrata takes a data.frame and appends a column with the stratum name for each record
+#'  make_strata returns a data.frame of strata boundaries
+#'  assign_strata takes a data.frame and appends a column with the stratum name for each record
 #'
 #'@examples
 #'
@@ -48,7 +48,7 @@
 #'       plot(dbhs,hts)
 #'
 #'       #example 1 factor and numeric
-#'       str_test = makeStrata(
+#'       str_test = make_strata(
 #'         dat_test
 #'         , x1="height_cat"
 #'         , x2="dbh"
@@ -64,7 +64,7 @@
 #'       )
 #'
 #'
-#'       res = assignStrata(
+#'       res = assign_strata(
 #'        str_test
 #'         ,dat_test
 #'       )
@@ -76,7 +76,7 @@
 #'       summary(lm(height ~ stratum , data = res))
 #'
 #'       #example 2 numeric and numeric
-#'       str_test1 = makeStrata(
+#'       str_test1 = make_strata(
 #'         dat_test
 #'         , x1="height"
 #'         , x2="dbh"
@@ -91,13 +91,13 @@
 #'         , precision = 0
 #'       )
 #'
-#'       res1 = assignStrata(
+#'       res1 = assign_strata(
 #'         str_test1
 #'         ,dat_test
 #'       )
 #'
 #'       #example 3 numeric and factor
-#'       str_test2 = makeStrata(
+#'       str_test2 = make_strata(
 #'         dat_test
 #'         , x1="height"
 #'         , x2="dbh_cat"
@@ -112,7 +112,7 @@
 #'         , precision = 0
 #'       )
 #'
-#'       res2 = assignStrata(
+#'       res2 = assign_strata(
 #'         str_test2
 #'         ,dat_test
 #'       )
@@ -136,7 +136,7 @@
 
 #function takes a factor at the first level and then cuts based upon
 # a numeric vector as the second level
-makeStrata = function(
+make_strata = function(
   data
   , x1="PlotStrata1"
   , x2="Elev.P95"
@@ -314,7 +314,7 @@ makeStrata = function(
 
   #collapse strata ?
   if(collapse){
-    pdstrat_in = assignStrata(dfStr2,data[,c(x1,x2)])$stratum
+    pdstrat_in = assign_strata(dfStr2,data[,c(x1,x2)])$stratum
     tbtest = table(data$strat_in)
     nmtest = names(tbtest)
     missing_idx = !dfStr2$stratum %in% pdstrat_in
@@ -355,7 +355,7 @@ makeStrata = function(
 }
 
 #'@export
-assignStrata = function(strata,data){
+assign_strata = function(strata,data){
 
   x1numeric = !is.na(strata[1,"x1.from"])
   x2numeric = !is.na(strata[1,"x2.from"])
@@ -407,7 +407,7 @@ if(F){
 
 		plot(dbhs,hts)
 
-    str_test = makeStrata(
+    str_test = make_strata(
     	dat_test
       , x1="height_cat"
       , x2="dbh"
@@ -423,7 +423,7 @@ if(F){
     )
 
 
-    res = assignStrata(
+    res = assign_strata(
       str_test
       ,dat_test
     )
@@ -434,7 +434,7 @@ if(F){
     summary(lm(height ~ dbh_cat , data = res))
     summary(lm(height ~ stratum , data = res))
 
-    str_test1 = makeStrata(
+    str_test1 = make_strata(
     	dat_test
     	, x1="height"
     	, x2="dbh"
@@ -449,12 +449,12 @@ if(F){
     	, precision = 0
     )
 
-    res1 = assignStrata(
+    res1 = assign_strata(
     	str_test1
     	,dat_test
     )
 
-    str_test2 = makeStrata(
+    str_test2 = make_strata(
       dat_test
       , x1="height"
       , x2="dbh_cat"
@@ -469,7 +469,7 @@ if(F){
       , precision = 0
     )
 
-    res2 = assignStrata(
+    res2 = assign_strata(
       str_test2
       ,dat_test
     )
