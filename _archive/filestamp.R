@@ -64,7 +64,7 @@
 
 
 #rename function and add guts
-filestamp = function(
+file_stamp = function(
                       path = tempdir()
                       ,stamp = format(Sys.time(), "%Y%m%d%H%M%S")
                       ,prefix = "logfile_V"
