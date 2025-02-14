@@ -15,8 +15,6 @@ pairs2(
   pdf_out = NA,
   pdf_ht = 8,
   pdf_wd = 11,
-  las.x = 1,
-  las.y = 1,
   xlab_fig = NA,
   ylab_fig = NA,
   combination = F,
@@ -47,7 +45,7 @@ pairs2(
 <Delete and Replace>
 }
 \description{
-accepts two dataframes and prepares pairplots, results in fewer combinations than plot(xy_df)
+Prepare pair plots for two dataframes x,y: figure columns from x and rows from y. This results in fewer combinations than plot(xy_df)
 }
 \details{
 <Delete and Replace>
@@ -70,5 +68,5 @@ pairs2(mtcars[,1:4],mtcars[5:8],combination=F)
 \code{\link{plot}}\cr
 }
 \author{
-Jacob Strunk <strunky@g@mail.com>
+Jacob Strunk <someone@somewhere.com>
 }

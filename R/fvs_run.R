@@ -24,7 +24,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param key_df input dataframe with key file parameters
 #'@param cluster optional parallel cluster object

@@ -24,7 +24,7 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <Jacob.strunk@@usda.gov>
+#'Jacob Strunk <someone@@somewhere.com>
 #'
 #'@param pattern vector of patterns
 #'@param replacement vector of replacements

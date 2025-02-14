@@ -113,7 +113,7 @@ file_version = function(
     , increment = F
     , note = ""
     , return_all_versions = F
-
+    , update_path = T
     , purge_missing_versions = ifelse(increment,T,F)
     , version_markers = c(version="VS",date="")
     , version_sep = "_"
@@ -143,9 +143,13 @@ file_version = function(
     # get / make current version
       #version_in = .version_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions)
 
+    #fix broken paths in file trackers caused by file copying
+    if(update_path) .update_paths(path)
+
+
     # get / make / update tracking spreadsheet
       version_in = .tracking_get(
-                                path_file = path
+                                  path_file = path
                                 , increment = increment
                                 , note = note
                                 , digits = version_digits
@@ -156,6 +160,8 @@ file_version = function(
                                 , purge = purge_missing_versions
                                 , nm_simple = internal_simple
                                )
+
+
 
     # return version
       return(version_in)
@@ -234,11 +240,23 @@ file_version = function(
                                 , sep = sep
                                 , nm_simple = nm_simple
                                   )
+    this_suffix = .version_name(
+                                ""
+                                , v_num = this_id
+                                , digits = digits
+                                , stamp = stamp
+                                , markers = markers
+                                , sep = sep
+                                , nm_simple = nm_simple
+                                  )
 
     #build record for single increment
     df_increment = data.frame(
+
           file = path_file
         , version = this_version
+        , base_name = basename(path_file)
+        , version_suffix = this_suffix
         , exist = F
         , id = this_id
         , date = stamp
@@ -248,6 +266,7 @@ file_version = function(
         , markerDT = markers[["date"]]
         , sep = sep
         , note = note
+
       )
 
     #combine with previous
@@ -269,6 +288,28 @@ file_version = function(
 
 }
 
+.update_paths=function(path,increment=F){
+
+      #get versioning data
+      path_trk = file.path(path,"_tracking.csv")
+
+      if(file.exists(path_trk)){
+        version_in = read.csv(path_trk)
+
+        #see which paths match
+        bad_paths_A = normalizePath(version_in$file) != normalizePath(path)
+        bad_paths_B = normalizePath(dirname(version_in$version)) != normalizePath(path)
+
+        #fix bad paths
+        if(sum(bad_paths_A ) > 0) version_in$file[bad_paths_A] = path
+        if(sum(bad_paths_B ) > 0) version_in$version[bad_paths_B] = file.path(path,basename(version_in$version[bad_paths_B]))
+
+        #write updated paths to output
+        err = try(write.csv(version_in, path_trk,row.names=F))
+        if(class(err) == "try-error") warning("please close ", path_trk, " before creating a new version")
+      }
+
+}
 
 
 #Testing code
@@ -287,7 +328,7 @@ if(T){
     writeLines(letters,vs_test1)
     file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
   }
-  if(T){
+  if(F){
 
     #update version every time
     vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
@@ -329,6 +370,14 @@ if(T){
     writeLines(letters,file.path(vs_test2,"letters.txt"))
 
     file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_missing_versions = F)
+
+  }
+
+  if(T){
+
+    path1 = "C:/Users/jstrunk/Box/sync/data/[CUI]NIMS/PGM_BEST_COORDS_VW/ANL_PNW_FIA_PGM.PGM_BEST_COORDS_VW.RDS"
+    cds_path = file_version(path1,increment=F)
+    cds = readRDS(cds_path)
 
   }
 

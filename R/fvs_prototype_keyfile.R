@@ -17,7 +17,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param title item in keyword file to replace - st to NULL to omit keyword
 #'@param invyr item in keyword file to replace

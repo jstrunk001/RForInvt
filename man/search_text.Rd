@@ -61,5 +61,5 @@ print(test)
 \code{\link{makeCluster}}\cr \code{\link{list.files}}\cr  \code{\link{readLines}}\cr \code{\link{grepl}}\cr
 }
 \author{
-Jacob L Strunk
+Jacob Strunk <someone@somewhere.com>
 }

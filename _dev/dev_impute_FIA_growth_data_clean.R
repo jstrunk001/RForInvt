@@ -25,7 +25,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param
 #'@param

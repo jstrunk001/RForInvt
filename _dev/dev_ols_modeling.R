@@ -20,7 +20,10 @@
 #'
 #'
 #'@author
-#'Jacob Strunk <strunky@gmail.com>
+#'
+#'Jacob Strunk <someone@@somewhere.com>
+#'
+#'
 #'
 #'@param dat_yx tbd
 #'@param reg_obj tbd

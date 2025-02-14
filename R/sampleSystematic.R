@@ -21,7 +21,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param N vector length
 #'@param n length of sample (optionally a vector of samples)

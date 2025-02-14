@@ -44,5 +44,5 @@ Revision History
 \code{\link{dist}}\cr \code{\link{sweep}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }
