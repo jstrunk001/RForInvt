@@ -22,7 +22,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param idxy1 first vector of coordinates
 #'@param idxy2 second vector of coordinates

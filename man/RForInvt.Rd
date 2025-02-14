@@ -113,5 +113,5 @@ Revision History
 \code{\link{lidR}}\cr \code{\link{RSForInvt}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

@@ -52,5 +52,5 @@ Revision History
 \code{\link{yaImpute::yai}}\cr \code{\link{yaImpute::impute}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

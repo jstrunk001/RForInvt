@@ -1,8 +1,8 @@
 #
-#'@title 
+#'@title
 #' xy plot of variables in two dataframes
 #'
-#'@description 
+#'@description
 #'
 #'accepts two dataframes and prepares pairplots, results in fewer combinations than plot(xy_df)
 #'
@@ -20,7 +20,9 @@
 #'
 #'
 #'@author
-#'Jacob Strunk <strunky@g@mail.com> 
+#'
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 
 #'
 #'@param x first data.frame
@@ -41,7 +43,7 @@
 #' pairs2( x = x_ht_debug ,  y = y1 , title = "Hello" )
 #'
 #'
-#'@seealso \code{\link{plot}}\cr 
+#'@seealso \code{\link{plot}}\cr
 #'
 #'
 
@@ -52,7 +54,7 @@ pairs3=function(
                 ,str_max = 12
                 ,oneLine = F
                 ,mai_fig = c(.3,.3,.3,.1)
-                ,mai_edge = c(0,0,0,0) 
+                ,mai_edge = c(0,0,0,0)
                 ,title = NA
                 #,lattice = F
                 ,pdf_out = NA
@@ -68,68 +70,68 @@ pairs3=function(
                 ){
 
           #par_in = par()
-          
+
           if(!is.na(pdf_out)) pdf( file = pdf_out , height = pdf_ht , width = pdf_wd )
-          
-        
+
+
           #layout.show(ly_in)
 
           if(combination){
-            
+
             par( omi = mai_fig )
-            
+
             ncols = length(names(x))
             nrows = length(names(y))
             col_widths = c(.9,rep(.9,ncols-1))
             row_heights = c(rep(.9,nrows-1),.9)
-            
+
             ly_in = layout(matrix(1:(ncols*nrows), nrows , ncols , byrow = TRUE),
                            widths = col_widths,  heights = row_heights
             )
-            
+
             nm_combn = data.frame(expand.grid(col_id = 1:length(names(x)),row_id=1:length(names(y))))
             mapply(.plot_ij, nm_combn[,1] ,nm_combn[,2] , MoreArgs = list(x=x,y=y,mai_edge, ncols=ncols, nrows=nrows,oneLine=oneLine,str_max=str_max,las.x=las.x,las.y=las.y))
-            
+
           }else{
 
             par( omi = mai_fig )
-            
+
             min_cols = min(length(names(x)),length(names(y)))
             #sides = ceiling(sqrt(min_cols))
             ncols = floor(sqrt(min_cols))
             nrows = ceiling(sqrt(min_cols))
             if( nrows*ncols < min_cols ) ncols = ncols + 1
-            
-            
+
+
             col_widths = c(.9,rep(.9,ncols-1))
             row_heights = c(rep(.9,nrows-1),.9)
-            
+
             ly_in = layout(matrix(1:(ncols*nrows), nrows , ncols , byrow = TRUE),
                            widths = col_widths,  heights = row_heights
             )
             nm_combn = data.frame(col_id = 1:min_cols,row_id=1:min_cols)
             mapply(.plot2_ij, nm_combn[,1] ,nm_combn[,2] , MoreArgs = list(x=x,y=y,mai_edge, ncols=ncols, nrows=nrows,oneLine=oneLine,str_max=str_max,square=square))
-            
+
           }
-          
+
 
           if(!is.na(title)){
                   par(xpd=F)
                   mtext(title, outer = TRUE, cex = 1.5 , line = .5)
           }
-          
+
           if(!is.na(xlab_fig)) mtext(xlab_fig,1, outer = TRUE, cex = 1 , line = 2)
           if(!is.na(ylab_fig)) mtext(ylab_fig,2, outer = TRUE, cex = 1 , line = 2)
-          
+
           if(!is.na(pdf_out)) dev.off()
-          
+
           #par(par_in)
 
 }
 
 #function to iterate across y
 .plot_ij=function( i, j , y , x , mai_edge , ncols, nrows,oneLine,str_max,las.x,las.y){
-  
+
   #prepare margins
   v_mai=c(0,0,0,0)
   if( i==1 ) v_mai[2] = mai_edge[2]
@@ -137,25 +139,25 @@ pairs3=function(
   if( j==1 ) v_mai[3] = mai_edge[3]
   if( j==nrows ) v_mai[1] = mai_edge[1]
   par( mai=v_mai )
-  
+
   #plot data
   plot(x[,i],y[,j],xaxt="n",yaxt="n",xlab="",ylab="")
   if(oneLine){
     par(xpd=F)
     lines(c(-10e6,10e6),c(-10e6,10e6))
     par(xpd=T)
-  }                
-  
+  }
+
   #print y axis when in position 1
   if( i==1 ) mtext(substr(names(y)[j],1,str_max),2,1,las = las.y)
-  
+
   #print x axis when in last posituin
   if (j==nrows) mtext(substr(names(x)[i],1,str_max),1,1,las = las.x)
-  
+
 }
 
 .plot2_ij=function( i, j , y , x , mai_edge , ncols, nrows,oneLine,str_max,square){
-  
+
   #prepare margins
   v_mai=c(0,0,0,0)
   if( i==1 ) v_mai[2] = mai_edge[2]
@@ -163,24 +165,24 @@ pairs3=function(
   if( j==1 ) v_mai[3] = mai_edge[3]
   if( j==nrows ) v_mai[1] = mai_edge[1]
   par( mai=v_mai )
-  
+
   #plot data
   if(square){
     rng_in = range(c(x[,i],y[,j]))
     plot(x[,i],y[,j],xaxt="n",yaxt="n",xlab="",ylab="",xlim=rng_in, ylim=rng_in)
-    
+
     }  else plot(x[,i],y[,j],xaxt="n",yaxt="n",xlab="",ylab="")
   if(oneLine){
     par(xpd=F)
     lines(c(-10e6,10e6),c(-10e6,10e6))
     par(xpd=T)
-  }                
-  
+  }
+
   mtext(substr(names(y)[j],1,str_max),side=2,line=-1,las = 0)
   mtext(substr(names(x)[i],1,str_max),side=1,line=-1,las = 0)
 
 }
-# 
+#
 # rng_print = 1:9
 # pairs3(
 #   plt_vs[, sort( vec_names_y[-c(1:2)][rng_print] ,T ) ]

@@ -7,22 +7,22 @@
 #'
 #'@details
 #'  Accepts a list of trees and a series of functions (some provided) and additively applies the
-#'  functions to the tree list. Something like spp_y(dbcl_y(dbcl(ba_ft(tpa(treeList))))) ... A number
+#'  functions to the tree list. Something like computeVolume(computeBA(computeTPA(treeList))) ... A number
 #'  of functions are provided - feel free to modify or update them to meet your needs
 #'
-#'  ba_ft(x, tree_nms, ...)
+#'  ba_ft(x, db_nm, ...)
 #'
-#'  tpa(x, tree_nms, ...)
+#'  tpa(x, acres_nm = NA, ntrees_nm = NA, ...)
 #'
-#'  tph(x, tree_nms, ...)
+#'  tph(x, haNm = NA, ntrees_nm = NA, ...)
 #'
-#'  dbcl(x, tree_nms, db_breaks = c(seq(0, 32, 4), 50, 1000), ...)
+#'  dbcl(x, db_nm = "dbh", dbcl = c(seq(0, 32, 4), 50, 1000), dbcl_nm = "dbcl", ...)
 #'
-#'  dbcl_y(x, tree_nms, vars_group, ...)
+#'  dbcl_y(x, trID, dbcl_nm, dbcl_y, ...)
 #'
-#'  spp_y(x, tree_nms, vars_group, ...)
+#'  spp_y(x, trID, spp_y, spp_nm, ...)
 #'
-#'  dbcl_spp_y(x, tree_nms, vars_group, ...)
+#'  dbcl_spp_y(x, trID, spp_y, dbcl_nm, spp_nm, ...)
 #'
 #'  This program is free software but it is provided WITHOUT WARRANTY
 #'  and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
@@ -34,7 +34,6 @@
 #'Revision History
 #' \tabular{ll}{
 #'1.0 \tab 6/10/2020 Created  \cr
-#'1.1 \tab 10/09/2024 updated to be consistent with compile_plots \cr
 #'}
 #'
 #'@author
@@ -42,15 +41,12 @@
 #'Jacob Strunk <jacob@@somewhere.something>
 #'
 #'@param df_tree data frame of tree records
-#'@param tree_nms map expected tree column names onto df_tree. These are the minimum expected names: c( tree_ids = "tr_id", dbh = "DBH" , ht = "Ht" , spp = "spcd" ).
-#' Feel free to provide others used by custom functions.
-#'
-#'@param fns_compute sequential list of functions to apply to tree data, earlier
-#' results (e.g. ba) are available to later functions. Every function should accept an elipsis.
-#'
+#'@param tree_nms map expected tree column names onto df_tree. These are the minimum expected names: c( tree_id = "tr_id", dbh = "DBH" , ht = "Ht" , spp = "spcd" ). Feel free to provide others used by custom functions.
+#'@param fns_compute sequential list of functions to
+#'apply to tree data, earlier results (e.g. ba) are available to later
+#'functions. Every function should accept an elipsis
 #'@param ... arguments to functions in fns_compute
-#'@param db_breaks <...>  argument passed to optional dbcl_y function,  passed generically by compile_trees through '...'
-#'@param vars_group <...>  argument passed to optional dbcl_y, dbcl_spp_y, spp_y functions,  passed generically by compile_trees through '...'
+#'@param db_breaks <...>  argument passed to optional dbcl_y function,  passed generically by compile_plots through '...'
 #'
 #'@return
 #'  typically an updated df_tree data.frame (compile_trees function argument) with additional columns. This behavior can be broken using fns_compute
@@ -58,55 +54,71 @@
 #'
 #'@examples
 #'
-#'    #generate data
-#'       test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1,ntrees=1)
-#'       test0$ht = abs(75*test0$dbh/12 + rnorm(nrow(test0))*3)
 #'
-#'     #compile trees : processes A and B are equivalent
-#'      #A
-#'       test1 = ba_ft(test0,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"))
-#'       test2 = dbcl(test1,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp") )
-#'       test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_group= c("ba_ft","dbh"))
-#'       test4 = spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
+#'   set.seed=111
+#'   nfake=50
+#'   dbh_fk = 10*abs(rnorm(nfake))
+#'   df_fake = data.frame(
+#'     pltId = sample((1:7),nfake,replace=T)
+#'     ,trid=1:50
+#'     ,db= dbh_fk
+#'     ,ht=75*dbh_fk + rnorm(nfake)*10
+#'     ,spp = sample(c("df","wh","cw","ra") , nfake , T)
+#'     ,acres = 0.1
+#'     ,trees = round(1+ abs(rnorm(nfake)/3))
 #'
-#'     #B
-#'     test5 =
-#'       compile_trees(
-#'         #
-#'         test0
-#'         ,tree_nms = c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp",acres="acres")
-#'         ,vars_group = c("ba_ft")
-#'         #optional functions to run against tree data must accept elipsis argument: "..."
-#'         ,fns_compute =
-#'           list(
-#'             tpa
-#'             ,ba_ft
-#'             ,dbcl
-#'             ,dbcl_y
-#'             ,spp_y
-#'             ,dbcl_spp_y
-#'           )
+#'   )
 #'
-#'       )
+#'   test_tl =
+#'     compile_trees(
+#'       df_fake
 #'
-#'   test5
+#'       #arguments to fns_compute functions
+#'       ,tr_id = "trid"
+#'       ,spp_nm = "spp"
+#'       ,db_nm = "db"
+#'       ,htNm = "ht"
+#'       ,dbcl_nm = "dbcl"
+#'       ,dbcl = c(seq(0,32,4),50,1000)
+#'       ,dbcl_y = c("ba_ft")
+#'       ,spp_y = c("ba_ft")
+#'       ,spp_dbcl_y = c("ba_ft")
+#'       ,acres_nm = "acres"
+#'       ,ntrees_nm = NA
 #'
-#'   #compile plots
-#'   res_pl =   compile_plots(
-#'     df_tree = test5
-#'     , tree_nms = list(plot_ids = c("plot") , tr_ids = c("id") , dbh = "dbh" , ht = "ht" , spp = "spp" , expansion = "TPA" )
-#'     , plot_nms = list( plot_ids = c( "plot" ), plt_wt = NA )
-#'     , dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
-#'     , fns_compute = list(
-#'       plot_lor_qmd
-#'        ,plot_wtsum
+#'       #optional functions to run against tree data
+#'       #must accept ...
+#'       ,fns_compute =
+#'         list(
+#'           tpa
+#'           ,ba_ft
+#'           ,dbcl
+#'           ,dbcl_y
+#'           ,spp_y
+#'           ,dbcl_spp_y
+#'         )
+#'
 #'     )
+#'
+#'   test_tl
+#'
+#'   res_pl =   compile_plots(
+#'
+#'     df_tree = testTL
+#'     ,tree_nms = c(plot_ids = c("pltId") , tr_ids = c("trid") , dbh = "db" , ht = "ht" , spp = "spp"  )
+#'     ,dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
+#'     ,fns_compute = list(
+#'       plot_wtmn
+#'       ,plot_wtsum
+#'     )
+#'
 #'     ,return = T
 #'     ,do_debug = F
+#'
 #'     ,nclus = 1
-#'     #arguments to custom functions - in this case plot_wtsum
-#'     ,sum_nms = c("ntrees",grep("^ba",names(test5),value=T))
-#'     ,append = F
+#'
+#'     #' arguments to custom functions - in this case plot_wtsum
+#'     ,sum_nms = c("TPA",grep("^ba",names(testTL),value=T))
 #'
 #'   )
 #'
@@ -123,10 +135,10 @@
 
 #'@export
 #'@rdname compile_trees
-compile_trees = function(
+compile_trees=function(
 
   df_tree
-  ,tree_nms = c( tree_ids ="tree", dbh = "DIA" , ht = "HT" , spp = "SPCD" , nstems = "nstems", acres="acres", dbcl="dbcl" )
+  ,tree_nms = c( tree_id ="tree", dbh = "DIA" , ht = "HT" , spp = "SPCD" , nstems = "nstems", acres="acres", dbcl="dbcl" )
   ,fns_compute = list(
     tpa
     ,ba_ft
@@ -190,11 +202,11 @@ tph = function(x,tree_nms,...){
 
 #'@export
 #'@rdname compile_trees
-dbcl = function(x , tree_nms, db_breaks=c(seq(0,32,4),50,1000) , ...){
+dbcl = function(x , tree_nms, dbcl=c(seq(0,32,4),50,1000) , ...){
   x_in = x
   #get dbcls
-  labels_dbcl = (db_breaks[-1] + db_breaks[-length(db_breaks)]) / 2
-  x_in[,tree_nms["dbcl"]] = labels_dbcl[cut(x_in[,tree_nms["dbh"]],db_breaks,labels=FALSE)]
+  labels_dbcl = (dbcl[-1] + dbcl[-length(dbcl)]) / 2
+  x_in[,tree_nms["dbcl"]] = labels_dbcl[cut(x_in[,tree_nms["dbh"]],dbcl,labels=FALSE)]
   return(x_in)
 }
 
@@ -209,13 +221,13 @@ dbcl_y = function(x,tree_nms,vars_group,...){
   for(i in 1:length(vars_group)){
 
     #cross dbcl with response attributes
-    mi = reshape2::melt(x_in[,c(tree_nms[c("tree_ids","dbcl")],vars_group[i])],id.vars= tree_nms[c("tree_ids","dbcl")] )
-    fi = as.formula(paste("variable +",tree_nms["tree_ids"],"~",tree_nms["dbcl"]))
+    mi = reshape2::melt(x_in[,c(tree_nms[c("tree_id","dbcl")],vars_group[i])],id.vars= tree_nms[c("tree_id","dbcl")] )
+    fi = as.formula(paste("variable +",tree_nms["tree_id"],"~",tree_nms["dbcl"]))
     dfi = reshape2::dcast(mi, formula =  fi)[,-1]
     names(dfi)[-1] = paste(vars_group[i], paste(tree_nms["dbcl"],names(dfi)[-1],sep=""),sep="_")
 
     #merge back in
-    x_in = merge(x_in, dfi, by = tree_nms["tree_ids"])
+    x_in = merge(x_in, dfi, by = tree_nms["tree_id"])
   }
   return(x_in)
 }
@@ -223,7 +235,7 @@ dbcl_y = function(x,tree_nms,vars_group,...){
  # test=data.frame(id=1:50,dbh=1:50)
  # test1 = ba_ft(test,tree_nms=c(dbh="dbh",dbcl="dbcl") )
  # test2 = dbcl(test1,tree_nms=c(dbh="dbh",dbcl="dbcl") )
- # test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
+ # test3 = dbcl_y(test2,tree_nms=c(tree_id="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
 
 #'@export
 #'@rdname compile_trees
@@ -235,13 +247,13 @@ spp_y = function(x,tree_nms,vars_group,...){#tr_id,spp_y,spp_nm,...){
   for(i in 1:length(vars_group)){
 
     #cross dbcl with response attributes
-    mi = reshape2::melt(x_in[,c(tree_nms[c("tree_ids","spp")],vars_group[i])],id.vars=tree_nms[c("tree_ids","spp")] )
-    fi = as.formula(paste("variable +",tree_nms["tree_ids"],"~",tree_nms["spp"]))
+    mi = reshape2::melt(x_in[,c(tree_nms[c("tree_id","spp")],vars_group[i])],id.vars=tree_nms[c("tree_id","spp")] )
+    fi = as.formula(paste("variable +",tree_nms["tree_id"],"~",tree_nms["spp"]))
     dfi = reshape2::dcast(mi, formula =  fi)[,-1]
     names(dfi)[-1] = paste(vars_group[i], paste(tree_nms["spp"],names(dfi)[-1],sep="_"),sep="_")
 
     #merge back in
-    x_in = merge(x_in, dfi,  by = tree_nms["tree_ids"])
+    x_in = merge(x_in, dfi,  by = tree_nms["tree_id"])
   }
   return(x_in)
 }
@@ -249,8 +261,8 @@ spp_y = function(x,tree_nms,vars_group,...){#tr_id,spp_y,spp_nm,...){
   # test=data.frame(id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T))
   # test1 = ba_ft(test,tree_nms=c(dbh="dbh",dbcl="dbcl") )
   # test2 = dbcl(test1,tree_nms=c(dbh="dbh",dbcl="dbcl") )
-  # test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
-  # test4 = spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
+  # test3 = dbcl_y(test2,tree_nms=c(tree_id="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
+  # test4 = spp_y(test3,tree_nms=c(tree_id="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
 
 
 #'@export
@@ -263,18 +275,18 @@ dbcl_spp_y = function(x,tree_nms,vars_group,...){
   for(i in 1:length(vars_group)){
 
     #cross dbcl with response attributes
-    mi = reshape2::melt(x_in[,c(tree_nms[c("tree_ids","spp","dbcl")],vars_group[i])],id.vars=tree_nms[c("tree_ids","spp","dbcl")] )
+    mi = reshape2::melt(x_in[,c(tree_nms[c("tree_id","spp","dbcl")],vars_group[i])],id.vars=tree_nms[c("tree_id","spp","dbcl")] )
 
     #append spp and dbcl to improve readability of final columns
     mi[,tree_nms["spp"]] = paste(vars_group[i],tree_nms["spp"],mi[,tree_nms["spp"]],sep="_")
     mi[,tree_nms["dbcl"]] = paste(tree_nms["dbcl"],mi[,tree_nms["dbcl"]],sep="_")
 
     #merge data
-    fi = as.formula(paste("variable +",tree_nms["tree_ids"],"~",tree_nms["spp"],"+",tree_nms["dbcl"]))
+    fi = as.formula(paste("variable +",tree_nms["tree_id"],"~",tree_nms["spp"],"+",tree_nms["dbcl"]))
     dfi = reshape2::dcast(mi, formula =  fi)[,-1]
 
     #merge back in
-    x_in = merge(x_in, dfi,  by = tree_nms["tree_ids"])
+    x_in = merge(x_in, dfi,  by = tree_nms["tree_id"])
   }
   return(x_in)
 }
@@ -283,9 +295,9 @@ if(F){
   test=data.frame(id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T))
   test1 = ba_ft(test,tree_nms=c(dbh="dbh",dbcl="dbcl") )
   test2 = dbcl(test1,tree_nms=c(dbh="dbh",dbcl="dbcl") )
-  test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
-  test4 = spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
-  test5 = dbcl_spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
+  test3 = dbcl_y(test2,tree_nms=c(tree_id="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
+  test4 = spp_y(test3,tree_nms=c(tree_id="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
+  test5 = dbcl_spp_y(test3,tree_nms=c(tree_id="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
 }
 
 #test this code

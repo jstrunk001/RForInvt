@@ -16,7 +16,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param ... regular arguments to duplicated
 #'@param all T/F return all duplicates

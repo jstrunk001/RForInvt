@@ -23,7 +23,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param x yaImpute::yai() object or data frame returned by yaImpute::impute(...)
 #'@param vars subset of variables

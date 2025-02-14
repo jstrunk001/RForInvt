@@ -60,5 +60,5 @@ parallel::stopCluster(clus1)
 \code{\link{fvs_run}}\cr \code{\link{fvs_keyfile_prototype}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

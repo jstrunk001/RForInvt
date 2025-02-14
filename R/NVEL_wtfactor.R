@@ -15,7 +15,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <Jacob.strunk@@usda.gov>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param dfTL data.frame with tree records
 #'@param region (optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm

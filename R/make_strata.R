@@ -28,7 +28,7 @@
 #'@param  n2  number of strata for x2
 #'@param  type_x1  is x1 numeric or factor
 #'@param  type_x2 is x2 numeric or factor
-#'@param  minRecs what is the minimum number of records in a stratum before collapse
+#'@param  min_recs what is the minimum number of records in a stratum before collapse
 #'@param  precision  what precision is retained for cutting numeric values into strata
 #'
 #'
@@ -59,7 +59,7 @@
 #'         , n2 = 10
 #'         , type_x1 = "factor"
 #'         , type_x2 = "numeric"
-#'         , minRecs = 7
+#'         , min_recs = 7
 #'         , precision = 0
 #'       )
 #'
@@ -87,7 +87,7 @@
 #'         , n2 = 10
 #'         , type_x1 = "numeric"
 #'         , type_x2 = "numeric"
-#'         , minRecs = 7
+#'         , min_recs = 7
 #'         , precision = 0
 #'       )
 #'
@@ -108,7 +108,7 @@
 #'         , n2 = 10
 #'         , type_x1 = "numeric"
 #'         , type_x2 = "factor"
-#'         , minRecs = 7
+#'         , min_recs = 7
 #'         , precision = 0
 #'       )
 #'
@@ -147,7 +147,7 @@ make_strata = function(
   , n2 = 10
   , type_x1 = c("factor","numeric")[1]
   , type_x2 = c("numeric","factor")[1]
-  , minRecs = 7
+  , min_recs = 7
   , precision = 0
   , collapse=T
 ){
@@ -213,7 +213,7 @@ make_strata = function(
 
         dati = spl1[[i]]
 
-        if(nrow(dati) / n2 < minRecs ) n2i = max(floor(nrow(dati) / minRecs),1)
+        if(nrow(dati) / n2 < min_recs ) n2i = max(floor(nrow(dati) / min_recs),1)
         else n2i = n2
 
         ri = range(dati[,x2])
@@ -418,7 +418,7 @@ if(F){
       , n2 = 10
       , type_x1 = "factor"
       , type_x2 = "numeric"
-      , minRecs = 7
+      , min_recs = 7
       , precision = 0
     )
 
@@ -445,7 +445,7 @@ if(F){
     	, n2 = 10
     	, type_x1 = "numeric"
     	, type_x2 = "numeric"
-    	, minRecs = 7
+    	, min_recs = 7
     	, precision = 0
     )
 
@@ -465,7 +465,7 @@ if(F){
       , n2 = 10
       , type_x1 = "numeric"
       , type_x2 = "factor"
-      , minRecs = 7
+      , min_recs = 7
       , precision = 0
     )
 

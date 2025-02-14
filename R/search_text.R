@@ -20,8 +20,10 @@
 #'
 
 #'@author
-#'Jacob L Strunk
-
+#'
+#'Jacob Strunk <someone@@somewhere.com>
+#'
+#'
 #'@param match_string string to find within searched files
 #'@param directory where to search files
 #'@param file single file
@@ -93,7 +95,7 @@ search_text=function(
     }
 
       res=rbind.fill(res)
-      if(is.null(res[1])) res=empty_df(c("file","matches"))
+      if(is.null(res[1])) res=read.csv(text=c("file,matches"),header=T)#empty_df(c("file","matches"))
 
   }else{
 

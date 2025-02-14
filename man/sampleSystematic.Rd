@@ -47,5 +47,5 @@ Revision History
 \code{\link{sample}}\cr \code{\link{which}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

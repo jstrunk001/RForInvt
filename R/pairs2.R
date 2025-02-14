@@ -20,8 +20,9 @@
 #'
 #'
 #'@author
-#'Jacob Strunk <strunky@g@mail.com>
-
+#'
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param x first data.frame
 #'@param y second data.frame

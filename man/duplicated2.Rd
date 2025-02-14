@@ -34,5 +34,5 @@ something
 \code{\link{duplicated}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

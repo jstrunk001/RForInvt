@@ -18,7 +18,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <Jacob.strunk@@usda.gov>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param dfTL tree list with a minimum of diamter and height columns
 #'@param bioeq (optional) use single equation for all trees

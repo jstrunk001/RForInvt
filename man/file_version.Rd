@@ -9,6 +9,7 @@ file_version(
   increment = F,
   note = "",
   return_all_versions = F,
+  update_path = T,
   purge_missing_versions = ifelse(increment, T, F),
   version_markers = c(version = "VS", date = ""),
   version_sep = "_",
