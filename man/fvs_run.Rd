@@ -89,5 +89,5 @@ parallel::stopCluster(clus1)
 \code{\link{fvs_load}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_keyfile_prototype}}\cr \code{\link{fvs_param_prototype}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

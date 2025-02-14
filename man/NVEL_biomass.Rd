@@ -99,5 +99,5 @@ Revision History
 
 }
 \author{
-Jacob Strunk <Jacob.strunk@usda.gov>
+Jacob Strunk <someone@somewhere.com>
 }

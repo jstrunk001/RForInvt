@@ -15,7 +15,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param param_df parameters substituted into keyfile
 #'@param processing_dir where do keyfiles and output data go

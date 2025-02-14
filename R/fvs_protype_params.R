@@ -15,7 +15,8 @@
 #'
 #'@author
 #'
-#'Jacob Strunk <strunky@@gmail.com>
+#'Jacob Strunk <someone@@somewhere.com>
+#'
 #'
 #'@param add_params optional substitution parameters, but must match substitution in keyfile using @@somekey@@
 #'

@@ -178,5 +178,5 @@ Revision History
 \code{\link{NVEL_voleq}}\cr
 }
 \author{
-Jacob Strunk <Jacob.strunk@usda.gov>
+Jacob Strunk <someone@somewhere.com>
 }

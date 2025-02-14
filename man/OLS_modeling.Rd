@@ -171,5 +171,5 @@ Revision History
 \code{\link{regsubsets}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

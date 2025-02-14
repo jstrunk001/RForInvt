@@ -94,5 +94,5 @@ parallel::stopCluster(clus1)
 \code{\link{fvs_run}}\cr \code{\link{fvs_load_rfvs}}\cr
 }
 \author{
-Jacob Strunk <strunky@gmail.com>
+Jacob Strunk <someone@somewhere.com>
 }

@@ -53,6 +53,12 @@
   mse = function(err,na.rm=T){mean(err^2,na.rm=na.rm)} 
   rmse = function(err,na.rm=T){sqrt(mean(err^2,na.rm=na.rm))}   
   
+  #file_tif = RForInvt::file_increment(file.path("c:/temp","some_plots.tif"), increment=T)
+  #con_this = DBI::dbConnect(RSQLite::SQLite(), file_db )
+  #tiff(file_tif , width = 6, height = 4, units = "in", res = 600)
+  #dev.off()
+  
+  
 ```
 
 ## load data - some examples of ways to load various data types. 
