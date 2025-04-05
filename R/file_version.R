@@ -373,13 +373,6 @@ if(T){
 
   }
 
-  if(T){
-
-    path1 = "C:/Users/jstrunk/Box/sync/data/[CUI]NIMS/PGM_BEST_COORDS_VW/ANL_PNW_FIA_PGM.PGM_BEST_COORDS_VW.RDS"
-    cds_path = file_version(path1,increment=F)
-    cds = readRDS(cds_path)
-
-  }
 
 
 }
