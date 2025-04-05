@@ -3,20 +3,19 @@
 \name{compile_plots}
 \alias{compile_plots}
 \alias{plot_wtsum}
-\alias{plot_wtmn}
+\alias{plot_lor_qmd}
 \alias{spp_y_plot}
 \title{Compile tree data by plot}
 \usage{
 compile_plots(
   cl = NA,
-  df_tree = list(NA, data.frame(PLT_CN = 1, year = 2020, dbh = NA, spcd = NA, ac =
+  df_tree = list(NA, data.frame(PLT_CN = 1, year = 2020, dbh = NA, spp = NA, ac =
     0.1))[[1]],
   df_plot = list(NA, data.frame(PLT_CN = c(1, 2), PLOT = 1, YEAR = 2020, STATE = 1,
     COUNTY = 1, PROJECT = "Test"))[[1]],
   tree_nms = list(plot_ids = c("PLOT", "YEAR"), tree_ids = c("tr_cn"), dbh = "DIA", ht =
-    "HT", spcd = "SPCD", tr_wt = "TPA"),
-  plot_nms = list(plot_ids = c("STATE", "COUNTY", "PROJECT", "PLOT", "YEAR"), plt_wt =
-    NA),
+    "HT", spp = "SPCD", expansion = "TPA"),
+  plot_nms = list(plot_ids = c("PLOT", "YEAR")),
   tree_filter = c(NA, "select * from df_tree where dbh > 2 "),
   plot_filter = c(NA,
     "select * from df_plot where YEAR = 2018 and STATE = 'WA' and CONDITION = 1"),
@@ -24,7 +23,7 @@ compile_plots(
   nm_out = "compile_plots",
   sql_tbl = "plot_metrics",
   append = T,
-  fns_compute = list(plot_wtmn, plot_wtsum),
+  fns_compute = list(plot_wtsum, plot_lor_qmd),
   return = F,
   do_debug = F,
   nclus = 4,
@@ -33,7 +32,7 @@ compile_plots(
 
 plot_wtsum(df_tree, tree_nms, sum_nms, ...)
 
-plot_wtmn(df_tree, tree_nms, ...)
+plot_lor_qmd(df_tree, tree_nms, ...)
 
 spp_y_plot(df_tree, tree_nms, n_dom_spp = 3, spp_y, ...)
 }
@@ -42,7 +41,7 @@ spp_y_plot(df_tree, tree_nms, n_dom_spp = 3, spp_y, ...)
 
 \item{df_plot}{data frame of plot records}
 
-\item{tree_nms}{map expected tree column names onto df_tree. These are the minimum expected names: c( plot_ids = "?", tr_ids = c("?","?") , dbh = "?" , ht = "?" , spcd = "?" , tr_wt = "?"). Feel free to provide others used by custom functions.}
+\item{tree_nms}{map expected tree column names onto df_tree. These are the minimum expected names: c( plot_ids = "?", tr_ids = c("?","?") , dbh = "?" , ht = "?" , spp = "?" , expansion  = "?"). Feel free to provide others used by custom functions.}
 
 \item{plot_nms}{map expected plot column names onto df_plot. These are the minimum expected names: c( plot_ids = c("?","?"), plt_wt = c(NA,"?")[1] ). Feel free to provide others used by custom functions.}
 
@@ -104,78 +103,61 @@ Revision History
 1.0 \tab 6/12/2020 Created \cr
 1.1 \tab 8/23/2024 Modify checks on data.frame inputs to be more generic (e.g., allow tibbles) \cr
 1.1 \tab 8/23/2024 Add more debug checks \cr
+1.2 \tab 10/09/2024 complete overhaul, simpler and consistent with compile_trees \cr
 }
 }
 \examples{
 
-  #build fake tree list
-  set.seed=111
-  nfake=50
-  dbh_fk = 10*abs(rnorm(nfake))
-  df_fake = data.frame(
-    pltId = sample((1:7),nfake,replace=T)
-    ,trid=1:50
-    ,db= dbh_fk
-    ,ht=75*dbh_fk + rnorm(nfake)*10
-    ,spp = sample(c("df","wh","cw","ra") , nfake , T)
-    ,acres = 0.1
-    ,trees = round(1+ abs(rnorm(nfake)/3))
 
-  )
+   #generate data
+      test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1,ntrees=1)
+      test0$ht = abs(75*test0$dbh/12 + rnorm(nrow(test0))*3)
 
-  #compute tree level attributes for fake tree list
-  test_tl =
-    compile_trees(
-      df_fake
+    #compile trees : processes A and B are equivalent
+     #A
+      test1 = ba_ft(test0,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"))
+      test2 = dbcl(test1,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp") )
+      test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_group= c("ba_ft","dbh"))
+      test4 = spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
 
-      #arguments to fn_compute functions
-      ,tr_id = "trid"
-      ,spp_nm = "spp"
-      ,db_nm = "db"
-      ,htNm = "ht"
-      ,dbcl_nm = "dbcl"
-      ,dbcl = c(seq(0,32,4),50,1000)
-      ,dbcl_y = c("ba_ft")
-      ,spp_y = c("ba_ft")
-      ,spp_dbcl_y = c("ba_ft")
-      ,acres_nm = "acres"
-      ,ntrees_nm = NA
+    #B
+    test5 =
+      compile_trees(
+        #
+        test0
+        ,tree_nms = c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp",acres="acres")
+        ,vars_group = c("ba_ft")
+        #optional functions to run against tree data must accept elipsis argument: "..."
+        ,fns_compute =
+          list(
+            tpa
+            ,ba_ft
+            ,dbcl
+            ,dbcl_y
+            ,spp_y
+            ,dbcl_spp_y
+          )
 
-      #optional functions to run against tree data
-      #must accept ...
-      ,fn_compute =
-        list(
-          tpa
-          ,ba_ft
-          ,dbcl
-          ,dbcl_y
-          ,spp_y
-          ,dbcl_spp_y
-        )
+      )
 
-    )
+  test5
 
-  testTL
-
-
-  #compute plot level attributes from fake tree list
+  #compile plots
   res_pl =   compile_plots(
-
-    df_tree = testTL
-    ,tree_nms = c(plot_ids = c("pltId") , tr_ids = c("trid") , dbh = "db" , ht = "ht" , spcd = "spp" , tr_wt = "TPA" )
-    ,dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
-    ,fns_compute = list(
-      plot_wtmn
-      ,plot_wtsum
+    df_tree = test5
+    , tree_nms = list(plot_ids = c("plot") , tr_ids = c("id") , dbh = "dbh" , ht = "ht" , spp = "spp" , expansion = "TPA" )
+    , plot_nms = list( plot_ids = c( "plot" ), plt_wt = NA )
+    , dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
+    , fns_compute = list(
+      plot_lor_qmd
+       ,plot_wtsum
     )
-
     ,return = T
     ,do_debug = F
-
     ,nclus = 1
-
-    #' arguments to custom functions - in this case plot_wtsum
-    ,sum_nms = c("TPA",grep("^ba",names(testTL),value=T))
+    #arguments to custom functions - in this case plot_wtsum
+    ,sum_nms = c("ntrees",grep("^ba",names(test5),value=T))
+    ,append = F
 
   )
 
