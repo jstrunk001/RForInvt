@@ -90,30 +90,19 @@ Revision History
 }
 \examples{
 
-  set.seed=111
-  nfake=50
-  dbh_fk = 10*abs(rnorm(nfake))
-  df_fake = data.frame(
-    pltId = sample((1:7),nfake,replace=T)
-    ,trid=1:50
-    ,db= dbh_fk
-    ,ht=75*dbh_fk + rnorm(nfake)*10
-    ,spp = sample(c("df","wh","cw","ra") , nfake , T)
-    ,acres = 0.1
-    ,trees = round(1+ abs(rnorm(nfake)/3))
+   #generate data
+      test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1,ntrees=1)
+      test0$ht = abs(75*test0$dbh/12 + rnorm(nrow(test0))*3)
 
-  )
-
-   #these processes A and B are equivalent
-    #A
-      test0 = data.frame(id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1)
+    #compile trees : processes A and B are equivalent
+     #A
       test1 = ba_ft(test0,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"))
       test2 = dbcl(test1,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp") )
       test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_group= c("ba_ft","dbh"))
       test4 = spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
 
     #B
-    test_tl =
+    test5 =
       compile_trees(
         #
         test0
@@ -132,25 +121,24 @@ Revision History
 
       )
 
-  test_tl
+  test5
 
+  #compile plots
   res_pl =   compile_plots(
-
-    df_tree = test_tl
-    ,tree_nms = c(plot_ids = c("pltId") , tr_ids = c("trid") , dbh = "db" , ht = "ht" , spp = "spp"  )
-    ,dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
-    ,fns_compute = list(
-      plot_wtmn
-      ,plot_wtsum
+    df_tree = test5
+    , tree_nms = list(plot_ids = c("plot") , tr_ids = c("id") , dbh = "dbh" , ht = "ht" , spp = "spp" , expansion = "TPA" )
+    , plot_nms = list( plot_ids = c( "plot" ), plt_wt = NA )
+    , dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
+    , fns_compute = list(
+      plot_lor_qmd
+       ,plot_wtsum
     )
-
     ,return = T
     ,do_debug = F
-
     ,nclus = 1
-
     #arguments to custom functions - in this case plot_wtsum
-    ,sum_nms = c("TPA",grep("^ba",names(testTL),value=T))
+    ,sum_nms = c("ntrees",grep("^ba",names(test5),value=T))
+    ,append = F
 
   )
 

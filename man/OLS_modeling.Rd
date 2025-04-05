@@ -6,6 +6,7 @@
 \alias{lm_boot}
 \alias{many_boots}
 \alias{reg_multi}
+\alias{lm_multi}
 \alias{mod_multi}
 \alias{pred_multi}
 \alias{multi_bs}
@@ -36,19 +37,21 @@ reg_multi(
   ...
 )
 
-mod_multi(reg_multi_obj, data, ...)
+lm_multi(y_vars, data, form_y = c("y~.", "y~.*."), verbose = T, ...)
+
+mod_multi(mods_list, data, ...)
 
 pred_multi(
-  mods,
+  mods_list,
   data,
   dat0,
   id_col,
   n_clus = 1,
   clus = NA,
-  out_dir = NULL,
-  se_fit = TRUE,
-  return = FALSE,
-  fix_outliers = T,
+  out_dir = NA,
+  se_fit = FALSE,
+  return = TRUE,
+  fix_outliers = F,
   outlier_fun = function(y0, yhat, yhat_se) {
      large = yhat > max(y0) * 1.5
     
@@ -59,13 +62,13 @@ pred_multi(
      yhat_se[large] = max(yhat_se[!large & !small])
      yhat_se[small] =
     max(yhat_se[!large & !small])
-     data.frame(fit = yhat, se_fit = yhat_se)
+     data.frame(pd = yhat, se_pd = yhat_se)
  }
 )
 
-multi_bs(mods, n_boot = 50, n_clus, lm_boot)
+multi_bs(mods_list, n_boot = 50, n_clus, lm_boot)
 
-lm_summary(x, data, resids = FALSE)
+lm_summary(mods_list, data, resids = FALSE)
 }
 \arguments{
 \item{dat_yx}{tbd}
@@ -110,9 +113,7 @@ lm_summary(x, data, resids = FALSE)
 
 \item{really_big}{tbd}
 
-\item{reg_multi_obj}{tbd}
-
-\item{mods}{tbd}
+\item{mods_list}{list of models where each element is named with response name}
 
 \item{dat0}{tbd}
 
@@ -132,9 +133,9 @@ lm_summary(x, data, resids = FALSE)
 \cr\cr
 \bold{multi_bs() parameters:}}
 
-\item{x}{tbd}
-
 \item{resids}{tbd}
+
+\item{mods}{tbd}
 }
 \value{
 reg_model:
