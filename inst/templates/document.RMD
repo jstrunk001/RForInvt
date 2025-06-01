@@ -48,6 +48,30 @@
   
   #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
   nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
+  
+  #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
+  # - version 2 adds newline at 50 chars
+  nmsVec2=function(x,char_break=70,newline="\n"){
+    nms_in = names(x)
+    vec_i = paste0("'",nms_in[1],"'")
+    char_break_in = char_break
+    for(i in 2:length(nms_in)){
+      vec_ln = nchar(vec_i)
+      
+      if((vec_ln + nchar(nms_in[i])) >= char_break_in){
+        char_break_in = char_break + nchar(vec_i) 
+        vec_i = paste0(vec_i,"\n    ,'",nms_in[i],"'")
+      }else{
+        vec_i = paste0(vec_i,",'",nms_in[i],"'")
+      }
+    }
+    #add parentheses  
+    vec_i = paste("c(",vec_i,"  \n)",sep="",collapse="")
+    
+    writeClipboard2(vec_i)
+    return(vec_i)
+  }
+
 
   #mse and rmse functions
   mse = function(err,na.rm=T){mean(err^2,na.rm=na.rm)} 
