@@ -29,7 +29,7 @@
 # helpful functions
 
   #convenience function for more usable version of writeClipboard - overcomes newline issues
-  writeClipboard2 = function(x) cat(x, file="clipboard")
+  writeClipboard2 = function(x){closeAllConnections(); y=try(cat(x, file="clipboard"),silent=T)}
   
   #generic file path editing function - forwards or backwards
   reslash<- function(x=NA, slash=c("back","forward")){
@@ -41,10 +41,12 @@
   }
 
   #correctly escape back slashes and quote path - a parameterized version o f   
-  bs=function(x=NA){reslash(x,slash="back")}
-  
+  bs1=function(x=NA){reslash(x,slash="back")}
+  makeActiveBinding("bs", bs1, .GlobalEnv)
+    
   #correctly escape back slashes and quote path   
-  fs=function(x=NA){reslash(x,slash="forward")}
+  fs1=function(x=NA){reslash(x,slash="forward")}
+  makeActiveBinding("fs", fs1, .GlobalEnv)
   
   #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
   nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
