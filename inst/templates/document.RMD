@@ -10,7 +10,6 @@
 # Analysis overview 
 
 
-
 # setup and environment including helpful function fs() to "forwardslash" paths on your clipboard
 
 ```{r}
@@ -26,66 +25,93 @@
   #prevent strings being read as factors
   options(stringsAsFactors = F)
 
-# helpful functions
-
-  #convenience function for more usable version of writeClipboard - overcomes newline issues
-  writeClipboard2 = function(x){closeAllConnections(); y=try(cat(x, file="clipboard"),silent=T)}
+#helpful functions
   
-  #generic file path editing function - forwards or backwards
-  reslash<- function(x=NA, slash=c("back","forward")){
-    if(is.na(x[1])) x = readClipboard()
-    if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
-    if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
-    writeClipboard2(path)
-    return(path)
-  }
-
-  #correctly escape back slashes and quote path - a parameterized version o f   
-  bs1=function(x=NA){reslash(x,slash="back")}
-  makeActiveBinding("bs", bs1, .GlobalEnv)
-    
-  #correctly escape back slashes and quote path   
-  fs1=function(x=NA){reslash(x,slash="forward")}
-  makeActiveBinding("fs", fs1, .GlobalEnv)
-  
-  #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
-  nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); writeClipboard2(x);return(x)}
-  
-  #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
-  # - version 2 adds newline at 50 chars
-  nmsVec2=function(x,char_break=70,newline="\n"){
-    nms_in = names(x)
-    vec_i = paste0("'",nms_in[1],"'")
-    char_break_in = char_break
-    for(i in 2:length(nms_in)){
-      vec_ln = nchar(vec_i)
-      
-      if((vec_ln + nchar(nms_in[i])) >= char_break_in){
-        char_break_in = char_break + nchar(vec_i) 
-        vec_i = paste0(vec_i,"\n    ,'",nms_in[i],"'")
-      }else{
-        vec_i = paste0(vec_i,",'",nms_in[i],"'")
+  #convenience function for package loading / update /  install
+    library1 = function(pkgs=NA,load=T,update=F){
+      if(!is.na(pkgs[1])){
+        #parse existing packages
+        old.pkgs <- pkgs[(pkgs %in% installed.packages()[, "Package"])]      
+        new.pkgs <- pkgs[!(pkgs %in% installed.packages()[, "Package"])]
+        #update and install
+        if( (length(old.pkgs)>0) & update) update.packages(old.pkgs, dependencies = TRUE)  
+        if(length(new.pkgs)>0) install.packages(new.pkgs, dependencies = TRUE)
+        if(load) sapply(pkgs, function(...)try(require(...)), character.only = TRUE)
       }
     }
-    #add parentheses  
-    vec_i = paste("c(",vec_i,"  \n    )",sep="",collapse="")
-    
-    writeClipboard2(vec_i)
-    return(vec_i)
-  }
 
+  #convenience function for more usable version of writeClipboard - overcomes newline issues
+    writeClipboard2 = function(x) cat(x, file="clipboard")
+  
+  #generic file path editing function - forwards or backwards
+    reslash<- function(x=NA, slash=c("back","forward")){
+      if(is.na(x)) x = readClipboard()
+      if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
+      if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
+      writeClipboard2(path)
+      return(path)
+    }
 
-  #mse and rmse functions
-  mse = function(err,na.rm=T){mean(err^2,na.rm=na.rm)} 
-  rmse = function(err,na.rm=T){sqrt(mean(err^2,na.rm=na.rm))}   
-  
-  #file_tif = RForInvt::file_increment(file.path("c:/temp","some_plots.tif"), increment=T)
-  #con_this = DBI::dbConnect(RSQLite::SQLite(), file_db )
-  #tiff(file_tif , width = 6, height = 4, units = "in", res = 600)
-  #dev.off()
-  
-  
+  #correctly escape back slashes and quote path - a parameterized version o f   
+    bs=function(x=NA){reslash(x,slash="back")}
+  #correctly escape back slashes and quote path   
+    fs=function(x=NA){reslash(x,slash="forward")}
+  #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
+  # - version 2 adds newline at 50 chars
+    nmsVec=function(x,char_break=70,newline="\n"){
+      nms_in = names(x)
+      vec_i = paste0("'",nms_in[1],"'")
+      char_break_in = char_break
+      for(i in 2:length(nms_in)){
+        vec_ln = nchar(vec_i)
+        if((vec_ln + nchar(nms_in[i])) >= char_break_in){
+          char_break_in = char_break + nchar(vec_i) 
+          vec_i = paste0(vec_i,"\n    ,'",nms_in[i],"'")
+        }else{
+          vec_i = paste0(vec_i,",'",nms_in[i],"'")
+        }
+      }
+      #add parentheses  
+      vec_i = paste("c(",vec_i,"  \n    )",sep="",collapse="")
+      #write / return
+      writeClipboard2(vec_i)
+      cat(vec_i)
+      return(vec_i)
+    }
+
+  #stats functions
+    mse = function(err,na.rm=T){ mean(err^2,na.rm=na.rm) } 
+    rmse = function(err,na.rm=T){ sqrt(mean(err^2,na.rm=na.rm)) }   
+    rsq = function(err, y){ (1 - sum(err^2) / sum((y-mean(y))^2) )  }
+
 ```
+
+## load some common libraries
+ - use custom library1 function defined above that installs / loads packages
+```{r}
+
+  #install.packages("mltools",type="source")
+  #remotes::install_github("jstrunk001/RSForTools")
+  #remotes::install_github("jstrunk001/RForInvt")
+  library1(c(
+     "data.table"
+    # ,"DBI"
+    # ,"lidR"
+    # ,"odbc"
+    # ,"openxlsx"
+    # ,"RSQLite"
+    # ,"sf"
+    # ,"terra"
+    # ,"devtools"
+    # ,"RSForTools"
+    # ,"RForInvt"
+    # ,"ggplot2"
+    ),load=T, update=F
+    )
+
+
+```
+
 
 ## load data - some examples of ways to load various data types. 
 
