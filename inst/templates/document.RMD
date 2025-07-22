@@ -45,7 +45,7 @@
   
   #generic file path editing function - forwards or backwards
     reslash<- function(x=NA, slash=c("back","forward")){
-      if(is.na(x)) x = readClipboard()
+      if(is.na(x[1])) x = readClipboard()
       if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
       if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
       writeClipboard2(path)
