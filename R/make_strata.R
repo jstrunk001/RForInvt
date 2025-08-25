@@ -1,3 +1,5 @@
+#'@name make_strata
+#'@rdname make_strata
 #'@title Make and assign strata based on two input columns
 #'
 #'@description
@@ -354,7 +356,8 @@ make_strata = function(
 
 }
 
-#'@export
+##' @rdname make_strata
+##' @export
 assign_strata = function(strata,data){
 
   x1numeric = !is.na(strata[1,"x1.from"])
