@@ -3,8 +3,8 @@
 #'@title Make and assign strata based on two input columns
 #'
 #'@description
-#'  Make and assign strata based on two input attributes and some parameters
-#'  functions are make_strata and assign_strata
+#'  Make and assign strata based on two input attributes and some parameters.
+#'  Functions are make_strata and assign_strata.
 #'
 #'@details
 #'  <Delete and Replace>
@@ -14,6 +14,7 @@
 #' \tabular{ll}{
 #'1.0 \tab 2019 01 24 created \cr
 #'1.1 \tab 2020 06 25 updated to allow more complex inputs \cr
+#'1.2 \tab 2025 08 25 repair help file for assign_strata \cr
 #'}
 #'
 #'@author
