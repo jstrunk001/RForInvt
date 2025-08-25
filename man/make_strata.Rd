@@ -2,6 +2,7 @@
 % Please edit documentation in R/make_strata.R
 \name{make_strata}
 \alias{make_strata}
+\alias{assign_strata}
 \title{Make and assign strata based on two input columns}
 \usage{
 make_strata(
@@ -19,6 +20,8 @@ make_strata(
   precision = 0,
   collapse = T
 )
+
+assign_strata(strata, data)
 }
 \arguments{
 \item{data}{input data}
