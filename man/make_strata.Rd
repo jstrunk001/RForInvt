@@ -14,8 +14,6 @@ make_strata(
   nest_x2 = T,
   n1 = 10,
   n2 = 10,
-  type_x1 = c("factor", "numeric")[1],
-  type_x2 = c("numeric", "factor")[1],
   min_recs = 7,
   precision = 0,
   collapse = T
@@ -39,10 +37,6 @@ assign_strata(strata, data)
 \item{n1}{number of strata for x1}
 
 \item{n2}{number of strata for x2}
-
-\item{type_x1}{is x1 numeric or factor}
-
-\item{type_x2}{is x2 numeric or factor}
 
 \item{min_recs}{what is the minimum number of records in a stratum before collapse}
 
@@ -87,8 +81,6 @@ Revision History
         , nest_x2 =  T
         , n1 = 10
         , n2 = 10
-        , type_x1 = "factor"
-        , type_x2 = "numeric"
         , min_recs = 7
         , precision = 0
       )
@@ -115,8 +107,6 @@ Revision History
         , nest_x2 =  T
         , n1 = 10
         , n2 = 10
-        , type_x1 = "numeric"
-        , type_x2 = "numeric"
         , min_recs = 7
         , precision = 0
       )
