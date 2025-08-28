@@ -1,5 +1,3 @@
-#'@name make_strata
-#'@rdname make_strata
 #'@title Make and assign strata based on two input columns
 #'
 #'@description
@@ -29,16 +27,15 @@
 #'@param  n1  number of strata for x1
 #'@param  n2  number of strata for x2
 #'@param  min_recs what is the minimum number of records in a stratum before collapse
-#'@param  precision  what precision is retained for cutting numeric values into strata
-#'
+#'@param  precision  what precision is retained for cutting numeric values into strata \cr assign_strata()\cr
+#'@param  strata `assign_strata()` strata definitions returned by make_strata()
+#'@param  data `assign_strata()` dataset with same x1 and x2 column names used to make_strata()
 #'
 #'@return
 #'  make_strata returns a data.frame of strata boundaries
 #'  assign_strata takes a data.frame and appends a column with the stratum name for each record
 #'
 #'@examples
-#'
-#'
 #'
 #'       #prepare pseudo data
 #'       n=500
@@ -116,8 +113,9 @@
 #'
 #'
 #'@export
-#
-#@seealso \code{\link{another_function}}\cr \code{\link{yet_another_function}}\cr
+#'@name make_strata
+#'
+#@seealso \code{\link{cut}}\cr \code{\link{split}}\cr
 
 #Desired upgrades to this function:
 # - provide option to return strata assignments of input data
@@ -142,7 +140,7 @@ make_strata = function(
     , min_recs = 7
     , precision = 0
     , collapse=T
-    #, assign = T
+    #, assign_data_strata = F
 ){
 
 
@@ -191,8 +189,12 @@ make_strata = function(
 
     #prepare new factor version of attribute
     x1_in_fct = paste(x1,"_fct",sep="")
+    x1_in_fct1 = paste(x1,"_fct1",sep="")
     data_in[[x1_in_fct]] = cut(dat_x1 , str_levels_x1 , labels = 1:(length(str_levels_x1)-1) )
+    #data_in[[x1_in_fct1]] = cut(dat_x1 , str_levels_x1  )
+
     dat_x1_fct = cut(dat_x1 , str_levels_x1 , labels = 1:(length(str_levels_x1)-1) )
+    #dat_x1_fct1 = cut(dat_x1 , str_levels_x1  )
 
     #assign bins
     dfStr0[1:(length(str_levels_x1)-1),"stratum_x1"] = 1:(length(str_levels_x1)-1)
@@ -260,7 +262,7 @@ make_strata = function(
       dfStri[, "x2.to"] = str_levels_x2[-1]
       dfStri[,"stratum"] = apply(dfStri[,c("stratum_x1","stratum_x2")],1,paste,collapse=".")
 
-      df_ct = as.data.frame(table(as.factor(cut(dat_x2, round(str_levels_x2,precision) , labels = F ))),responseName = "Freq.x2")
+      df_ct = as.data.frame(table(as.factor(cut(x2i, round(str_levels_x2,precision) , labels = F ))),responseName = "Freq.x2")
       if(i == 1) dfStr1 = merge(x=dfStri,df_ct,by.x="stratum_x2",by.y="Var1",all=T)
       if(i > 1) dfStr1 = plyr::rbind.fill(dfStr1, merge(x=dfStri,df_ct,by.x="stratum_x2",by.y="Var1",all=T))
 
@@ -298,6 +300,7 @@ make_strata = function(
     x2_in_fct = paste(x2,"_fct",sep="")
     data_in[,x2_in_fct] = cut(dat_x2, str_levels_x2 , labels = 1:(length(str_levels_x2)-1) )
     dat_x2_fct = cut(dat_x2 , str_levels_x2 , labels = 1:(length(str_levels_x2)-1) )
+    #dat_x2_fct1 = cut(dat_x2 , str_levels_x2  )
 
     #assign bins
     df_ct_x2 = as.data.frame(table(dat_x2_fct  ),responseName = "Freq.x2")
@@ -384,16 +387,22 @@ make_strata = function(
   dfStr3$nest_x2 = nest_x2
   dfStr3$collapse = collapse
 
+  #add charact strata field with combined extents
+  dfStr3[["range_x1"]] = paste0("(",apply(dfStr3[,c("x1.from","x1.to")],1,paste,collapse=","),"]")
+  dfStr3[["range_x2"]] = paste0("(",apply(dfStr3[,c("x2.from","x2.to")],1,paste,collapse=","),"]")
+  dfStr3[["stratum1"]] = apply(dfStr3[,c("range_x1","range_x2")],1,paste,collapse=".")
+
   #arrange columns and return
-  nm_vec = c('stratum',"n_obs","nest_x2","collapse","nm_x1","nm_x2",'stratum_x1','x1.from','x1.to',"Freq.x1",'stratum_x2','x2.from','x2.to',"Freq.x2")
-  dfStr3[,nm_vec ]
+  nm_vec = c('stratum',"stratum1","n_obs","nest_x2","collapse","nm_x1","nm_x2",'stratum_x1','x1.from','x1.to',"Freq.x1",'stratum_x2','x2.from','x2.to',"Freq.x2")
+  #dfStr3[,nm_vec ]
   return( dfStr3[,nm_vec])
 
 }
 
-##' @rdname make_strata
 ##' @export
-assign_strata = function(strata,data){
+##' @rdname make_strata
+
+assign_strata = function(strata,data,append_definitions=F){
 
   data_in = as.data.frame(data)
   x1numeric = !is.na(strata[1,"x1.from"])
@@ -429,6 +438,12 @@ assign_strata = function(strata,data){
       id_i[is.na(id_i)] = F
       data_in[ id_i , "stratum" ] = strata[ i , "stratum" ]
     }
+  }
+
+  if(append_definitions){
+
+    data_in = merge(data_in,strata,by="stratum")
+
   }
 
   data_in
