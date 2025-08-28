@@ -19,10 +19,10 @@ make_strata(
   collapse = T
 )
 
-assign_strata(strata, data)
+assign_strata(strata, data, append_definitions = F)
 }
 \arguments{
-\item{data}{input data}
+\item{data}{`assign_strata()` dataset with same x1 and x2 column names used to make_strata()}
 
 \item{x1}{name of input x field}
 
@@ -40,7 +40,9 @@ assign_strata(strata, data)
 
 \item{min_recs}{what is the minimum number of records in a stratum before collapse}
 
-\item{precision}{what precision is retained for cutting numeric values into strata}
+\item{precision}{what precision is retained for cutting numeric values into strata \cr assign_strata()\cr}
+
+\item{strata}{`assign_strata()` strata definitions returned by make_strata()}
 }
 \value{
 make_strata returns a data.frame of strata boundaries
@@ -61,8 +63,6 @@ Revision History
 }
 }
 \examples{
-
-
 
       #prepare pseudo data
       n=500
