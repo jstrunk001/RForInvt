@@ -9,6 +9,8 @@ make_strata(
   data,
   x1 = "PlotStrata1",
   x2 = "Elev.P95",
+  wt = c(NA, "acres")[1],
+  wt_min = 0.1,
   split_x1 = c("qt", "eq"),
   split_x2 = c("qt", "eq"),
   nest_x2 = T,
@@ -22,11 +24,15 @@ make_strata(
 assign_strata(strata, data, append_definitions = F)
 }
 \arguments{
-\item{data}{`assign_strata()` dataset with same x1 and x2 column names used to make_strata()}
+\item{data}{input data used to "make_strata()" or "assign_strata()" - in assign strata, the data column names (x1,x2) should match make_strata()}
 
 \item{x1}{name of input x field}
 
 \item{x2}{name of input y field}
+
+\item{wt}{(optional) name of input field used to weight observations in data - weights are used to make replicate records for post-stratification}
+
+\item{wt_min}{(optional) minimun weight size to be considered, if the weight is too small then millions of billions of replicates may result}
 
 \item{split_x1}{how to split - equal interval or quantile based}
 
@@ -40,9 +46,9 @@ assign_strata(strata, data, append_definitions = F)
 
 \item{min_recs}{what is the minimum number of records in a stratum before collapse}
 
-\item{precision}{what precision is retained for cutting numeric values into strata \cr assign_strata()\cr}
+\item{precision}{what precision is retained for cutting numeric values into strata \cr \crassign_strata: \cr}
 
-\item{strata}{`assign_strata()` strata definitions returned by make_strata()}
+\item{strata}{witth`assign_strata()` strata definitions returned by make_strata()}
 }
 \value{
 make_strata returns a data.frame of strata boundaries
@@ -53,13 +59,21 @@ Make and assign strata based on two input attributes and some parameters
  functions are make_strata and assign_strata
 }
 \details{
-<Delete and Replace>
+uses input data to define splits for two X variables
+
+ If wt column is provided, then rows are replicated by their weighting variable.
+ Post-stratification is then performed by replicated weight data.
+
+ Weights (wt) are first  multiplied by 1/max(wt_min,min(wt)) to make sure all
+ larger than 1. Then they are rounded using ceiling() so that no negative
+ weights are present.
 
 \cr
 Revision History
 \tabular{ll}{
 1.0 \tab 2019 01 24 created \cr
 1.1 \tab 2020 06 25 updated to allow more complex inputs \cr
+1.2 \tab 2025 08 29 with various bug fixes and enable weight inputs \cr
 }
 }
 \examples{
