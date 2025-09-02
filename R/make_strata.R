@@ -36,9 +36,10 @@
 #'@param  nest_x2  should x2 be nested in x1, or should x1 and x2 be split independently
 #'@param  n1  number of strata for x1
 #'@param  n2  number of strata for x2
+#'@param  collapse should small strata be collapsed with neighbors?
 #'@param  min_recs what is the minimum number of records in a stratum before collapse
 #'@param  precision  what precision is retained for cutting numeric values into strata \cr \crassign_strata: \cr
-#'@param  strata witth`assign_strata()` strata definitions returned by make_strata()
+#'@param  strata strata definitions returned by make_strata()
 #'
 #'@return
 #'  make_strata returns a data.frame of strata boundaries
@@ -146,12 +147,13 @@ make_strata = function(
     , nest_x2 = T
     , n1 = 10
     , n2 = 10
-    , min_recs = 7
     , precision = 0
-    , collapse=T
+    , collapse = T
+    , min_recs = 7
     #, assign_data_strata = F
 ){
 
+  if(!collapse) min_recs=0
 
   #get various datasets
   data_in = as.data.frame(data)
@@ -197,14 +199,14 @@ make_strata = function(
       str_levels_x1 = c(
         r_x1[1]-dr_x1
         ,quantile(data_in[,x1] ,seq(1/n1,1-1/n1,1/n1))
-        ,r_x1[1]+dr_x1
+        ,r_x1[2]+dr_x1
       )
     }
     if(split_x1[1] == "eq" ){
       str_levels_x1 = c(
         r_x1[1] - dr_x1
         ,seq(r_x1[1],r_x1[2],dr_x1/n1)[-c(1,n1)]
-        ,r_x1[1]+ dr_x1
+        ,r_x1[2]+ dr_x1
       )
     }
 
