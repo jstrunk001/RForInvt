@@ -16,9 +16,9 @@ make_strata(
   nest_x2 = T,
   n1 = 10,
   n2 = 10,
-  min_recs = 7,
   precision = 0,
-  collapse = T
+  collapse = T,
+  min_recs = 7
 )
 
 assign_strata(strata, data, append_definitions = F)
@@ -44,11 +44,15 @@ assign_strata(strata, data, append_definitions = F)
 
 \item{n2}{number of strata for x2}
 
-\item{min_recs}{what is the minimum number of records in a stratum before collapse}
-
 \item{precision}{what precision is retained for cutting numeric values into strata \cr \crassign_strata: \cr}
 
-\item{strata}{witth`assign_strata()` strata definitions returned by make_strata()}
+\item{collapse}{should small strata be collapsed with neighbors?}
+
+\item{min_recs}{what is the minimum number of records in a stratum before collapse}
+
+\item{strata}{(assign_strata) provide strata definitions returned by make_strata()}
+
+\item{append_definitions}{(assign_strata) - should strata definitions from make_strata() be appended}
 }
 \value{
 make_strata returns a data.frame of strata boundaries

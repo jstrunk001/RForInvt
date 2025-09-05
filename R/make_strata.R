@@ -39,7 +39,8 @@
 #'@param  collapse should small strata be collapsed with neighbors?
 #'@param  min_recs what is the minimum number of records in a stratum before collapse
 #'@param  precision  what precision is retained for cutting numeric values into strata \cr \crassign_strata: \cr
-#'@param  strata strata definitions returned by make_strata()
+#'@param  strata (assign_strata) provide strata definitions returned by make_strata()
+#'@param  append_definitions (assign_strata) - should strata definitions from make_strata() be appended
 #'
 #'@return
 #'  make_strata returns a data.frame of strata boundaries
