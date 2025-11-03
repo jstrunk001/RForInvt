@@ -66,7 +66,9 @@ archive_table <- function(data,
                           do_rds = TRUE,
                           do_sqlite = TRUE,
                           do_xlsx = TRUE,
-                          increment = TRUE) {
+                          increment = TRUE
+                          ){
+
   requireNamespace("sf", quietly = TRUE)
   requireNamespace("openxlsx", quietly = TRUE)
 
