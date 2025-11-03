@@ -2,7 +2,7 @@
 % Please edit documentation in R/archive_table.R
 \name{archive_table}
 \alias{archive_table}
-\title{Archive a data object to multiple formats}
+\title{Archive a data object to multiple formats (robust to per-format failures)}
 \usage{
 archive_table(
   data,
@@ -15,7 +15,8 @@ archive_table(
   do_xlsx = TRUE,
   increment = TRUE,
   use_subdirs = FALSE,
-  row.names = FALSE
+  row.names = FALSE,
+  stop_on_error = FALSE
 )
 }
 \arguments{
@@ -42,21 +43,27 @@ If `NA`, defaults to the base name of `path_out`.}
 \item{use_subdirs}{Logical. If `TRUE`, create subdirectories for each format (default = `FALSE`).}
 
 \item{row.names}{Logical. If `TRUE`, include row names in CSV and XLSX outputs (default = `FALSE`).}
+
+\item{stop_on_error}{Logical. If `TRUE`, rethrow on first write error; otherwise collect errors and continue (default = `FALSE`).}
 }
 \value{
-Invisibly returns a list of file paths created.
+Invisibly returns a named list per format with `success`, `path` (if any), and `error` (if any).
 }
 \description{
 Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with versioned filenames.
+ Each format write is isolated so one failure does not stop others. Detailed
+ per-format status is returned (success/path/error).
 }
 \details{
 - CSV and RDS files are written using `write.csv()` and `saveRDS()`.
- - XLSX export uses `openxlsx::write.xlsx()` with sheet name = `table_nm`.
+ - XLSX export uses `openxlsx::write.xlsx()` with sheet name = `table_nm` clipped to 30 chars.
  - SQLite export uses `sf::st_write()` (requires `data` to be an `sf` object).
  - If `table_nm = NA`, the base name of `path_out` is used for sheet/table names.
  - Row names are excluded by default in CSV and XLSX outputs (`row.names = FALSE`).
  - Filenames are versioned using `file_version()`.
- - If `use_subdirs = TRUE`, files are placed in subdirectories named after their format (e.g., `csv/`, `rds/`).
+ - If `use_subdirs = TRUE`, files are placed in subdirectories named after their format (e.g., `csv/`, `rds/`), which are created if needed.
+ - Column names are normalized for duplicate detection (case-insensitive). If duplicates exist after converting to lowercase, numeric suffixes (.2, .3, ...) are appended.
+ - Each writer uses `tryCatch()` to capture and report failures without stopping the function unless `stop_on_error = TRUE`.
 
  This program is free software but it is provided WITHOUT WARRANTY
  and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
@@ -67,9 +74,9 @@ Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with ver
 \cr
 Revision History
 \tabular{ll}{
-1.5 \tab 2025-11-03 Updated `table_nm` to allow NA and added `row.names` argument. \cr
-1.4 \tab 2025-11-03 Added `use_subdirs` argument for organizing outputs. \cr
-1.3 \tab 2025-11-03 Added internal argument type checks. \cr
+1.8 \tab 2025-11-03 Add per-format tryCatch, stop_on_error, and fixed subdir pathing. \cr
+1.7 \tab 2025-11-03 Added sheet name clipping to 30 characters for XLSX. \cr
+1.6 \tab 2025-11-03 Added duplicate column name handling logic. \cr
 }
 }
 \examples{
@@ -77,8 +84,11 @@ Revision History
    # Archive all formats in subdirectories, using base name for sheet/table
    archive_table(mtcars, "output/mydata", table_nm = NA, use_subdirs = TRUE)
 
-   # Archive only CSV and XLSX with row names included
+   # Archive only CSV and XLSX with row names included; continue on errors
    archive_table(mtcars, "output/mydata", do_rds = FALSE, do_sqlite = FALSE, row.names = TRUE)
+
+   # Fail fast on first error
+   archive_table(mtcars, "output/mydata", stop_on_error = TRUE)
  }
 
 }
