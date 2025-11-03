@@ -95,7 +95,7 @@ archive_table <- function(data,
   # SQLite
   if (do_sqlite && "sqlite" %in% names(extensions) && !is.na(extensions[["sqlite"]])) {
     path_out_sql <- RForInvt::file_version(paste0(path_out, extensions[["sqlite"]]), increment = increment)
-    sf::st_write(data, path_out_sql, table_nm)
+    sf::st_write(data, path_out_sql, table_nm, driver = "SQLite")
     out_files$sqlite <- path_out_sql
   }
 
