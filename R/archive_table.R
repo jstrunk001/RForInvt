@@ -39,6 +39,7 @@
 #'@param do_xlsx Logical. If `TRUE`, write XLSX file (default = `TRUE`).
 #'@param increment Logical. If `TRUE`, increment version numbers in filenames (default = `TRUE`).
 #'@param use_subdirs Logical. If `TRUE`, create subdirectories for each format (default = `FALSE`).
+#'@param row.names Logical. If `TRUE`, prepend row names in write.csv and write.xlsx (default = `FALSE`).
 #'
 #'@return Invisibly returns a list of file paths created.
 #'
@@ -60,7 +61,8 @@ archive_table <- function(data,
                           do_sqlite = TRUE,
                           do_xlsx = TRUE,
                           increment = TRUE,
-                          use_subdirs = FALSE
+                          use_subdirs = FALSE,
+                          row.names = FALSE
                           ) {
 
   requireNamespace("sf", quietly = TRUE)
@@ -89,7 +91,7 @@ archive_table <- function(data,
   if (do_csv && "csv" %in% names(extensions) && !is.na(extensions[["csv"]])) {
     base_path <- make_path("csv")
     path_out_csv <- file_version(paste0(base_path, extensions[["csv"]]), increment = increment)
-    write.csv(data, path_out_csv, row.names=F)
+    write.csv(data, path_out_csv, row.names=row.names)
     out_files$csv <- path_out_csv
   }
 
@@ -113,7 +115,7 @@ archive_table <- function(data,
   if (do_xlsx && "xlsx" %in% names(extensions) && !is.na(extensions[["xlsx"]])) {
     base_path <- make_path("xlsx")
     path_out_xlsx <- file_version(paste0(base_path, extensions[["xlsx"]]), increment = increment)
-    openxlsx::write.xlsx(data, file = path_out_xlsx, sheetName = table_nm, rowNames = FALSE)
+    openxlsx::write.xlsx(data, file = path_out_xlsx, sheetName = table_nm, rowNames = row.names)
     out_files$xlsx <- path_out_xlsx
   }
 
