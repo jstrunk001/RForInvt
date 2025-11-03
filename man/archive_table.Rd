@@ -13,7 +13,8 @@ archive_table(
   do_rds = TRUE,
   do_sqlite = TRUE,
   do_xlsx = TRUE,
-  increment = TRUE
+  increment = TRUE,
+  use_subdirs = FALSE
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ archive_table(
 \item{do_xlsx}{Logical. If `TRUE`, write XLSX file (default = `TRUE`).}
 
 \item{increment}{Logical. If `TRUE`, increment version numbers in filenames (default = `TRUE`).}
+
+\item{use_subdirs}{Logical. If `TRUE`, create subdirectories for each format (default = `FALSE`).}
 }
 \value{
 Invisibly returns a list of file paths created.
@@ -46,7 +49,8 @@ Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with ver
 - CSV and RDS files are written using `write.csv()` and `saveRDS()`.
  - XLSX export uses `openxlsx::write.xlsx()` with sheet name = `table_nm`.
  - SQLite export uses `sf::st_write()` (requires `data` to be an `sf` object).
- - Filenames are versioned using `RForInvt::file_version()`.
+ - Filenames are versioned using `file_version()`.
+ - If `use_subdirs = TRUE`, files are placed in subdirectories named after their format (e.g., `csv/`, `rds/`).
 
  This program is free software but it is provided WITHOUT WARRANTY
  and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
@@ -57,24 +61,16 @@ Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with ver
 \cr
 Revision History
 \tabular{ll}{
-1.2 \tab 2025-11-03 Added `increment` argument for versioning. \cr
-1.1 \tab 2025-11-03 Added binary switches for each file type. \cr
-1.0 \tab 2025-11-03 Initial version created. \cr
+1.4 \tab 2025-11-03 Added `use_subdirs` argument for organizing outputs. \cr
+1.3 \tab 2025-11-03 Added internal argument type checks. \cr
 }
 }
 \examples{
-
  \dontrun{
-   # Archive all formats with versioning
-   archive_table(mtcars, "output/mydata", table_nm = "CarsData", increment = TRUE)
-
-   # Archive only CSV and XLSX without versioning
-   archive_table(mtcars, "output/mydata", do_rds = FALSE, do_sqlite = FALSE, increment = FALSE)
+   # Archive all formats in subdirectories
+   archive_table(mtcars, "output/mydata", use_subdirs = TRUE)
  }
 
-}
-\seealso{
-\code{\link{file_version}}\cr
 }
 \author{
 Jacob Strunk <your.email@domain.com>

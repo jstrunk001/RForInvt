@@ -1,7 +1,7 @@
 Package: RForInvt
 Type: Package
 Title: Forest Inventory Data Compilation and FVS Growth Projections
-Version: 0.2.3 
+Version: 0.3.0 
 Author: Jacob Strunk
 Maintainer: Jacob Strunk <someone@somewhere.com>
 Description: A collection of data processing tools and helpers primarily motivated by forest inventory analysis. A companion package to
