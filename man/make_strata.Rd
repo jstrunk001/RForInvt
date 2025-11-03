@@ -44,7 +44,7 @@ assign_strata(strata, data, append_definitions = F)
 
 \item{n2}{number of strata for x2}
 
-\item{precision}{what precision is retained for cutting numeric values into strata \cr \crassign_strata: \cr}
+\item{precision}{what precision is retained for cutting numeric values into strata \cr \cr assign_strata: \cr}
 
 \item{collapse}{should small strata be collapsed with neighbors?}
 
