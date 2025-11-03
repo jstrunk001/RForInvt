@@ -89,7 +89,7 @@ archive_table <- function(data,
   if (do_csv && "csv" %in% names(extensions) && !is.na(extensions[["csv"]])) {
     base_path <- make_path("csv")
     path_out_csv <- file_version(paste0(base_path, extensions[["csv"]]), increment = increment)
-    write.csv(data, path_out_csv)
+    write.csv(data, path_out_csv, row.names=F)
     out_files$csv <- path_out_csv
   }
 
@@ -113,7 +113,7 @@ archive_table <- function(data,
   if (do_xlsx && "xlsx" %in% names(extensions) && !is.na(extensions[["xlsx"]])) {
     base_path <- make_path("xlsx")
     path_out_xlsx <- file_version(paste0(base_path, extensions[["xlsx"]]), increment = increment)
-    openxlsx::write.xlsx(data, file = path_out_xlsx, sheetName = table_nm)
+    openxlsx::write.xlsx(data, file = path_out_xlsx, sheetName = table_nm, rowNames = FALSE)
     out_files$xlsx <- path_out_xlsx
   }
 
