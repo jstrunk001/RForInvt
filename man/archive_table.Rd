@@ -8,13 +8,14 @@ archive_table(
   data,
   path_out,
   extensions = c(csv = ".csv", rds = ".RDS", sqlite = ".db", xlsx = ".xlsx"),
-  table_nm = "r_data",
+  table_nm = c(NA, "r_data"),
   do_csv = TRUE,
   do_rds = TRUE,
   do_sqlite = TRUE,
   do_xlsx = TRUE,
   increment = TRUE,
-  use_subdirs = FALSE
+  use_subdirs = FALSE,
+  row.names = FALSE
 )
 }
 \arguments{
@@ -25,7 +26,8 @@ archive_table(
 \item{extensions}{Named character vector of file extensions. Defaults to
 `c(csv = ".csv", rds = ".RDS", sqlite = ".db", xlsx = ".xlsx")`.}
 
-\item{table_nm}{Character. Table name for SQLite export and sheet name for XLSX export (default = `"some_table"`).}
+\item{table_nm}{Character or NA. Table name for SQLite export and sheet name for XLSX export.
+If `NA`, defaults to the base name of `path_out`.}
 
 \item{do_csv}{Logical. If `TRUE`, write CSV file (default = `TRUE`).}
 
@@ -38,6 +40,8 @@ archive_table(
 \item{increment}{Logical. If `TRUE`, increment version numbers in filenames (default = `TRUE`).}
 
 \item{use_subdirs}{Logical. If `TRUE`, create subdirectories for each format (default = `FALSE`).}
+
+\item{row.names}{Logical. If `TRUE`, include row names in CSV and XLSX outputs (default = `FALSE`).}
 }
 \value{
 Invisibly returns a list of file paths created.
@@ -49,6 +53,8 @@ Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with ver
 - CSV and RDS files are written using `write.csv()` and `saveRDS()`.
  - XLSX export uses `openxlsx::write.xlsx()` with sheet name = `table_nm`.
  - SQLite export uses `sf::st_write()` (requires `data` to be an `sf` object).
+ - If `table_nm = NA`, the base name of `path_out` is used for sheet/table names.
+ - Row names are excluded by default in CSV and XLSX outputs (`row.names = FALSE`).
  - Filenames are versioned using `file_version()`.
  - If `use_subdirs = TRUE`, files are placed in subdirectories named after their format (e.g., `csv/`, `rds/`).
 
@@ -61,14 +67,18 @@ Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with ver
 \cr
 Revision History
 \tabular{ll}{
+1.5 \tab 2025-11-03 Updated `table_nm` to allow NA and added `row.names` argument. \cr
 1.4 \tab 2025-11-03 Added `use_subdirs` argument for organizing outputs. \cr
 1.3 \tab 2025-11-03 Added internal argument type checks. \cr
 }
 }
 \examples{
  \dontrun{
-   # Archive all formats in subdirectories
-   archive_table(mtcars, "output/mydata", use_subdirs = TRUE)
+   # Archive all formats in subdirectories, using base name for sheet/table
+   archive_table(mtcars, "output/mydata", table_nm = NA, use_subdirs = TRUE)
+
+   # Archive only CSV and XLSX with row names included
+   archive_table(mtcars, "output/mydata", do_rds = FALSE, do_sqlite = FALSE, row.names = TRUE)
  }
 
 }

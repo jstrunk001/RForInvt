@@ -131,7 +131,7 @@ archive_table = function(data,
   path_out = gsub("[.]csv$|[.]RDS$|[.]db$|[.]sqlite$|[.]xlsx$", "", path_out, ignore.case = TRUE)
 
   # Normalize column names (case-insensitive duplicate handling)
-  colnames(data) = .normalize_colnames(colnames(data))
+  colnames(data) = .normalize_colnames(names_vec = colnames(data))
 
   # Names: table/sheet
   if (is.na(table_nm)) table_nm = basename(path_out)
@@ -145,26 +145,47 @@ archive_table = function(data,
 
   # CSV
   if (isTRUE(do_csv) && "csv" %in% names(extensions) && !is.na(extensions[["csv"]])) {
-    results$csv = .write_csv(data, base_path, extensions[["csv"]], row.names, increment, stop_on_error)
+    results$csv = .write_csv(data        = data,
+                             base_path   = base_path,
+                             ext         = extensions[["csv"]],
+                             row_names   = row.names,
+                             increment   = increment,
+                             stop_on_error = stop_on_error)
   }
 
   # RDS
   if (isTRUE(do_rds) && "rds" %in% names(extensions) && !is.na(extensions[["rds"]])) {
-    results$rds = .write_rds(data, base_path, extensions[["rds"]], increment, stop_on_error)
+    results$rds = .write_rds(data        = data,
+                             base_path   = base_path,
+                             ext         = extensions[["rds"]],
+                             increment   = increment,
+                             stop_on_error = stop_on_error)
   }
 
   # SQLite (uses sf::st_write; no data class checks)
   if (isTRUE(do_sqlite) && "sqlite" %in% names(extensions) && !is.na(extensions[["sqlite"]])) {
-    results$sqlite = .write_sqlite(data, base_path, extensions[["sqlite"]], table_nm, increment, stop_on_error)
+    results$sqlite = .write_sqlite(data        = data,
+                                   base_path   = base_path,
+                                   ext         = extensions[["sqlite"]],
+                                   table_nm    = table_nm,
+                                   increment   = increment,
+                                   stop_on_error = stop_on_error)
   }
 
   # XLSX
   if (isTRUE(do_xlsx) && "xlsx" %in% names(extensions) && !is.na(extensions[["xlsx"]])) {
-    results$xlsx = .write_xlsx(data, base_path, extensions[["xlsx"]],
-                               sheet_name, row.names,
-                               xlsx_drop_geometry, xlsx_collapse_lists, xlsx_matrix_collapse,
-                               xlsx_time_tz, xlsx_datetime_format,
-                               increment, stop_on_error)
+    results$xlsx = .write_xlsx(data            = data,
+                               base_path       = base_path,
+                               ext             = extensions[["xlsx"]],
+                               sheet_name      = sheet_name,
+                               row_names       = row.names,
+                               drop_geometry   = xlsx_drop_geometry,
+                               collapse_lists  = xlsx_collapse_lists,
+                               matrix_collapse = xlsx_matrix_collapse,
+                               time_tz         = xlsx_time_tz,
+                               datetime_format = xlsx_datetime_format,
+                               increment       = increment,
+                               stop_on_error   = stop_on_error)
   }
 
   invisible(results)
@@ -245,7 +266,7 @@ archive_table = function(data,
     # Matrix column -> collapse rowwise
     if (is.matrix(x)) {
       if (matrix_collapse == "error") stop("XLSX: matrix column encountered; set xlsx_matrix_collapse to 'comma' or 'json'.")
-      df[[i]] = apply(x, 1, function(r) .collapse_vec(r, matrix_collapse))
+      df[[i]] = apply(x, 1, function(r) .collapse_vec(x = r, how = matrix_collapse))
       next
     }
 
@@ -262,12 +283,12 @@ archive_table = function(data,
 
       if (collapse_lists == "auto") {
         if (all(len == 1)) df[[i]] = unlist(x)
-        else df[[i]] = vapply(x, function(el) .collapse_vec(el, "comma"), character(1))
+        else df[[i]] = vapply(x, function(el) .collapse_vec(x = el, how = "comma"), character(1))
         next
       }
 
       if (collapse_lists == "comma" || collapse_lists == "json") {
-        df[[i]] = vapply(x, function(el) .collapse_vec(el, collapse_lists), character(1))
+        df[[i]] = vapply(x, function(el) .collapse_vec(x = el, how = collapse_lists), character(1))
         next
       }
 
@@ -287,8 +308,10 @@ archive_table = function(data,
 #' @keywords internal
 .write_csv = function(data, base_path, ext, row_names, increment, stop_on_error) {
   target = paste0(base_path, ext)
-  path   = file_version(target, increment = increment)
-  res    = .safe_write(quote(utils::write.csv(data, path, row.names = row_names)), "csv", stop_on_error)
+  path   = file_version(path = target, increment = increment)
+  res    = .safe_write(expr = quote(utils::write.csv(data, path, row.names = row_names)),
+                       fmt_name = "csv",
+                       stop_on_error = stop_on_error)
   res$path = if (isTRUE(res$success)) path else NULL
   res
 }
@@ -296,8 +319,10 @@ archive_table = function(data,
 #' @keywords internal
 .write_rds = function(data, base_path, ext, increment, stop_on_error) {
   target = paste0(base_path, ext)
-  path   = file_version(target, increment = increment)
-  res    = .safe_write(quote(saveRDS(data, path)), "rds", stop_on_error)
+  path   = file_version(path = target, increment = increment)
+  res    = .safe_write(expr = quote(saveRDS(data, path)),
+                       fmt_name = "rds",
+                       stop_on_error = stop_on_error)
   res$path = if (isTRUE(res$success)) path else NULL
   res
 }
@@ -310,10 +335,15 @@ archive_table = function(data,
     return(list(success = FALSE, path = NULL, error = msg))
   }
   target = paste0(base_path, ext)
-  path   = file_version(target, increment = increment)
+  path   = file_version(path = target, increment = increment)
   # No class checks on `data` (as requested)
-  res    = .safe_write(quote(sf::st_write(data, path, table_nm, driver = "SQLite", delete_dsn = FALSE)),
-                       "sqlite", stop_on_error)
+  res    = .safe_write(expr = quote(sf::st_write(obj = data,
+                                                 dsn = path,
+                                                 layer = table_nm,
+                                                 driver = "SQLite",
+                                                 delete_dsn = FALSE)),
+                       fmt_name = "sqlite",
+                       stop_on_error = stop_on_error)
   res$path = if (isTRUE(res$success)) path else NULL
   res
 }
@@ -331,21 +361,23 @@ archive_table = function(data,
   }
 
   target    = paste0(base_path, ext)
-  path      = file_version(target, increment = increment)
+  path      = file_version(path = target, increment = increment)
   data_xlsx = .prepare_for_xlsx(df = data,
-                                drop_geometry = drop_geometry,
-                                collapse_lists = collapse_lists,
+                                drop_geometry   = drop_geometry,
+                                collapse_lists  = collapse_lists,
                                 matrix_collapse = matrix_collapse,
-                                time_tz = time_tz)
+                                time_tz         = time_tz)
 
-  res = .safe_write(
-    quote(openxlsx::write.xlsx(data_xlsx, file = path, sheetName = sheet_name, rowNames = row_names)),
-    "xlsx", stop_on_error
-  )
+  res = .safe_write(expr = quote(openxlsx::write.xlsx(x = data_xlsx,
+                                                      file = path,
+                                                      sheetName = sheet_name,
+                                                      rowNames = row_names)),
+                    fmt_name = "xlsx",
+                    stop_on_error = stop_on_error)
 
   # Optional: apply datetime style
   if (isTRUE(res$success) && !is.na(datetime_format)) {
-    wb = openxlsx::loadWorkbook(path)
+    wb = openxlsx::loadWorkbook(file = path)
     posix_cols = integer(0)
     for (j in 1:ncol(data_xlsx)) if (inherits(data_xlsx[[j]], "POSIXct")) posix_cols = c(posix_cols, j)
     if (length(posix_cols) > 0) {
@@ -355,7 +387,7 @@ archive_table = function(data,
         openxlsx::addStyle(wb, sheet = sheet_name, style = st,
                            rows = 2:nrows, cols = c, gridExpand = TRUE, stack = TRUE)
       }
-      openxlsx::saveWorkbook(wb, path, overwrite = TRUE)
+      openxlsx::saveWorkbook(wb, file = path, overwrite = TRUE)
     }
   }
 
