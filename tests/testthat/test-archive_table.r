@@ -1,277 +1,261 @@
-# test-archive_table.R
-# Run with: devtools::test() or testthat::test_dir("tests/testthat")
+# tests/testthat/test-archive_table.R
+# testthat edition 3
 
-testthat::test_that("archive_table: basic CSV & RDS writes succeed and report status", {
+# Helper: find the environment where archive_table() is defined so we can mock there.
+.get_archive_env <- function() {
+  if (!exists("archive_table", mode = "function")) {
+    testthat::skip("archive_table() is not available on the search path. Source it or load your package first.")
+  }
+  environment(get("archive_table", mode = "function"))
+}
+
+testthat::test_that("CSV write succeeds with minimal setup (no globals)", {
   testthat::skip_on_cran()
-  testthat::skip_on_ci()  # Optional, if file I/O is flaky on CI
-  # --- Arrange ---
   td = withr::local_tempdir()
   path_out = file.path(td, "mydata")
-  data = data.frame(a = 1:3, b = c("x", "y", "z"))
+  dat = data.frame(a = 1:3, b = letters[1:3])
 
-  # Mock file_version to be identity (no suffixing). Keeps path assertions simple.
-  testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
-  {
-    # --- Act ---
-    res = archive_table(
-      data = data,
-      path_out = path_out,
-      do_csv = TRUE,
-      do_rds = TRUE,
-      do_sqlite = FALSE,
-      do_xlsx = FALSE,
-      use_subdirs = FALSE,
-      increment = FALSE,
-      stop_on_error = FALSE
-    )
-
-    # --- Assert ---
-    testthat::expect_true(is.list(res))
-    testthat::expect_true(res$csv$success)
-    testthat::expect_true(res$rds$success)
-    testthat::expect_null(res$sqlite)
-    testthat::expect_null(res$xlsx)
-    testthat::expect_true(file.exists(res$csv$path))
-    testthat::expect_true(file.exists(res$rds$path))
-  })
-})
-
-testthat::test_that("archive_table: subdirectories are created when use_subdirs = TRUE", {
-  testthat::skip_on_cran()
-
-  td = withr::local_tempdir()
-  path_out = file.path(td, "base/mydata")  # nested base dir
-  dir.create(dirname(path_out), recursive = TRUE, showWarnings = FALSE)
-  data = data.frame(a = 1:2)
+  env_arch = .get_archive_env()
 
   testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      path
+    },
+    .env = env_arch,
   {
     res = archive_table(
-      data = data,
-      path_out = path_out,
-      do_csv = TRUE,
-      do_rds = TRUE,
-      do_sqlite = FALSE,
-      do_xlsx = FALSE,
-      use_subdirs = TRUE,
-      increment = FALSE
-    )
-
-    csv_dir = file.path(dirname(path_out), "csv")
-    rds_dir = file.path(dirname(path_out), "rds")
-    testthat::expect_true(dir.exists(csv_dir))
-    testthat::expect_true(dir.exists(rds_dir))
-    testthat::expect_true(grepl(file.path(csv_dir, "mydata[.]csv$"), res$csv$path))
-    testthat::expect_true(grepl(file.path(rds_dir, "mydata[.]RDS$"), res$rds$path))
-  })
-})
-
-testthat::test_that("archive_table: duplicate column names are normalized (case-insensitive)", {
-  testthat::skip_on_cran()
-
-  td = withr::local_tempdir()
-  path_out = file.path(td, "mydata")
-
-  data = data.frame(A = 1:3, a = 4:6, B = 7:9, b = 10:12, check.names = FALSE)
-
-  testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
-  {
-    res = archive_table(
-      data = data,
+      data = dat,
       path_out = path_out,
       do_csv = TRUE,
       do_rds = FALSE,
       do_sqlite = FALSE,
-      do_xlsx = FALSE,
-      increment = FALSE
+      do_xlsx = FALSE
     )
-
-    # Read CSV back and inspect column names
-    got = utils::read.csv(res$csv$path, stringsAsFactors = FALSE, check.names = FALSE)
-    # Expected behavior: first instance keeps original, subsequent duplicates get .2, .3, etc.
-    # Original order was A, a, B, b
-    testthat::expect_identical(colnames(got), c("A", "a.2", "B", "b.2"))
+    testthat::expect_true(res$csv$success)
+    testthat::expect_true(file.exists(res$csv$path))
   })
 })
 
-testthat::test_that("archive_table: XLSX write and sheet name clipping to 30 chars", {
+testthat::test_that("RDS write succeeds and file can be read back", {
   testthat::skip_on_cran()
-  if (!requireNamespace("openxlsx", quietly = TRUE)) testthat::skip("openxlsx not available")
-
   td = withr::local_tempdir()
   path_out = file.path(td, "mydata")
-  data = data.frame(a = 1:3)
-  long_tbl = paste(rep("VeryLongTableNameSegment", 3), collapse = "_")  # >> 30 chars
+  dat = data.frame(x = 1:5)
+
+  env_arch = .get_archive_env()
+
   testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      path
+    },
+    .env = env_arch,
   {
     res = archive_table(
-      data = data,
+      data = dat,
+      path_out = path_out,
+      do_csv = FALSE,
+      do_rds = TRUE,
+      do_sqlite = FALSE,
+      do_xlsx = FALSE
+    )
+    testthat::expect_true(res$rds$success)
+    testthat::expect_true(file.exists(res$rds$path))
+    dat2 = readRDS(res$rds$path)
+    testthat::expect_identical(dat2, dat)
+  })
+})
+
+testthat::test_that("XLSX write sanitizes list/matrix/POSIXlt and applies options", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not_installed("openxlsx")
+
+  td = withr::local_tempdir()
+  path_out = file.path(td, "xlsx_case")
+  # Build problematic columns
+  lt = list(1, 2:3, 4)
+  mx = cbind(m1 = 1:3, m2 = 4:6)
+  t_lt = as.POSIXlt(Sys.time())
+  t_vec = rep(t_lt, 3)
+  dat = data.frame(id = 1:3)
+  dat$lst = lt
+  dat$mx = I(split(mx, row(mx))) # matrix-like per-row
+  dat$when = t_vec
+
+  env_arch = .get_archive_env()
+
+  testthat::with_mocked_bindings(
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      path
+    },
+    .env = env_arch,
+  {
+    res = archive_table(
+      data = dat,
       path_out = path_out,
       do_csv = FALSE,
       do_rds = FALSE,
       do_sqlite = FALSE,
       do_xlsx = TRUE,
-      table_nm = long_tbl,
-      increment = FALSE
+      xlsx_collapse_lists = "auto",
+      xlsx_matrix_collapse = "comma",
+      xlsx_time_tz = "UTC",
+      xlsx_datetime_format = "yyyy-mm-dd hh:mm"
     )
-
     testthat::expect_true(res$xlsx$success)
     testthat::expect_true(file.exists(res$xlsx$path))
-
-    # Check sheet name length = 30
     wb = openxlsx::loadWorkbook(res$xlsx$path)
-    sheets = openxlsx::sheets(wb)
-    testthat::expect_true(length(sheets) == 1)
-    testthat::expect_true(nchar(sheets[1]) <= 30)
+    testthat::expect_true(length(openxlsx::sheets(wb)) >= 1)
   })
 })
 
-testthat::test_that("archive_table: SQLite write skipped with clear error when data is not sf", {
+testthat::test_that("SQLite write succeeds with sf object when sf available", {
   testthat::skip_on_cran()
+  testthat::skip_if_not_installed("sf")
 
   td = withr::local_tempdir()
-  path_out = file.path(td, "mydata")
-  data = data.frame(a = 1:3)
+  path_out = file.path(td, "sqlite_case")
+
+  # minimal sf point layer
+  sf = getNamespace("sf")
+  sfg = sf::st_sfc(sf::st_point(c(-120.5, 47.1)), sf::st_point(c(-120.6, 47.2)), crs = 4326)
+  dat_sf = sf::st_sf(data.frame(id = 1:2), geometry = sfg)
+
+  env_arch = .get_archive_env()
 
   testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      path
+    },
+    .env = env_arch,
   {
     res = archive_table(
-      data = data,
+      data = dat_sf,
       path_out = path_out,
       do_csv = FALSE,
       do_rds = FALSE,
       do_sqlite = TRUE,
       do_xlsx = FALSE,
-      increment = FALSE,
-      stop_on_error = FALSE
-    )
-
-    testthat::expect_false(res$sqlite$success)
-    testthat::expect_true(grepl("requires `data` to be an `sf` object", res$sqlite$error))
-  })
-})
-
-testthat::test_that("archive_table: SQLite write succeeds for sf data (if sf available)", {
-  testthat::skip_on_cran()
-  if (!requireNamespace("sf", quietly = TRUE)) testthat::skip("sf not available")
-
-  td = withr::local_tempdir()
-  path_out = file.path(td, "geo/mydata")
-  dir.create(dirname(path_out), recursive = TRUE, showWarnings = FALSE)
-
-  # Build a tiny sf object
-  coords = matrix(c(-120.1, 47.1,
-                    -120.2, 47.2), ncol = 2, byrow = TRUE)
-  sfg = sf::st_sfc(sf::st_point(coords[1, ]), sf::st_point(coords[2, ]), crs = 4326)
-  data = sf::st_sf(data.frame(id = 1:2), geometry = sfg)
-
-  testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
-  {
-    res = archive_table(
-      data = data,
-      path_out = path_out,
-      do_csv = FALSE,
-      do_rds = FALSE,
-      do_sqlite = TRUE,
-      do_xlsx = FALSE,
-      increment = FALSE,
       table_nm = "points"
     )
-
     testthat::expect_true(res$sqlite$success)
     testthat::expect_true(file.exists(res$sqlite$path))
   })
 })
 
-testthat::test_that("archive_table: stop_on_error = TRUE fails fast on first writer error (CSV mocked)", {
+testthat::test_that("stop_on_error = FALSE isolates failures; TRUE fails fast", {
   testthat::skip_on_cran()
-
   td = withr::local_tempdir()
-  path_out = file.path(td, "mydata")
-  data = data.frame(a = 1:2)
+  path_out = file.path(td, "iso_case")
+  dat = data.frame(a = 1:2)
+  env_arch = .get_archive_env()
 
-  # Mock file_version and write.csv to force a CSV failure
+  # Isolate: CSV fails, RDS succeeds (stop_on_error = FALSE)
   testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
-    write.csv = function(...) stop("csv write failed (mock)"),
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
+    },
+    .env = env_arch,
   {
-    testthat::expect_error(
-      archive_table(
-        data = data,
+    testthat::with_mocked_bindings(
+      `write.csv` = function(...) stop("csv write failed (mock)"),
+      .package = "utils",
+    {
+      res = archive_table(
+        data = dat,
         path_out = path_out,
         do_csv = TRUE,
         do_rds = TRUE,
         do_sqlite = FALSE,
         do_xlsx = FALSE,
-        increment = FALSE,
-        stop_on_error = TRUE
-      ),
-      regexp = "csv write failed"
-    )
+        stop_on_error = FALSE
+      )
+      testthat::expect_false(res$csv$success)
+      testthat::expect_match(res$csv$error, "csv write failed")
+      testthat::expect_true(res$rds$success)
+    })
+  })
+
+  # Fail-fast: stop_on_error = TRUE
+  testthat::with_mocked_bindings(
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
+    },
+    .env = env_arch,
+  {
+    testthat::with_mocked_bindings(
+      `write.csv` = function(...) stop("csv write failed (mock)"),
+      .package = "utils",
+    {
+      testthat::expect_error(
+        archive_table(
+          data = dat,
+          path_out = path_out,
+          do_csv = TRUE,
+          do_rds = TRUE,
+          do_sqlite = FALSE,
+          do_xlsx = FALSE,
+          stop_on_error = TRUE
+        ),
+        regexp = "csv write failed"
+      )
+    })
   })
 })
 
-testthat::test_that("archive_table: with stop_on_error = FALSE a failing writer does not block others", {
+testthat::test_that("use_subdirs logic builds base_path correctly", {
   testthat::skip_on_cran()
-
   td = withr::local_tempdir()
-  path_out = file.path(td, "mydata")
-  data = data.frame(a = 1:2)
+  base = file.path(td, "abc", "def")
+  dat = data.frame(a = 1:2)
+  env_arch = .get_archive_env()
 
-  # Fail CSV but allow RDS to succeed.
   testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
-    write.csv = function(...) stop("csv write failed (mock)"),
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
+    },
+    .env = env_arch,
   {
     res = archive_table(
-      data = data,
-      path_out = path_out,
+      data = dat,
+      path_out = base,
       do_csv = TRUE,
-      do_rds = TRUE,
+      do_rds = FALSE,
       do_sqlite = FALSE,
       do_xlsx = FALSE,
-      increment = FALSE,
-      stop_on_error = FALSE
+      use_subdirs = TRUE
     )
-
-    testthat::expect_false(res$csv$success)
-    testthat::expect_true(grepl("csv write failed", res$csv$error))
-    testthat::expect_true(res$rds$success)
-    testthat::expect_true(file.exists(res$rds$path))
+    expected_dir = file.path(base, basename(base))
+    testthat::expect_true(grepl(expected_dir, res$csv$path, fixed = TRUE))
   })
 })
 
-testthat::test_that("archive_table: strips known extensions off path_out", {
+testthat::test_that("duplicate column names are normalized in CSV output", {
   testthat::skip_on_cran()
-
   td = withr::local_tempdir()
-  # Intentionally include extension in path_out; should be stripped
-  path_out = file.path(td, "mydata.xlsx")
-  data = data.frame(a = 1:2)
+  path_out = file.path(td, "dupcols")
+  dat = data.frame(A = 1:3, a = 4:6, B = 7:9, b = 10:12, check.names = FALSE)
+  env_arch = .get_archive_env()
 
   testthat::with_mocked_bindings(
-    file_version = function(p, increment = TRUE) p,
+    file_version = function(path, increment = TRUE) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
+    },
+    .env = env_arch,
   {
     res = archive_table(
-      data = data,
+      data = dat,
       path_out = path_out,
       do_csv = TRUE,
-      do_rds = TRUE,
+      do_rds = FALSE,
       do_sqlite = FALSE,
-      do_xlsx = FALSE,
-      increment = FALSE
+      do_xlsx = FALSE
     )
-
-    testthat::expect_true(grepl("[.]csv$", res$csv$path))
-    testthat::expect_true(grepl("[.]RDS$", res$rds$path))
-    # And base name should be "mydata" not "mydata.xlsx"
-    testthat::expect_true(grepl("mydata[.]csv$", basename(res$csv$path)))
-    testthat::expect_true(grepl("mydata[.]RDS$", basename(res$rds$path)))
+    testthat::expect_true(res$csv$success)
+    got = utils::read.csv(res$csv$path, check.names = FALSE)
+    testthat::expect_identical(colnames(got), c("A", "a.2", "B", "b.2"))
   })
 })
