@@ -49,7 +49,7 @@
 #' df_params[1:nrow(stand_data),]=NA
 #' df_params[,"std_id"] = stand_data$stand
 #' df_params[,"invyr"] = stand_data$year
-#' df_params[,"timint"] = 1
+#' df_params[,"timeint"] = 1
 #' df_params[,"numcycle"] = 1
 #' df_params[,"input_db"] = "c:/temp/fordata.db"
 #' df_params[,"fvs_path"] = "C:/FVSbin/FVSca.exe"
@@ -114,7 +114,7 @@ fvs_run = function(
 
     dir_cmds = file.path(key_df$fvs_dir[1], "commands")
     if(!file.exists(dir_cmds)) err_in = try(dir.create(dir_cmds) , silent = T)
-    dir_cmds_file = filestamp(path = dir_cmds, prefix = "fvs_commands_v" , suffix = ".txt")
+    dir_cmds_file = file_stamp(path = dir_cmds, prefix = "fvs_commands_v" , suffix = ".txt")
     writeLines(fvs_runs,dir_cmds_file )
 
   }
