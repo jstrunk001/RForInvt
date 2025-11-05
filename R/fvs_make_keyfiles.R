@@ -74,6 +74,7 @@ fvs_make_keyfiles = function(
   ,path_key_proto = NA
   ,key_proto = NA
   ,clear_db = T
+  ,create_db = F
   ,clear_keys = T
   ,cluster = NA
   ,id=c("plt_id")
