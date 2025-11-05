@@ -5,7 +5,7 @@
 \title{create template key file that is applied to each record or stand - meant to be used with fvs_make_keyfiles()}
 \usage{
 fvs_prototype_keyfile(
-  title = "!!title: FVS key prototype - RForBio",
+  title = "!!title: FVS key prototype",
   std_id = "@std_id@",
   std_cn = "@std_id@",
   mgmt_id = "A001",

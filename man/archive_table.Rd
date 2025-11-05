@@ -16,7 +16,13 @@ archive_table(
   increment = TRUE,
   use_subdirs = FALSE,
   row.names = FALSE,
-  stop_on_error = FALSE
+  stop_on_error = FALSE,
+  xlsx_drop_geometry = TRUE,
+  xlsx_collapse_lists = "auto",
+  xlsx_matrix_collapse = "comma",
+  xlsx_time_tz = "",
+  xlsx_datetime_format = NA_character_,
+  xlsx_sheetname_max = 30
 )
 }
 \arguments{
@@ -24,74 +30,101 @@ archive_table(
 
 \item{path_out}{Character. Base path (without extension) for output files.}
 
-\item{extensions}{Named character vector of file extensions. Defaults to
-`c(csv = ".csv", rds = ".RDS", sqlite = ".db", xlsx = ".xlsx")`.}
+\item{extensions}{Named character vector of file extensions.
+Defaults to `c(csv = ".csv", rds = ".RDS", sqlite = ".db", xlsx = ".xlsx")`.}
 
-\item{table_nm}{Character or NA. Table name for SQLite export and sheet name for XLSX export.
+\item{table_nm}{Character or `NA`. Table name for SQLite and sheet name for XLSX.
 If `NA`, defaults to the base name of `path_out`.}
 
-\item{do_csv}{Logical. If `TRUE`, write CSV file (default = `TRUE`).}
+\item{do_csv, do_rds, do_sqlite, do_xlsx}{Logical flags to control which formats are written.}
 
-\item{do_rds}{Logical. If `TRUE`, write RDS file (default = `TRUE`).}
+\item{increment}{Logical. If `TRUE`, increment version numbers in filenames (default `TRUE`).}
 
-\item{do_sqlite}{Logical. If `TRUE`, write SQLite file (default = `TRUE`).}
+\item{use_subdirs}{Logical. If `TRUE`, base path becomes `<path_out>/<basename(path_out)>`.}
 
-\item{do_xlsx}{Logical. If `TRUE`, write XLSX file (default = `TRUE`).}
+\item{row.names}{Logical. Include row names in CSV and XLSX (default `FALSE`).}
 
-\item{increment}{Logical. If `TRUE`, increment version numbers in filenames (default = `TRUE`).}
+\item{stop_on_error}{Logical. If `TRUE`, rethrow on first write error; otherwise collect and continue.}
 
-\item{use_subdirs}{Logical. If `TRUE`, create subdirectories for each format (default = `FALSE`).}
+\item{xlsx_drop_geometry}{Logical. If `TRUE` and `data` is `sf`, drop geometry before Excel export (default `TRUE`).}
 
-\item{row.names}{Logical. If `TRUE`, include row names in CSV and XLSX outputs (default = `FALSE`).}
+\item{xlsx_collapse_lists}{Character. How to handle list-columns for Excel:
+`"auto"` (default), `"comma"`, `"json"`, `"unlist"`, or `"error"`.}
 
-\item{stop_on_error}{Logical. If `TRUE`, rethrow on first write error; otherwise collect errors and continue (default = `FALSE`).}
+\item{xlsx_matrix_collapse}{Character. How to handle matrix-columns row-wise:
+`"comma"` (default), `"json"`, or `"error"`.}
+
+\item{xlsx_time_tz}{Character. Time zone when converting POSIXlt → POSIXct for Excel. `""` keeps original TZ.}
+
+\item{xlsx_datetime_format}{Character or `NA`. If non-`NA`, apply Excel number format
+(e.g., `"yyyy-mm-dd hh:mm"`) to POSIXct columns after writing.}
+
+\item{xlsx_sheetname_max}{Integer. Maximum sheet name length (default `30`).}
 }
 \value{
-Invisibly returns a named list per format with `success`, `path` (if any), and `error` (if any).
+Invisibly returns a named list with elements `csv`, `rds`, `sqlite`, `xlsx`.
+Each is either `NULL` (not requested) or a list with elements:
+  * `success` (logical)
+  * `path` (character file path when success)
+  * `error` (NULL or character message)
 }
 \description{
-Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) with versioned filenames.
- Each format write is isolated so one failure does not stop others. Detailed
- per-format status is returned (success/path/error).
+Saves a given data object to specified formats (CSV, RDS, SQLite, XLSX) using
+versioned filenames. Each format write is isolated with `tryCatch` so a failure
+in one format does not stop others. A structured per-format result is returned.
 }
 \details{
-- CSV and RDS files are written using `write.csv()` and `saveRDS()`.
- - XLSX export uses `openxlsx::write.xlsx()` with sheet name = `table_nm` clipped to 30 chars.
- - SQLite export uses `sf::st_write()` (requires `data` to be an `sf` object).
- - If `table_nm = NA`, the base name of `path_out` is used for sheet/table names.
- - Row names are excluded by default in CSV and XLSX outputs (`row.names = FALSE`).
- - Filenames are versioned using `file_version()`.
- - If `use_subdirs = TRUE`, files are placed in subdirectories named after their format (e.g., `csv/`, `rds/`), which are created if needed.
- - Column names are normalized for duplicate detection (case-insensitive). If duplicates exist after converting to lowercase, numeric suffixes (.2, .3, ...) are appended.
- - Each writer uses `tryCatch()` to capture and report failures without stopping the function unless `stop_on_error = TRUE`.
+* **CSV** and **RDS** are written via base R.
+* **XLSX** uses `openxlsx::write.xlsx()` with:
+  - Sheet name clipped to `xlsx_sheetname_max`
+  - Optional geometry drop for `sf` objects
+  - Controlled handling of list and matrix columns
+  - Optional date-time column styling via Excel number formats
+* **SQLite** uses `sf::st_write()` (no class checks; data.frame or sf are both allowed).
+* If `table_nm = NA`, the base name of `path_out` is used for sheet/table names.
+* Row names are excluded by default in CSV and XLSX (`row.names = FALSE`).
+* Filenames are versioned using `file_version()` (assumed to also create paths).
+* If `use_subdirs = TRUE`, paths resolve to `<path_out>/<basename(path_out)>.*`
+  (the original `make_path` logic, computed once as `base_path`).
+* Column names are normalized (case-insensitive duplicate handling) by appending
+  `.2`, `.3`, ... to later duplicates.
 
- This program is free software but it is provided WITHOUT WARRANTY
- and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
- you can redistribute it and/or modify it under the terms of the GNU
- General Public License as published by the Free Software Foundation;
- either version 2 of the License, or (at your option) any later version.
+This program is free software but it is provided WITHOUT WARRANTY and with
+ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose; you can
+redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
 
 \cr
-Revision History
+**Revision History**
+
 \tabular{ll}{
-1.8 \tab 2025-11-03 Add per-format tryCatch, stop_on_error, and fixed subdir pathing. \cr
-1.7 \tab 2025-11-03 Added sheet name clipping to 30 characters for XLSX. \cr
-1.6 \tab 2025-11-03 Added duplicate column name handling logic. \cr
+1.10 \tab 2025-11-03 Refactor per-format write logic into helpers; compute base_path once. \cr
+1.9  \tab 2025-11-03 Add XLSX options (geometry drop, list/matrix handling, TZ/format, sheetname length). \cr
+1.8  \tab 2025-11-03 Add per-format tryCatch, stop_on_error, and robust pathing. \cr
+1.7  \tab 2025-11-03 Added sheet name clipping (configurable) for XLSX. \cr
+1.6  \tab 2025-11-03 Added duplicate column name handling logic. \cr
 }
 }
 \examples{
- \dontrun{
-   # Archive all formats in subdirectories, using base name for sheet/table
-   archive_table(mtcars, "output/mydata", table_nm = NA, use_subdirs = TRUE)
+\dontrun{
+# Basic usage (all formats if packages present)
+archive_table(mtcars, "out/mydata")
 
-   # Archive only CSV and XLSX with row names included; continue on errors
-   archive_table(mtcars, "output/mydata", do_rds = FALSE, do_sqlite = FALSE, row.names = TRUE)
+# CSV + RDS only
+archive_table(mtcars, "out/mydata", do_sqlite = FALSE, do_xlsx = FALSE)
 
-   # Fail fast on first error
-   archive_table(mtcars, "output/mydata", stop_on_error = TRUE)
- }
+# Strict XLSX handling with fail-fast
+archive_table(mtcars, "out/mydata",
+              do_csv = FALSE, do_rds = FALSE, do_xlsx = TRUE,
+              xlsx_collapse_lists = "error", xlsx_matrix_collapse = "error",
+              stop_on_error = TRUE)
 
+# Apply an Excel datetime format
+archive_table(data.frame(t = as.POSIXct(Sys.time()), x = 1),
+              "out/time_demo",
+              do_csv = FALSE, do_rds = FALSE, do_xlsx = TRUE,
+              xlsx_datetime_format = "yyyy-mm-dd hh:mm")
 }
-\author{
-Jacob Strunk <your.email@domain.com>
+
 }

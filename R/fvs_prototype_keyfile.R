@@ -72,7 +72,7 @@
 #'@seealso \code{\link{fvs_run}}\cr \code{\link{fvs_load_rfvs}}\cr
 
 fvs_prototype_keyfile = function(
-  title = "!!title: FVS key prototype - RForBio"
+  title = "!!title: RForInvt FVS keyword prototype"
   ,std_id = "@std_id@"
   ,std_cn = "@std_id@"
   ,mgmt_id = "A001"
@@ -90,7 +90,8 @@ fvs_prototype_keyfile = function(
 ){
   return(
     c(
-        title
+        ""
+        ,title
         ,paste("!!built:",as.character(Sys.time()))
         ,"StdIdent"
         ,std_id
@@ -110,14 +111,16 @@ fvs_prototype_keyfile = function(
         ,"@output_db_q@"
         ,"* FVS_Summary, FVS_Compute"
         ,"Summary        2"
-        ,"Compute            0         1"
+        ,"Computdb            0         1"
         ,"End"
         ,"* FVS_TreeList, FVS_Cutlist "
         ,treelist
         ,cutlist
+        ,"Atrtlist       0                   0"
         ,"Database"
-        ,"Treelist       2"
-        ,"Cutlist        2"
+        ,"TreeLiDB       2"
+        ,"CutLiDB        2"
+        ,"Atrtlidb       2"
         ,"End"
         ,"DelOTab            1"
         ,"DelOTab            2"
