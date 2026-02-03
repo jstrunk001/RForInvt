@@ -76,8 +76,9 @@ fvs_make_keyfiles = function(
   ,clear_db = T
   ,create_db = F
   ,clear_keys = T
+  ,key_nms = c(prefix="",suffix="")
   ,cluster = NA
-  ,id=c("plt_id")
+  ,id = c("plt_id")
   ,quotes_db = F
 ){
 
@@ -144,6 +145,14 @@ fvs_make_keyfiles = function(
   ##add input_db to param_df
   ##add the keyfile path
   param_df$key_path = paste0(key_dir,"/",gsub("(\\\\|/)",".", param_df[,id[1]]),".key")
+
+  #adjust output keyword file name using prefix and suffix
+  if( sum(nchar(key_nms)) > 0 ){
+    nms1 = c(key_nms[["prefix"]][1],id[1],key_nms[["suffix"]][1])
+    nms2 = nms1[sapply(nms1,nchar)>0]
+    keynm_in = apply(param_df[,nms2],1,paste0,collapse="",sep="")
+    param_df$key_path = gsub("//","/",paste0(key_dir,"/",gsub("(\\\\|/)",".", keynm_in),".key"))
+  }
 
   ##read the key prototype
   if(!is.na(path_key_proto)) key_proto_in = readLines(path_key_proto)
