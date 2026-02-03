@@ -123,13 +123,13 @@ fvs_run = function(
   ##run in series
   if(is.na(cluster[1])){
     res_fvs = lapply(fvs_runs,function(x){
-      try(system(x))
+      try(system(x,intern=T))
     })
   }
 
   ###run in parallel but split so each cluster uses the same DB in series
   if(!is.na(cluster[1])){
-    res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, function(x)try(system(x)) )
+    res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, function(x)try(system(x,intern=T)) )
   }
 
   #merge multiple databases into single database
@@ -179,5 +179,7 @@ fvs_run = function(
   t2 = Sys.time()
   print(paste("FVS runs finished at",t2))
   print(difftime(t2,t1,units="mins"))
+
+  return(res_fvs)
 }
 
