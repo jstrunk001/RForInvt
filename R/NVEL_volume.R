@@ -277,7 +277,7 @@ NVEL_volume=function(
   if(vol2biomass){
 
     #compute total biomass
-    wts_in = NVEL_wtfactor( dfTL = dfTL0_in[,c(regionNm,forestNm,spcdNm)])
+    wts_in = NVEL_wtfactor( dfTL = dfTL0_in[,c(regionNm,forestNm,spcdNm)] , spcdNm = spcdNm )
     res_in[,"TBIOGRN_LBS"] = wts_in[,"WFGRN_LBSCFT"]*res_in[,"TCFV"]
     res_in[,"TBIODRY_LBS"] = wts_in[,"WFDRY_LBSCFT"]*res_in[,"TCFV"]
 
