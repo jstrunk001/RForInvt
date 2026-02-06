@@ -45,17 +45,43 @@
   
   #generic file path editing function - forwards or backwards
     reslash<- function(x=NA, slash=c("back","forward")){
-      if(is.na(x[1])) x = readClipboard()
+      if(is.na(x)) x = readClipboard()
       if(slash[1]=="back") path <- shQuote(gsub("/","\\\\",gsub("\\", "\\\\", x, fixed = TRUE), fixed = TRUE))
       if(slash[1]=="forward") path <- shQuote(gsub("\\", "/", x, fixed = TRUE))
       writeClipboard2(path)
       return(path)
     }
+  
+  #convert commas into newline commas
+  nl1 = function(x=NA,newline="\n",npad=4, space_remove=T, newline_remove=T){
+     #grab from clipboard
+      if(is.na(x)) xin = paste(readClipboard(),collapse="") else xin = x
+     #remove spaces and newlines  
+      if (space_remove)   xin <- gsub(" ", "", xin, fixed = TRUE)
+      if (newline_remove) xin <- gsub("\\R", "", xin, perl = TRUE)
+
+     #generate generic padding and padded newline
+      pad_in = strrep(" ", npad)
+      newline_pad = paste0(newline,pad_in)
+     #add padding and newlines to original strin  
+      xin = paste0(" ",pad_in,gsub(",",paste0(newline_pad,","),xin))
+      #xin = gsub(",",paste0(newline_pad,","),xin)
+     #write / return
+      writeClipboard2(xin)
+      cat("--- Result copied to clipboard ---\n")
+      cat(xin, "\n")
+      return(invisible(xin))
+  }
+  makeActiveBinding("nl", nl1, .GlobalEnv)
 
   #correctly escape back slashes and quote path - a parameterized version o f   
-    bs=function(x=NA){reslash(x,slash="back")}
+  bs1=function(x=NA){reslash(x,slash="back")}
+  makeActiveBinding("bs", bs1, .GlobalEnv)
+    
   #correctly escape back slashes and quote path   
-    fs=function(x=NA){reslash(x,slash="forward")}
+  fs1=function(x=NA){reslash(x,slash="forward")}
+  makeActiveBinding("fs", fs1, .GlobalEnv)
+  
   #function to grab names from data.frame, quote them, place commas between them, and send to clipboard
   # - version 2 adds newline at 50 chars
     nmsVec=function(x,char_break=70,newline="\n"){
@@ -79,11 +105,23 @@
       return(vec_i)
     }
 
-  #stats functions
+  #common stats functions
     mse = function(err,na.rm=T){ mean(err^2,na.rm=na.rm) } 
     rmse = function(err,na.rm=T){ sqrt(mean(err^2,na.rm=na.rm)) }   
     rsq = function(err, y){ (1 - sum(err^2) / sum((y-mean(y))^2) )  }
-
+    cv = function(x,fun=median,...){sd(x,...)/fun(x,...)}
+    cvpct = function(x,fun=median,mult=100,...){mult*sd(x,...)/fun(x,...)}
+    #standard se function
+    se = function(err,na.rm=T){ sqrt(mean(err^2,na.rm=na.rm)) / sqrt(length(err)) }   
+    #se when n is known and need to add zeros
+    se_nzero = function(err, n,na.rm=T){
+      n_err = length(err)
+      n_zero = n - n_err
+      if(n_zero>0) err_in = c(rep(0,n_zero),err)
+      else err_in = err
+      sqrt(mean(err_in^2,na.rm=na.rm)) / sqrt(n) 
+    } 
+    
 ```
 
 ## load some common libraries
@@ -93,22 +131,50 @@
   #install.packages("mltools",type="source")
   #remotes::install_github("jstrunk001/RSForTools")
   #remotes::install_github("jstrunk001/RForInvt")
+
   library1(c(
-     "data.table"
-    # ,"DBI"
+     # "chattr",
+       "data.table"
+     #,"devtools"
+	   #,"dplyr"
+     #,"DBI"
+     #,"exactextractr"
+     #,"future"
+      ,"gridExtra"
+      ,"ggplot2"   
+    # ,"ggmap"
+	  # ,"gganimate"
+	  # ,"ggpmisc	"
+	  # ,"gtsummary"
+    # ,"kableExtra"
     # ,"lidR"
+  	# ,"leaps"
+  	# ,"lme4"
+  	# ,"MixRF"
     # ,"odbc"
     # ,"openxlsx"
-    # ,"RSQLite"
-    # ,"sf"
-    # ,"terra"
-    # ,"devtools"
-    # ,"RSForTools"
+    # ,"parsnip"
+	    ,"parallel"
+    # ,"ranger"
+    # ,"reactable"
+    # ,"reactablefmtr"
+    # ,"readxl"
     # ,"RForInvt"
-    # ,"ggplot2"
-    ),load=T, update=F
+    # ,"RSForTools"
+    # ,"RSQLite"
+    # ,"rstac"
+      ,"sf"
+  	# ,"survey" 
+    # ,"terra"
+    # ,"tidymodels"
+	  # ,"tmap"	
+    # ,"tune"	
+    # ,"vip"
+    )
+    ,load=T, update=F
     )
 
+  #if(isNamespaceLoaded("ggmap")) ggmap::register_google(key = "???")
 
 ```
 
