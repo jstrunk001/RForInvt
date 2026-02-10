@@ -44,14 +44,14 @@
 #'
 #' # 3. Example Merch Specs
 #' merch_specs <- data.table(
-#'   Species = "AF",
+#'   Species = "DF",
 #'   Sort = c("S", "S", "P"),
-#'   Grade = c("4", "3", "."),
-#'   Label = c("Saw 21+", "Saw 12-20", "Pulpwood"),
-#'   Rank = c(1, 2, 5),
-#'   MinDib = c(21, 12, 6),
-#'   MinDbh = c(8.5, 8.5, 8.5),
-#'   MinLen = c(2, 2, 2)
+#'   Grade = c("4", "3", "0"),
+#'   Label = c("Saw_h", "Saw_m", "Pulpwood"),
+#'   Rank = c(1, 2, 3),
+#'   MinDib = c(18, 12, 6),
+#'   MinDbh = c(7, 7, 7),
+#'   MinLen = c(3, 2, 1)
 #' )
 #'
 #' # 4. Assign Grades (Merchandizing)
