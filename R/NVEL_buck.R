@@ -216,6 +216,7 @@ NVEL_buck = function(
       , by = "TreeIdx"
       , all.x = TRUE
     )
+
     ### Compute biomass as density times volume
     res_in[, "TR_TBIOGRN_LBS"] = res_in[, "WFGRN_LBSCFT"] * res_in[, "TR_TCFV_ALL"]
     res_in[, "TR_TBIODRY_LBS"] = res_in[, "WFDRY_LBSCFT"] * res_in[, "TR_TCFV_ALL"]
@@ -338,7 +339,7 @@ NVEL_buck = function(
           TR_NLOGS_ALL = 0,
           TR_NLOGS_P = 0,
           TR_NLOGS_S = 0,
-          TR_TCFV_all   = 0,
+          TR_TCFV_ALL  = 0,
           TR_MBFV   = 0,
           TR_MCFV   = 0,
           TR_MCDV   = 0,
