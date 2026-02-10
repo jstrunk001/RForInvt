@@ -81,105 +81,75 @@
 #Desired upgrades to this function:
 #
 #
-#' @export
-#' @export
+
 NVEL_wtfactor = function(
-  dfTL = NULL
-  , region = NA
-  , forest = NA
-  , spcd = NA
-  , regionNm = "region"
-  , forestNm = "forest"
-  , spcdNm = "spcd"
-  , dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
-  , dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
-  , dll_func_wtfactor = "getwtfactor_r"
-  , load_dll = TRUE
+
+  dfTL = list(NA, data.frame(spcd=201, dbh=5 ,ht=5 ,region = 0 , forest = "01") )[[1]]
+
+  #optional, but these supercede values in dfTL columns regionNm,forestNm
+  ,region = NA
+  ,forest = NA
+  ,spcd = NA
+
+  #optional, provide region, forest, district for every tree
+  ,regionNm = "region"
+  ,forestNm = "forest"
+  ,spcdNm = "spcd"
+
+  ,dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package="RForInvt")
+  ,dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package="RForInvt")
+  ,dll_func_wtfactor = "getwtfactor_r"
+  ,load_dll = T
+
 ){
 
-  # 1. Ensure data.table is available
-  if (!requireNamespace("data.table", quietly = TRUE)) {
-    stop("Package 'data.table' is required for this function.")
+  #load dll if needed
+  if(load_dll) .load_dll(dll_64,dll_32,dll_func )
+
+  #figure out how we are generating volume equations
+  if(class(dfTL) == "logical"){
+
+    if( is.na(region[1]) | is.na(forest[1]) |  is.na(spcd[1]) ) warning("dfTL not provided, and missing region,forest,district, or spcd - generic equation(s) likely returned")
+
+    dfTL = data.frame(region=region,forest=forest,spcd=spcd)
+
+    regionNm = c("region")
+    forestNm = c("forest")
+    spcdNm = c("spcd")
+
   }
 
-  # 2. Internal conversion to data.table
-  # If dfTL is NULL or logical (NA), build the table from individual arguments
-  if (is.null(dfTL) || is.logical(dfTL)) {
-    if (any(is.na(c(region[1], forest[1], spcd[1])))) {
-      warning("dfTL not provided, and missing region, forest, or spcd arguments.")
-    }
-    dt_internal <- data.table::data.table(
-      region = region,
-      forest = forest,
-      spcd = spcd
-    )
-    regionNm <- "region"
-    forestNm <- "forest"
-    spcdNm <- "spcd"
-  } else {
-    # Convert input to data.table (creates a copy if it was a data.frame)
-    dt_internal <- data.table::as.data.table(dfTL)
-  }
-
-  # 3. Load NVEL DLL
-  if (load_dll) {
-    .load_dll(dll_64, dll_32)
-  }
-
-  # 4. Execute DLL calls
-  # Suppress portability warnings for character vectors passed to Fortran
+  #get volume equation
+  #catch warning about portabiliyt of passing a char vector
   defaultW <- getOption("warn")
   options(warn = -1)
-
-  # mapply logic: passing vectors extracted via [[ to the Fortran wrapper
-  res_list <- mapply(
-    .fn_fortran_wtf,
-    region  = dt_internal[[regionNm]],
-    forest  = dt_internal[[forestNm]],
-    species = dt_internal[[spcdNm]],
-    MoreArgs = list(dll_func_wtfactor = dll_func_wtfactor),
-    SIMPLIFY = FALSE
-  )
-
+  res_wf0 = mapply(.fn_fortran_wtf,dfTL[,regionNm],dfTL[,forestNm],dfTL[,spcdNm] , MoreArgs = list(dll_func_wtfactor = dll_func_wtfactor), SIMPLIFY = F)
   options(warn = defaultW)
 
-  # 5. Recombine results using data.table tools
-  # rbindlist is the data.table replacement for plyr::ldply / rbind.fill
-  res_dt <- data.table::rbindlist(res_list)
+  #merge predictions together
+  return(data.frame(dfTL,plyr::rbind.fill(res_wf0)))
 
-  # 6. Final Column Bind (Returns a data.table)
-  return(cbind(dt_internal, res_dt))
+}
+#call fortran
+.fn_fortran_wtf = function(region,forest,species,dll_func_wtfactor){
+
+  #browser()
+  res_wf0 = .Fortran(dll_func_wtfactor,as.integer(region),as.character(forest),as.integer(species),as.double(0),as.double(0), PACKAGE="vollib")
+  data.frame(WFGRN_LBSCFT = res_wf0[[4]] , WFDRY_LBSCFT = res_wf0[[5]] )
+
 }
 
-# Wrapper for the Fortran DLL call
-.fn_fortran_wtf = function(region, forest, species, dll_func_wtfactor){
-  res_wf0 = .Fortran(
-    dll_func_wtfactor,
-    as.integer(region),
-    as.character(forest),
-    as.integer(species),
-    as.double(0), # Output 4: Green Weight Factor
-    as.double(0), # Output 5: Dry Weight Factor
-    PACKAGE = "vollib"
-  )
-  # Return a named list which rbindlist handles efficiently
-  list(WFGRN_LBSCFT = res_wf0[[4]], WFDRY_LBSCFT = res_wf0[[5]])
-}
+#load dll if needed
+.load_dll = function(dll_64,dll_32,dll_func ){
 
-# Robust DLL loader
-.load_dll = function(dll_64, dll_32){
   arch_in = R.Version()$arch
-  dll_loaded = "vollib" %in% names(getLoadedDLLs())
+  loaded_dlls_in = names(getLoadedDLLs())
+  dll_loaded = "vollib" %in% loaded_dlls_in
+  if(arch_in == "x86_64" & !dll_loaded) dyn.load(dll_64)
+  if(arch_in == "x86_32" & !dll_loaded) dyn.load(dll_32)
 
-  if(!dll_loaded){
-    target_dll <- if(arch_in == "x86_64") dll_64 else dll_32
-    if(file.exists(target_dll)) {
-      dyn.load(target_dll)
-    } else {
-      warning("NVEL DLL not found at specified path: ", target_dll)
-    }
-  }
 }
+
 
 #Testing
 if(F){

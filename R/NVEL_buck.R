@@ -1,85 +1,7 @@
-#' @title Predict log-level volume and dimensions using NVEL (vollib2_r)
-#'
-#' @description
-#' Predict tree-level volumes and individual log-level dimensions and volumes using the
-#' National Volume Estimator Library (NVEL) DLL.
-#'
-#' @details
-#' \itemize{
-#'   \item \code{LG_}: Individual log attributes (Length, Diameter, Volume).
-#'   \item \code{TR_}: Whole-tree attributes (Total volume, Biomass, total log counts).
-#' }
-#'
-#' @param dfTL data.frame. Tree list containing at least DBH, Height, and Species.
-#' @param voleq character. Optional. A specific volume equation to force.
-#' @param region integer. USFS Region (1-10).
-#' @param forest character. USFS Forest code.
-#' @param district character. USFS District code.
-#' @param voleqNm character. Column name in \code{dfTL} for volume equations.
-#' @param regionNm character. Column name in \code{dfTL} for region.
-#' @param forestNm character. Column name in \code{dfTL} for forest.
-#' @param districtNm character. Column name in \code{dfTL} for district.
-#' @param spcdNm character. Column name in \code{dfTL} for USFS species code.
-#' @param dbhNm character. Column name in \code{dfTL} for DBH (inches).
-#' @param htNm character. Column name in \code{dfTL} for Height (feet).
-#' @param pulpDbNm character. Optional. Column name for pulpwood top diameter.
-#' @param sawDbNm character. Optional. Column name for sawtimber top diameter.
-#' @param htPrd1Nm character. Optional. Column name for height to primary product top.
-#' @param htPrd2Nm character. Optional. Column name for height to secondary product top.
-#' @param upHt1Nm character. Optional. Column name for upper stem height.
-#' @param upDb1Nm character. Optional. Column name for upper stem diameter.
-#' @param stumpHtNm character. Optional. Column name for stump height.
-#' @param fclassNm character. Optional. Column name for Girard Form Class.
-#' @param dbtbhNm character. Optional. Column name for double bark thickness.
-#' @param btrNm character. Optional. Column name for bark thickness ratio.
-#' @param vol2biomass logical. If TRUE, computes biomass using NVEL weight factors.
-#' @param dll_64 character. Path to the 64-bit vollib.dll.
-#' @param dll_32 character. Path to the 32-bit vollib.dll.
-#' @param load_dll logical. Whether to load the DLL into the R session.
-#' @param dll_func_vol character. Entry point for volume calculation (default "vollib2_r").
-#'
-#' @return A data.frame in "long" format (one row per log).If a tree is non-merchantable,
-#' it returns one row with \code{LG_NUM = 0}.
-#'
-#' @examples
-#' \dontrun{
-#'   library(RForInvt)
-#'
-#'   # 1. Prepare a sample tree list
-#'   df_trees <- data.frame(
-#'     tree_id = c(1, 2)
-#'     , region = c(6, 6)
-#'     , forest = c("01", "01")
-#'     , district = c("01", "01")
-#'     , spcd = c(202, 202) # Douglas-fir
-#'     , dbh = c(12.5, 28.2)
-#'     , ht = c(85, 140)
-#'   )
-#'
-#'   # 2. Predict volumes and log dimensions
-#'   # Note: vollib2_r is the default entry point
-#'   res <- NVEL_buck1(
-#'     dfTL = df_trees
-#'     , dbhNm = "dbh"
-#'     , htNm = "ht"
-#'     , spcdNm = "spcd"
-#'     , vol2biomass = TRUE
-#'   )
-#'
-#'   # 3. View results
-#'   # Tree 2 will have multiple rows (one for each 16ft or 32ft log)
-#'   print(subset(res, tree_id == 2)[, c("LG_NUM", "LG_LEN", "LG_DIB_SMALL", "TR_TCFV")])
-#'
-#'   # 4. Forcing a specific volume equation
-#'   res_forced <- NVEL_buck1(
-#'     dfTL = df_trees
-#'     , voleq = "F0162521"
-#'   )
-#' }
-#'
+#' @export
 #' @export
 NVEL_buck = function(
-  dfTL = data.frame(dbh = 5, ht = 5)
+  dfTL = data.table::data.table(dbh = 5, ht = 5)
   , voleq = NA
   , region = 1
   , forest = NA
@@ -105,127 +27,239 @@ NVEL_buck = function(
   , dll_64 = system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package = "RForInvt")
   , dll_32 = system.file('lib/VolLibDll20231106/vollib-32bits/vollib.dll', package = "RForInvt")
   , load_dll = TRUE
-  , dll_func_vol = "vollib2_r" ### UPDATED: Default changed to vollib2_r
+  , dll_func_vol = "vollib2_r"
+  , ncore = 1
 ){
 
-  options(stringsAsFactors = FALSE)
+# Debugging check
+# print(args(.load_dll))
 
-  if(load_dll){
-    .load_dll(
-      dll_64 = dll_64
-      , dll_32 = dll_32
-      , dll_func = dll_func_vol
-    )
-  }
-
+  # 1. Standardize and Format Data (Once)
   dfTL0_in = .formatTL2NVEL2(
-    dfTL0 = dfTL
-    , voleq = voleq[1]
-    , region = region[1]
-    , forest = forest[1]
-    , district = district[1]
-    , voleqNm = voleqNm
-    , regionNm = regionNm
-    , forestNm = forestNm
-    , districtNm = districtNm
-    , spcdNm = spcdNm
-    , dbhNm = dbhNm
-    , htNm = htNm
-    , pulpDbNm = pulpDbNm
-    , sawDbNm = sawDbNm
-    , htPrd1Nm = htPrd1Nm
-    , htPrd2Nm = htPrd2Nm
-    , upHt1Nm = upHt1Nm
-    , upDb1Nm = upDb1Nm
-    , stumpHtNm = stumpHtNm
-    , fclassNm = fclassNm
-    , dbtbhNm = dbtbhNm
-    , btrNm = btrNm
+     dfTL0=dfTL
+    ,voleq=voleq[1]
+    ,region=region[1]
+    ,forest=forest[1]
+    ,district=district[1]
+    ,voleqNm=voleqNm
+    ,regionNm=regionNm
+    ,forestNm=forestNm
+    ,districtNm=districtNm
+    ,spcdNm=spcdNm
+    ,dbhNm=dbhNm
+    ,htNm=htNm
+    ,pulpDbNm=pulpDbNm
+    ,sawDbNm=sawDbNm
+    ,htPrd1Nm=htPrd1Nm
+    ,htPrd2Nm=htPrd2Nm
+    ,upHt1Nm=upHt1Nm
+    ,upDb1Nm=upDb1Nm
+    ,stumpHtNm=stumpHtNm
+    ,fclassNm=fclassNm
+    ,dbtbhNm=dbtbhNm
+    ,btrNm=btrNm
   )
 
-  if(is.na(voleq[1]) & (!voleqNm %in% names(dfTL))){
+  data.table::setDT(dfTL0_in)
+  dfTL0_in[, TreeIdx := .I]
+
+  # Handle Volume Equation Lookup
+  if(is.na(voleq[1]) & (!voleqNm %in% names(dfTL0_in))){
     vol_eqns_in = NVEL_voleq(
-      dfTL = dfTL
-      , regionNm = regionNm
-      , forestNm = forestNm
-      , districtNm = districtNm
-      , spcdNm = spcdNm
-      , load_dll = FALSE
-    )
-    dfTL0_in[, "voleq"] = vol_eqns_in[, "voleq"]
+                        dfTL=dfTL
+                      ,regionNm=regionNm
+                      ,forestNm=forestNm
+                      ,districtNm=districtNm
+                      ,spcdNm=spcdNm
+                      ,load_dll=FALSE
+                         )
+    dfTL0_in[, (voleqNm) := vol_eqns_in[["voleq"]]]
     voleqNm = "voleq"
   }
 
-  defaultW <- getOption("warn")
-  options(warn = -1)
-  dfTL0_in[is.na(dfTL0_in)] = 0
+  # Fill NAs with 0
+  for (j in names(dfTL0_in)) data.table::set(dfTL0_in, which(is.na(dfTL0_in[[j]])), j, 0)
 
-  ### mapply calls .fn_fortran_vol2_logs
-  vol_list = mapply(
-    .fn_fortran_vol2_logs
-    , voleq = dfTL0_in[, voleqNm]
-    , region = dfTL0_in[, regionNm]
-    , forest = dfTL0_in[, forestNm]
-    , district = dfTL0_in[, districtNm]
-    , spcd = dfTL0_in[, spcdNm]
-    , dbh = dfTL0_in[, dbhNm]
-    , ht = dfTL0_in[, htNm]
-    , pulpDb = dfTL0_in[, pulpDbNm]
-    , sawDb = dfTL0_in[, sawDbNm]
-    , htPrd1 = dfTL0_in[, htPrd1Nm]
-    , htPrd2 = dfTL0_in[, htPrd2Nm]
-    , upHt1 = dfTL0_in[, upHt1Nm]
-    , upDb1 = dfTL0_in[, upDb1Nm]
-    , stumpHt = dfTL0_in[, stumpHtNm]
-    , fclass = dfTL0_in[, fclassNm]
-    , dbtbh = dfTL0_in[, dbtbhNm]
-    , btr = dfTL0_in[, btrNm]
-    , MoreArgs = list(dll_func_vol2 = dll_func_vol)
-    , SIMPLIFY = FALSE
-  )
+  # 2. Execution Logic
+  if(ncore > 1){
+    if (!requireNamespace("parallel", quietly = TRUE)) stop("Package 'parallel' required.")
 
-  options(warn = defaultW)
+    cl_in <- parallel::makeCluster(ncore)
+    # FIX: Ensure on.exit uses the correct cluster variable name
+    on.exit(parallel::stopCluster(cl_in))
 
-  ### handle multi-row log lists
-  vol_pd0_df = plyr::ldply(
-    1:length(vol_list)
-    , function(i){
-        res = vol_list[[i]]
-        if(nrow(res) > 0) cbind(TreeIdx = i, res) else NULL
-      }
-  )
+    # Split data into chunks
+    chunks <- split(dfTL0_in, cut(seq_len(nrow(dfTL0_in)), ncore, labels = FALSE))
 
-  ### merge trees with logs
-  dfTL0_in$TreeIdx = 1:nrow(dfTL0_in)
-  res_in = merge(
-    x = dfTL0_in
-    , y = vol_pd0_df
-    , by = "TreeIdx"
-    , all.x = TRUE
-  )
+    # FIX: Export all necessary helper functions and path variables.
+    # We use parent.frame() or .GlobalEnv if debugging as a script.
+    helper_funcs = c(".fn_fortran_vol2_logs", ".load_dll", ".formatTL2NVEL2")
+    parallel::clusterExport(cl_in,
+                            varlist = c(
+                                       "dll_64"
+                                      ,"dll_32"
+                                      ,"dll_func_vol"
+                                      ,"voleqNm"
+                                      ,"regionNm"
+                                      ,"forestNm"
+                                      ,"districtNm"
+                                      ,"spcdNm"
+                                      ,"dbhNm"
+                                      ,"htNm"
+                                      ,"pulpDbNm"
+                                      ,"sawDbNm"
+                                      ,"htPrd1Nm"
+                                      ,"htPrd2Nm"
+                                      ,"upHt1Nm"
+                                      ,"upDb1Nm"
+                                      ,"stumpHtNm"
+                                      ,"fclassNm"
+                                      ,"dbtbhNm"
+                                      ,"btrNm"
+                                      ,helper_funcs),
+                            envir = environment())
+
+    vol_list_raw <- parallel::parLapply(cl_in, chunks, function(dt_chunk) {
+      # Load data.table inside worker
+      library(data.table)
+
+      #for debugging Use the local helper instead of RForInvt:::
+      .load_dll(dll_64 = dll_64, dll_32 = dll_32, dll_func = dll_func_vol)
+
+      mapply(
+         .fn_fortran_vol2_logs
+        ,voleq=dt_chunk[[voleqNm]]
+        ,region=dt_chunk[[regionNm]]
+        ,forest=dt_chunk[[forestNm]]
+        ,district=dt_chunk[[districtNm]]
+        ,spcd=dt_chunk[[spcdNm]]
+        ,dbh=dt_chunk[[dbhNm]]
+        ,ht=dt_chunk[[htNm]]
+        ,pulpDb=dt_chunk[[pulpDbNm]]
+        ,sawDb=dt_chunk[[sawDbNm]]
+        ,htPrd1=dt_chunk[[htPrd1Nm]]
+        ,htPrd2=dt_chunk[[htPrd2Nm]]
+        ,upHt1=dt_chunk[[upHt1Nm]]
+        ,upDb1=dt_chunk[[upDb1Nm]]
+        ,stumpHt=dt_chunk[[stumpHtNm]]
+        ,fclass=dt_chunk[[fclassNm]]
+        ,dbtbh=dt_chunk[[dbtbhNm]]
+        ,btr=dt_chunk[[btrNm]]
+        ,MoreArgs=list(dll_func_vol2=dll_func_vol)
+        ,SIMPLIFY=FALSE
+          )
+    })
+    vol_list = do.call(c, vol_list_raw)
+
+  } else {
+    # ncore == 1
+    if(load_dll) .load_dll(dll_64, dll_32, dll_func_vol)
+
+    vol_list = mapply(
+                   .fn_fortran_vol2_logs
+                  ,voleq=dfTL0_in[[voleqNm]]
+                  ,region=dfTL0_in[[regionNm]]
+                  ,forest=dfTL0_in[[forestNm]]
+                  ,district=dfTL0_in[[districtNm]]
+                  ,spcd=dfTL0_in[[spcdNm]]
+                  ,dbh=dfTL0_in[[dbhNm]]
+                  ,ht=dfTL0_in[[htNm]]
+                  ,pulpDb=dfTL0_in[[pulpDbNm]]
+                  ,sawDb=dfTL0_in[[sawDbNm]]
+                  ,htPrd1=dfTL0_in[[htPrd1Nm]]
+                  ,htPrd2=dfTL0_in[[htPrd2Nm]]
+                  ,upHt1=dfTL0_in[[upHt1Nm]]
+                  ,upDb1=dfTL0_in[[upDb1Nm]]
+                  ,stumpHt=dfTL0_in[[stumpHtNm]]
+                  ,fclass=dfTL0_in[[fclassNm]]
+                  ,dbtbh=dfTL0_in[[dbtbhNm]]
+                  ,btr=dfTL0_in[[btrNm]]
+                  ,MoreArgs=list(dll_func_vol2=dll_func_vol)
+                  ,SIMPLIFY=FALSE
+                  )
+  }
+
+  # 3. Post-Processing
+  vol_pd0_df = data.table::rbindlist(lapply(seq_along(vol_list), function(i) {
+    res = vol_list[[i]]
+    if (is.null(res) || nrow(res) == 0) return(NULL)
+    data.table::setDT(res)[, TreeIdx := i]
+    return(res)
+  }), use.names = TRUE, fill = TRUE)
+
+  res_in = merge(dfTL0_in, vol_pd0_df, by = "TreeIdx", all.x = TRUE)
 
   if(vol2biomass){
-    wts_in = NVEL_wtfactor(
-      dfTL = dfTL0_in[, c(regionNm, forestNm, spcdNm)]
-      , spcdNm = spcdNm
-    )
-    wts_in$TreeIdx = 1:nrow(wts_in)
-    res_in = merge(
-      x = res_in
-      , y = wts_in[, c("TreeIdx", "WFGRN_LBSCFT", "WFDRY_LBSCFT")]
-      , by = "TreeIdx"
-      , all.x = TRUE
-    )
-
-    ### Compute biomass as density times volume
-    res_in[, "TR_TBIOGRN_LBS"] = res_in[, "WFGRN_LBSCFT"] * res_in[, "TR_TCFV_ALL"]
-    res_in[, "TR_TBIODRY_LBS"] = res_in[, "WFDRY_LBSCFT"] * res_in[, "TR_TCFV_ALL"]
+    wts_in = NVEL_wtfactor(dfTL = dfTL0_in[, .SD, .SDcols = c(regionNm, forestNm, spcdNm)], spcdNm = spcdNm)
+    data.table::setDT(wts_in)[, TreeIdx := .I]
+    res_in = merge(res_in, wts_in[, .(TreeIdx, WFGRN_LBSCFT, WFDRY_LBSCFT)], by = "TreeIdx", all.x = TRUE)
+    res_in[, `:=`(TR_TBIOGRN_LBS = WFGRN_LBSCFT * TR_TCFV_ALL, TR_TBIODRY_LBS = WFDRY_LBSCFT * TR_TCFV_ALL)]
   }
 
   return(res_in)
 }
 
-### UPDATED: Rewritten helper for vollib2_r
+
+### Simplified .formatTL2NVEL2
+.formatTL2NVEL2 = function(
+  dfTL0
+  , voleq
+  , region
+  , forest
+  , district
+  , voleqNm
+  , regionNm
+  , forestNm
+  , districtNm
+  , spcdNm
+  , dbhNm
+  , htNm
+  , pulpDbNm
+  , sawDbNm
+  , htPrd1Nm
+  , htPrd2Nm
+  , upHt1Nm
+  , upDb1Nm
+  , stumpHtNm
+  , fclassNm
+  , dbtbhNm
+  , btrNm
+){
+
+  dfTL1 = dfTL0
+  nms_in = c(
+     voleq=voleqNm[1]
+    ,region=regionNm[1]
+    ,forest=forestNm[1]
+    ,district=districtNm[1]
+    ,spcd=spcdNm[1]
+    ,dbh=dbhNm[1]
+    ,ht=htNm[1]
+    ,pulpDb=pulpDbNm
+    ,sawDb=sawDbNm
+    ,htPrd1=htPrd1Nm
+    ,htPrd2=htPrd2Nm
+    ,upHt1=upHt1Nm
+    ,upDb1=upDb1Nm
+    ,stumpHt=stumpHtNm
+    ,fclass=fclassNm
+    ,dbtbh=dbtbhNm
+    ,btr=btrNm
+  )
+
+  for(n in names(nms_in)){
+    if(!nms_in[n] %in% names(dfTL1)) dfTL1[[nms_in[n]]] = 0
+  }
+
+  if(!is.na(voleq))    dfTL1[[voleqNm]] <- voleq
+  if(!is.na(region))   dfTL1[[regionNm]] <- region
+  if(!is.na(forest))   dfTL1[[forestNm]] <- forest
+  if(!is.na(district)) dfTL1[[districtNm]] <- district
+
+  return(dfTL1)
+}
+
+### helper for vollib2_r
 .fn_fortran_vol2_logs = function(
   voleq
   , region
@@ -354,65 +388,6 @@ NVEL_buck = function(
   }
 }
 
-### UPDATED: Simplified .formatTL2NVEL2
-.formatTL2NVEL2 = function(
-  dfTL0
-  , voleq
-  , region
-  , forest
-  , district
-  , voleqNm
-  , regionNm
-  , forestNm
-  , districtNm
-  , spcdNm
-  , dbhNm
-  , htNm
-  , pulpDbNm
-  , sawDbNm
-  , htPrd1Nm
-  , htPrd2Nm
-  , upHt1Nm
-  , upDb1Nm
-  , stumpHtNm
-  , fclassNm
-  , dbtbhNm
-  , btrNm
-){
-
-  dfTL1 = dfTL0
-  nms_in = c(
-     voleq=voleqNm[1]
-    ,region=regionNm[1]
-    ,forest=forestNm[1]
-    ,district=districtNm[1]
-    ,spcd=spcdNm[1]
-    ,dbh=dbhNm[1]
-    ,ht=htNm[1]
-    ,pulpDb=pulpDbNm
-    ,sawDb=sawDbNm
-    ,htPrd1=htPrd1Nm
-    ,htPrd2=htPrd2Nm
-    ,upHt1=upHt1Nm
-    ,upDb1=upDb1Nm
-    ,stumpHt=stumpHtNm
-    ,fclass=fclassNm
-    ,dbtbh=dbtbhNm
-    ,btr=btrNm
-  )
-
-  for(n in names(nms_in)){
-    if(!nms_in[n] %in% names(dfTL1)) dfTL1[[nms_in[n]]] = 0
-  }
-
-  if(!is.na(voleq))    dfTL1[[voleqNm]] <- voleq
-  if(!is.na(region))   dfTL1[[regionNm]] <- region
-  if(!is.na(forest))   dfTL1[[forestNm]] <- forest
-  if(!is.na(district)) dfTL1[[districtNm]] <- district
-
-  return(dfTL1)
-}
-
 .load_dll = function(
   dll_64
   , dll_32
@@ -424,5 +399,3 @@ NVEL_buck = function(
     if(arch_in == "x86_64") dyn.load(dll_64) else dyn.load(dll_32)
   }
 }
-
-
