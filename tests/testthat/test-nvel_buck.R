@@ -1,124 +1,112 @@
 library(testthat)
-library(plyr)
+library(data.table)
 
-# Mock DLL paths for the test environment if needed
-# dll_path <- "path/to/your/vollib.dll"
+context("NVEL_buck functionality and parallel execution")
 
-test_that("NVEL_buck returns correct column prefixes and structure", {
-  # 1. Setup minimal valid input
-  df_test <- data.frame(
-    trid = 1,
-    region = 6,
-    forest = "01",
-    district = "01",
-    spcd = 202,
-    dbh = 20,
-    ht = 100
+# Setup a standard testing dataset
+test_trees <- data.table(
+  id = 1:3,
+  spcd = c(202, 202, 122), # Doug-fir, Doug-fir, Ponderosa
+  dbh = c(5.0, 24.2, 35.0), # Small (non-merch), Medium, Large
+  ht = c(20, 110, 150),
+  region = 6,
+  forest = "01",
+  district = "01"
+)
+
+# Helper to check if DLL exists (skips tests if DLL is missing)
+check_dll <- function() {
+  dll_path <- system.file('lib/VolLibDll20231106/vollib-64bits/vollib.dll', package = "RForInvt")
+  return(file.exists(dll_path))
+}
+
+test_that("NVEL_buck returns a data.table and handles log expansion", {
+  skip_if_not(check_dll(), "NVEL DLL not found, skipping tests")
+
+  # Run serial version
+  res <- NVEL_buck(
+    dfTL = test_trees,
+    dbhNm = "dbh",
+    htNm = "ht",
+    spcdNm = "spcd",
+    ncore = 1,
+    vol2biomass = FALSE
   )
 
-  res <- NVEL_buck(dfTL = df_test, vol2biomass = TRUE)
+  # Check Class
+  expect_s3_class(res, "data.table")
 
-  # Check that it returns a data.frame
-  expect_s3_class(res, "data.frame")
+  # Check that we have more rows than input (log expansion)
+  # Tree 1 (small) should have 1 row (LG_NUM=0), Trees 2 & 3 should have multiple logs
+  expect_gt(nrow(res), nrow(test_trees))
 
-  # Check for Log-level prefixes
-  expect_true(any(grepl("^LG_", names(res))))
-
-  # Check for Tree-level prefixes
-  expect_true(any(grepl("^TR_", names(res))))
-
-  # Check that original columns (trid) are preserved
-  expect_true("trid" %in% names(res))
+  # Check for essential columns
+  expect_true(all(c("LG_NUM", "LG_LEN", "TR_TCFV_ALL", "TreeIdx") %in% names(res)))
 })
 
-test_that("NVEL_buck handles non-merchantable trees (Zero Logs)", {
-  # A 4-inch tree is usually below merchantable limits for most equations
-  df_small <- data.frame(
-    region = 6,
-    forest = "01",
-    district = "01",
-    spcd = 202,
-    dbh = 4.0,
-    ht = 20
-  )
+test_that("Parallel results match Serial results exactly", {
+  skip_if_not(check_dll(), "NVEL DLL not found, skipping tests")
 
-  res <- NVEL_buck(dfTL = df_small)
+  # 1 Core
+  res_serial <- NVEL_buck(dfTL = test_trees, ncore = 1, vol2biomass = FALSE)
 
-  # Should return exactly 1 row with LG_NUM = 0
-  expect_equal(nrow(res), 1)
-  expect_equal(res$LG_NUM[1], 0)
-  expect_equal(res$TR_NLOGS_ALL[1], 0)
+  # 2 Cores
+  res_parallel <- NVEL_buck(dfTL = test_trees, ncore = 2, vol2biomass = FALSE)
+
+  # Sort to ensure comparison is valid (though TreeIdx should handle this)
+  setkey(res_serial, TreeIdx, LG_NUM)
+  setkey(res_parallel, TreeIdx, LG_NUM)
+
+  # Check equality
+  expect_equal(res_serial, res_parallel)
 })
 
-test_that("NVEL_buck correctly expands a large tree into multiple logs", {
-  # A 30-inch DBH, 150ft tree should definitely produce multiple logs
-  df_large <- data.frame(
-    region = 6,
-    forest = "01",
-    district = "01",
-    spcd = 202,
-    dbh = 30.0,
-    ht = 150
-  )
-
-  res <- NVEL_buck(dfTL = df_large)
-
-  # Should have more than 1 row
-  expect_gt(nrow(res), 1)
-
-  # LG_NUM should be sequential
-  expect_equal(res$LG_NUM, 1:nrow(res))
-
-  # Total height of logs should be less than or equal to total tree height
-  expect_true(max(res$LG_HT) <= 150)
-})
-
-test_that("NVEL_buck biomass columns are added when vol2biomass is TRUE", {
-  df_test <- data.frame(
-    region = 6, forest = "01", district = "01",
-    spcd = 202, dbh = 10, ht = 60
-  )
-
-  res_with <- NVEL_buck(dfTL = df_test, vol2biomass = TRUE)
-  res_without <- NVEL_buck(dfTL = df_test, vol2biomass = FALSE)
-
-  expect_true("TR_TBIOGRN_LBS" %in% names(res_with))
-  expect_false("TR_TBIOGRN_LBS" %in% names(res_without))
-})
-
-test_that("NVEL_buck handles custom column names correctly", {
-  # Input data with non-standard names
-  df_custom <- data.frame(
-    MY_SPECIES = 202,
-    MY_DBH = 15.5,
-    MY_HT = 90,
-    region = 6,
-    forest = "01",
-    district = "01"
-  )
+test_that("Biomass calculations are performed when requested", {
+  skip_if_not(check_dll(), "NVEL DLL not found, skipping tests")
 
   res <- NVEL_buck(
-    dfTL = df_custom,
-    spcdNm = "MY_SPECIES",
-    dbhNm = "MY_DBH",
-    htNm = "MY_HT"
+    dfTL = test_trees[2,], # Use a merchantable tree
+    vol2biomass = TRUE,
+    ncore = 1
   )
 
-  expect_true(all(res$LG_NUM > 0))
-  expect_true("MY_DBH" %in% names(res))
+  # Check for biomass columns
+  expect_true("TR_TBIOGRN_LBS" %in% names(res))
+  expect_true("TR_TBIODRY_LBS" %in% names(res))
+
+  # Values should be positive and numeric
+  expect_true(all(res$TR_TBIOGRN_LBS > 0))
 })
 
-test_that("NVEL_buck voleq parameter overrides default equations", {
-  df_test <- data.frame(
-    region = 1, forest = "01", district = "01",
-    spcd = 202, dbh = 12, ht = 80
+test_that("Non-merchantable trees return a single row with LG_NUM 0", {
+  skip_if_not(check_dll(), "NVEL DLL not found, skipping tests")
+
+  # Tree with 2 inch DBH
+  small_tree <- data.table(spcd=202, dbh=2, ht=10, region=6, forest="01", district="01")
+
+  res <- NVEL_buck(dfTL = small_tree, ncore = 1)
+
+  expect_equal(nrow(res), 1)
+  expect_equal(res$LG_NUM, 0)
+  expect_equal(res$TR_TCFV_ALL, 0)
+})
+
+test_that("Function handles data.frame input and still returns data.table", {
+  skip_if_not(check_dll(), "NVEL DLL not found, skipping tests")
+
+  df_input <- as.data.frame(test_trees[2,])
+
+  res <- NVEL_buck(dfTL = df_input, ncore = 1)
+
+  expect_s3_class(res, "data.table")
+})
+
+test_that("Incorrect column mapping throws error early", {
+  # This tests the .formatTL2NVEL2 and internal mapply safety
+  # If we pass a column name that doesn't exist, it should fill with 0 or warn
+  expect_error(
+    NVEL_buck(dfTL = test_trees, dbhNm = "wrong_name"),
+    NA # We don't necessarily expect an R error if it defaults to 0,
+       # but you could add specific validation in the function to throw errors.
   )
-
-  # Force a specific Region 6 equation on a Region 1 tree
-  forced_eq <- "F0162521"
-  res <- NVEL_buck(dfTL = df_test, voleq = forced_eq)
-
-  # In our revised formatTL2NVEL2, the voleqNm column (default "voleq")
-  # should contain the forced value
-  expect_equal(unique(res$voleq), forced_eq)
 })

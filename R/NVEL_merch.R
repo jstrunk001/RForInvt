@@ -24,40 +24,39 @@
 #' library(RForInvt)
 #' library(data.table)
 #'
-#' # 1. Prepare dummy tree data
-#' df_trees <- data.frame(
-#'   tree_id = 1:2,
-#'   Species = c("AF", "AF"),
-#'   dbh = c(22.0, 10.5),
-#'   ht = c(100, 60)
+#' # 1. Prepare a small tree list (NVEL needs region/forest/district + species)
+#' df_trees <- data.table(
+#'   id       = 1:2,
+#'   spcd     = c(202, 202),   # Douglas-fir
+#'   dbh      = c(22.0, 10.5),
+#'   ht       = c(100, 60),
+#'   region   = 6,
+#'   forest   = "01",
+#'   district = "01"
 #' )
 #'
-#' # 2. Generate logs using NVEL_buck
+#' # 2. Generate logs using NVEL_buck (note the *Nm column-mapping arguments)
 #' df_logs <- NVEL_buck(
-#'   df_trees,
-#'   col_id = "tree_id",
-#'   col_spp = "Species",
-#'   col_dbh = "dbh",
-#'   col_ht = "ht",
-#'   log_len = 16.4
+#'   dfTL   = df_trees,
+#'   dbhNm  = "dbh",
+#'   htNm   = "ht",
+#'   spcdNm = "spcd"
 #' )
 #'
-#' # 3. Example Merch Specs
+#' # 3. Example merchantability specifications
 #' merch_specs <- data.table(
-#'   Species = "DF",
-#'   Sort = c("S", "S", "P"),
-#'   Grade = c("4", "3", "0"),
-#'   Label = c("Saw_h", "Saw_m", "Pulpwood"),
-#'   Rank = c(1, 2, 3),
-#'   MinDib = c(18, 12, 6),
-#'   MinDbh = c(7, 7, 7),
-#'   MinLen = c(3, 2, 1)
+#'   Species = 202,
+#'   Sort    = c("S", "S", "P"),
+#'   Grade   = c("4", "3", "0"),
+#'   Label   = c("Saw_h", "Saw_m", "Pulpwood"),
+#'   Rank    = c(1, 2, 3),
+#'   MinDib  = c(18, 12, 6),
+#'   MinDbh  = c(7, 7, 7),
+#'   MinLen  = c(3, 2, 1)
 #' )
 #'
-#' # 4. Assign Grades (Merchandizing)
+#' # 4. Assign grades (merchandizing) and view results
 #' graded_logs <- NVEL_merch(df_logs, merch_specs)
-#'
-#' # View results
 #' print(head(graded_logs))
 #' }
 NVEL_merch <- function(df_logs,

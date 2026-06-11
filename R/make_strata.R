@@ -367,13 +367,11 @@ make_strata = function(
   if(collapse){
 
     pdstrat_in = assign_strata(dfStr2,data_in[,c(x1,x2)])$stratum
-    tbtest = table(data_in$strat_in)
-    nmtest = names(tbtest)
     missing_idx = !dfStr2$stratum %in% pdstrat_in
 
     if( sum(missing_idx) > 0 ){
 
-      warning("currently 'collapse=T' uses a cheap fix - eventually add something smarter")
+      warning("currently 'collapse=T' uses a cheap fix - empty bins are merged into the nearest occupied bin by bin sequence")
 
       #grab nearest bin based on bin sequence
       idx_bad = sort(which(missing_idx))
@@ -387,21 +385,6 @@ make_strata = function(
       dfStr2[idx_bad,c("stratum")] = dfStr2[idx_new,c("stratum")]
       dfStr2[idx_bad,"is_collapsed"] = T
       dfStr2 = dfStr2[-idx_bad,]
-
-      #eventually add something smarter:
-      if(type_x1 == "numeric" & type_x2 == "numeric"){
-
-
-
-      }
-      if(type_x1 != "numeric" & type_x2 == "numeric"){
-
-
-      }
-      if(type_x1 == "numeric" & type_x2 != "numeric"){
-
-
-      }
 
     }
 

@@ -5,7 +5,7 @@
 \title{create template key file that is applied to each record or stand - meant to be used with fvs_make_keyfiles()}
 \usage{
 fvs_prototype_keyfile(
-  title = "!!title: FVS key prototype",
+  title = "!!title: RForInvt FVS keyword prototype",
   std_id = "@std_id@",
   std_cn = "@std_id@",
   mgmt_id = "A001",
@@ -65,7 +65,7 @@ clus1 = parallel::makeCluster(4)
 
 #assume a typical inventory dataset and prepare fvs parameters
 stand_data = data.frame(stand=1:10, year=2000:2009)#'
-df_params = fvs_protype_params()
+df_params = fvs_prototype_params()
 df_params[1:nrow(stand_data),]=NA
 df_params[,"std_id"] = stand_data$stand
 df_params[,"invyr"] = stand_data$year

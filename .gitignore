@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# databases / data files are kept out of version control (distributed separately)
+*.db

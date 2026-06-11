@@ -2,11 +2,10 @@
 % Please edit documentation in R/NVEL_wtfactor.R
 \name{NVEL_wtfactor}
 \alias{NVEL_wtfactor}
-\title{Select Appropriate Volume equation for Region, Forest, District, Tree species from National Volume Estimator Library (NVEL)}
+\title{Get green/dry weight factors for Region, Forest, Tree species from the National Volume Estimator Library (NVEL)}
 \usage{
 NVEL_wtfactor(
-  dfTL = list(NA, data.frame(spcd = 201, dbh = 5, ht = 5, region = 0, forest =
-    "01"))[[1]],
+  dfTL = NULL,
   region = NA,
   forest = NA,
   spcd = NA,
@@ -18,40 +17,44 @@ NVEL_wtfactor(
   dll_32 = system.file("lib/VolLibDll20231106/vollib-32bits/vollib.dll", package =
     "RForInvt"),
   dll_func_wtfactor = "getwtfactor_r",
-  load_dll = T
+  load_dll = TRUE
 )
 }
 \arguments{
-\item{dfTL}{data.frame with tree records}
+\item{dfTL}{data.frame/data.table with tree records (region, forest, species columns)}
 
-\item{region}{(optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm}
+\item{region}{(optional) scalar region; supercedes the dfTL regionNm column}
 
-\item{forest}{(optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm}
+\item{forest}{(optional) scalar forest; supercedes the dfTL forestNm column}
 
-\item{regionNm}{(optional) column name in DFTL:provide region, forest, district for every tree in dfTL}
+\item{spcd}{(optional) scalar USFS species code; supercedes the dfTL spcdNm column}
 
-\item{forestNm}{(optional) column name in DFTL:provide region, forest, district for every tree in dfTL}
+\item{regionNm}{column name in dfTL holding the region}
 
-\item{spcdNm}{(required) column name in DFTL: USFS species code}
+\item{forestNm}{column name in dfTL holding the forest}
 
-\item{dll_64}{path to 64bit dll}
+\item{spcdNm}{(required) column name in dfTL holding the USFS species code}
 
-\item{dll_32}{path to 64bit dll}
+\item{dll_64}{path to the 64-bit vollib.dll}
 
-\item{dll_func_wtfactor}{name of volume equation chooser function call in NVEL .dll}
+\item{dll_32}{path to the 32-bit vollib.dll}
 
-\item{load_dll}{T/F should dll be loaded (in case it is already loaded)}
+\item{dll_func_wtfactor}{name of the weight-factor function in the NVEL .dll}
 
-\item{district}{(optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm}
+\item{load_dll}{T/F should the dll be loaded (skip if already loaded)}
 }
 \value{
-reformatted tree list with with a new column volume equation codes for NVEL - "voleq"
+the input tree list (as a data.table) with two appended columns: `WFGRN_LBSCFT` (green weight
+ factor, lbs/ft^3) and `WFDRY_LBSCFT` (dry weight factor, lbs/ft^3)
 }
 \description{
-Select Appropriate Volume equation for Region, Forest, District, Tree species from National Volume Estimator Library (NVEL)
+Look up the NVEL green and dry weight factors (pounds per cubic foot) for each tree, given its
+ region, forest, and USFS species code. These factors convert cubic-foot volume to biomass.
 }
 \details{
-Select Appropriate Volume equation for Region, Forest, District, Tree species from National Volume Estimator Library (NVEL)
+Calls the NVEL `getwtfactor`-style routine in vollib.dll once per tree and returns the
+ green (`WFGRN_LBSCFT`) and dry (`WFDRY_LBSCFT`) weight factors. Region/forest/species may be
+ supplied either as columns of `dfTL` (via the `*Nm` arguments) or as scalar `region`/`forest`/`spcd`.
 
 \cr
 Revision History
@@ -60,44 +63,14 @@ Revision History
 }
 }
 \examples{
+\donttest{
+ # scalar lookup
+ NVEL_wtfactor(region = 6, forest = "01", spcd = 202)
 
-        library(RSForInvt)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
-         NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
-
-        #grab list of species
-        if(!"dfSpp" \%in\% ls()){
-          library(RSQLite)
-          db0 = dbConnect(RSQLite::SQLite(), "code/BiomassEqns.db")
-          dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-          dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-          dbDisconnect(db0)
-        }
-
-        #build a fake tree list
-        if(!"dfSpp" \%in\% ls()){
-          set.seed=111
-          nfake=length(unique(dfCoeff$species_code))
-
-          df_fake = data.frame(
-            trid=1:(nfake)
-            ,region = 6
-            ,forest = "01"
-            ,district = "01"
-            ,dbh=10*abs(rnorm(nfake))
-            ,ht=100*abs(rnorm(nfake))
-            ,spcd = unique(dfCoeff$species_code)#'     sample(c("a","b","c","d") , nfake , T)
-          )
-
-        }
-
-        #get volumes
-        NVEL_voleq( dfTL = df_fake )
-
-
-
+ # column-based lookup over a small tree list
+ trees = data.frame(region = 6, forest = "01", spcd = c(202, 122, 242))
+ NVEL_wtfactor(dfTL = trees, spcdNm = "spcd")
+}
 
 
 }

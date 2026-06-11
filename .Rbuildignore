@@ -1,2 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^_dev($|/)
+^_archive($|/)
+^.*\.Rhistory$
+^fort\.2$
+^[^/]*\.db$
+^inst/NVEL/NBEL_CPP_DAL($|/)
+^inst/tidyverse_coding_convention($|/)
+^\.git($|/)

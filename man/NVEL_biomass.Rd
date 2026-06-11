@@ -4,7 +4,28 @@
 \alias{NVEL_biomass}
 \title{Predict biomass using National Volume Estimator Library (NVEL)}
 \usage{
-NVEL_biomass()
+NVEL_biomass(
+  dfTL = data.frame(dbh = 15, ht = 65, cl = 30),
+  bioeq = NA,
+  geosub = NA,
+  bioeqNm = c("bioeq"),
+  geosubNm = "geosub",
+  spcdNm = "spcd",
+  dbhNm = "dbh",
+  htNm = "ht",
+  stemsNm = "stems",
+  clNm = "cl",
+  merchDbNm = c("merchDb"),
+  htPrd1Nm = c("htPrd1"),
+  htPrd2Nm = c("htPrd2"),
+  cv4Nm = "cv4",
+  dll_64 = system.file("lib/VolLibDll20231106/vollib-64bits/vollib.dll", package =
+    "RForInvt"),
+  dll_32 = system.file("lib/VolLibDll20231106/vollib-32bits/vollib.dll", package =
+    "RForInvt"),
+  load_dll = T,
+  dll_func_bio = "biomasslib_r"
+)
 }
 \arguments{
 \item{dfTL}{tree list with a minimum of diamter and height columns}

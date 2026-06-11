@@ -247,13 +247,13 @@ compile_plots=function(
 
 	#subset data before compilation
 	if(!is.na(plot_filter[1]) & !no_df_plot){
-		df_plot_in = sqldf(plot_filter, envir=as.environment(data))
+		df_plot_in = sqldf(plot_filter[1], envir=environment())
 	}
 	if((!"df_plot_in" %in% ls()) & !no_df_plot){
 		df_plot_in = df_plot
 	}
 	if(!is.na(tree_filter[1])){
-		df_tree_in = sqldf(tree_filter, envir=as.environment(data))
+		df_tree_in = sqldf(tree_filter[1], envir=environment())
 	}
 	if((!"df_tree_in" %in% ls())){
 		df_tree_in = df_tree
@@ -559,8 +559,6 @@ spp_y_plot = function(
   #x,sppNm,plot_ids,wt_nm=NA,...
   ,...
 ){
-
-  require("reshape2")
 
   #remove trees without ID fields
   bad_ids = apply(is.na(df_tree[,tree_nms[["plot_ids"]],drop=F]),1,function(x) TRUE %in% x )

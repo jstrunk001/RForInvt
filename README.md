@@ -1,5 +1,15 @@
 # RForInvt
-A collection of forest inventory related tools
+A collection of forest inventory related tools.
+
+`RForInvt` bundles tools for forest inventory data compilation and growth projection. The functionality
+falls into a few groups:
+
+- **`compile_*`** — compile plot- and tree-level inventory summaries (e.g. `compile_trees`, `compile_plots`).
+- **`fia_*`** — clean and geolocate FIA (Forest Inventory and Analysis) data (`fia_clean_best_cds`, `fia_make_geom`).
+- **`fvs_*`** — build key files for and run the Forest Vegetation Simulator (`fvs_make_keyfiles`, `fvs_run`, ...).
+- **`NVEL_*`** — National Volume Estimator Library wrappers for volume, bucking, merchandizing, biomass, and weight factors.
+- **`model_archive_*` / `model_predict`** — save, list, load, and apply archived statistical models.
+- Statistical and utility helpers (`make_strata`, `archive_table`, `aggregate2`, ...).
 
 This functionality is being split off of RSForInvt because of the dependency nightmare resulting from packing too much into a single package.
 
@@ -24,10 +34,10 @@ devtools::install_github("jstrunk001/RForInvt")
 ```
 #Manual way to install this package:
 
-Download this git repository to a local zip file, then rename the downloaded zip archive from "RForinvt-master.zip" -> "RForInvt.zip", and then use the R remotes::install_local to install from .zip package file or just use the r or RStudio dropdown to inall a local zip. 
+Download this git repository to a local zip file, then rename the downloaded zip archive from "RForinvt-master.zip" -> "RForInvt.zip", and then use the R remotes::install_local to install from .zip package file or just use the R or RStudio dropdown to install from a local zip. 
 
 ```r
-install.packages("remotes)
+install.packages("remotes")
 #your path will vary here!
 remotes::install_local("c:\\temp\\RForInvt.zip")
 
@@ -63,7 +73,7 @@ Package usage is also fairly simple
   #the fvs_make_keyfiles will take this list of parameters and make a
   #separate key file for each record in the FVS_StandInit table
   
-    df_params = fvs_protype_params()
+    df_params = fvs_prototype_params()
     df_params[1:nrow(fvs_stands),]=NA
     df_params[,"std_id"] = fvs_stands$STAND_ID
     df_params[,"invyr"] = fvs_stands$INV_YEAR
@@ -108,7 +118,7 @@ Package usage is also fairly simple
         #grab list of species
         if(!"dfSpp" %in% ls()){
           library(RSQLite)
-          db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RForInvt"))
+          db0 = dbConnect(RSQLite::SQLite(), system.file("NVEL/BiomassEqns.db", package="RForInvt"))
             dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
             dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
           dbDisconnect(db0)

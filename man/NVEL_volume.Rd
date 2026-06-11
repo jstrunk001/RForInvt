@@ -134,44 +134,35 @@ Revision History
 }
 }
 \examples{
-
+\donttest{
         #look up volume equations
-         library(RForInvt)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
-         NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
+         NVEL_voleq(region = 2, forest = "01", district = "01", spcd = 951)
+         NVEL_voleq(region = 2, forest = "01", district = "01", spcd = rep(c(951, 201), 2))
+         NVEL_voleq(dfTL = data.frame(region = 6, forest = "01", district = "01",
+                                      spcd = rep(c(951, 201), 2)))
 
-        #grab list of species
-        if(!"dfSpp" \%in\% ls()){
-          library(RSQLite)
-          db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RForInvt"))
-          dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-          dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-          dbDisconnect(db0)
-        }
+        #grab species codes from the bundled biomass-equation database
+        db0 = DBI::dbConnect(RSQLite::SQLite(),
+                             system.file("NVEL/BiomassEqns.db", package = "RForInvt"))
+        dfCoeff = DBI::dbGetQuery(db0, "select * from BM_EQCoefs")
+        DBI::dbDisconnect(db0)
 
         #build a fake tree list
-        if("df_fake" \%in\% ls()){
-          set.seed=111
-          nfake=length(unique(dfCoeff$species_code))
-
-          df_fake = data.frame(
-            trid=1:(nfake)
-            ,region = 6
-            ,forest = "01"
+        set.seed(111)
+        nfake = length(unique(dfCoeff$species_code))
+        df_fake = data.frame(
+            trid     = 1:nfake
+            ,region   = 6
+            ,forest   = "01"
             ,district = "01"
-            ,dbh=10*abs(rnorm(nfake))
-            ,ht=100*abs(rnorm(nfake))
-            ,spcd = unique(dfCoeff$species_code)#'     sample(c("a","b","c","d") , nfake , T)
+            ,dbh      = 10*abs(rnorm(nfake))
+            ,ht       = 100*abs(rnorm(nfake))
+            ,spcd     = unique(dfCoeff$species_code)
           )
-
-        }
 
         #get volumes
         NVEL_volume( dfTL = df_fake )
-
-
+}
 
 }
 \seealso{

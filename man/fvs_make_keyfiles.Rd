@@ -10,7 +10,9 @@ fvs_make_keyfiles(
   path_key_proto = NA,
   key_proto = NA,
   clear_db = T,
+  create_db = F,
   clear_keys = T,
+  key_nms = c(prefix = "", suffix = ""),
   cluster = NA,
   id = c("plt_id"),
   quotes_db = F
@@ -49,7 +51,7 @@ clus1 = parallel::makeCluster(4)
 
 #assume a typical inventory dataset and prepare fvs parameters
 stand_data = data.frame(stand=1:10, year=2000:2009)#'
-df_params = fvs_protype_params()
+df_params = fvs_prototype_params()
 df_params[1:nrow(stand_data),]=NA
 df_params[,"std_id"] = stand_data$stand
 df_params[,"invyr"] = stand_data$year

@@ -124,7 +124,7 @@ NVEL_biomass=function(
 ){
   options(stringsAsFactors = F)
   #load dll if needed
-  if(load_dll) .load_dll(dll_64,dll_32,dll_func )
+  if(load_dll) .nvel_load_dll(dll_64,dll_32 )
 
   #test for existence of bioeq
   # get_bioeq = T
@@ -178,17 +178,6 @@ NVEL_biomass=function(
 
   #return formatted tree list with predicted volumes
   data.frame(dfTL0_in,bio_pd0_df )
-
-}
-
-#load dll if needed
-.load_dll = function(dll_64,dll_32,dll_func ){
-
-  arch_in = R.Version()$arch
-  loaded_dlls_in = names(getLoadedDLLs())
-  dll_loaded = "vollib" %in% loaded_dlls_in
-  if(arch_in == "x86_64" & !dll_loaded) dyn.load(dll_64)
-  if(arch_in == "x86_32" & !dll_loaded) dyn.load(dll_32)
 
 }
 

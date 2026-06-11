@@ -1,5 +1,112 @@
-#' @export
-#' @export
+#'@title Predict Log-Level Volume and Dimensions using NVEL
+#'
+#'@description
+#' A high-performance wrapper for the National Volume Estimator Library (NVEL) \code{vollib2_r} entry point.
+#' This function predicts individual log dimensions (length, diameters, volumes) and whole-tree
+#' attributes (total volumes, biomass). It supports multi-core parallel processing for large datasets
+#' and forces internal use of \code{data.table} for memory efficiency.
+#'
+#'@details
+#' The function returns a "long-format" table. If a tree has 5 logs, it will result in 5 rows in the
+#' output, each sharing the same tree-level attributes but having unique log-level attributes.
+#' \itemize{
+#'   \item \code{LG_}: Columns prefixed with LG represent log-specific data (e.g., \code{LG_DIB_SMALL}).
+#'   \item \code{TR_}: Columns prefixed with TR represent tree-level totals (e.g., \code{TR_TCFV_ALL}).
+#' }
+#'
+#' Note: Parallel execution (\code{ncore > 1}) uses a PSOCK cluster to ensure the non-thread-safe
+#' Fortran DLL is isolated within separate R processes.
+#'
+#'@param dfTL data.frame or data.table. Tree list containing DBH, Height, and Species codes.
+#'@param voleq character. Optional. A specific NVEL volume equation (e.g., "F0162521") to force for all trees.
+#'@param region integer. USFS Region (1-10). Default 1.
+#'@param forest character. USFS Forest code (e.g., "01").
+#'@param district character. USFS District code (e.g., "01").
+#'@param voleqNm character. Column name in \code{dfTL} containing volume equations.
+#'@param regionNm character. Column name in \code{dfTL} for USFS Region.
+#'@param forestNm character. Column name in \code{dfTL} for USFS Forest.
+#'@param districtNm character. Column name in \code{dfTL} for USFS District.
+#'@param spcdNm character. Column name in \code{dfTL} for USFS Species Code.
+#'@param dbhNm character. Column name in \code{dfTL} for DBH (inches).
+#'@param htNm character. Column name in \code{dfTL} for Total Height (feet).
+#'@param pulpDbNm character. Optional. Column name for pulpwood top diameter limit.
+#'@param sawDbNm character. Optional. Column name for sawtimber top diameter limit.
+#'@param htPrd1Nm character. Optional. Column name for height to primary product top.
+#'@param htPrd2Nm character. Optional. Column name for height to secondary product top.
+#'@param upHt1Nm character. Optional. Column name for upper stem height.
+#'@param upDb1Nm character. Optional. Column name for upper stem diameter.
+#'@param stumpHtNm character. Optional. Column name for stump height.
+#'@param fclassNm character. Optional. Column name for Girard Form Class.
+#'@param dbtbhNm character. Optional. Column name for double bark thickness.
+#'@param btrNm character. Optional. Column name for bark thickness ratio.
+#'@param vol2biomass logical. If TRUE, joins with \code{NVEL_wtfactor} to compute green/dry biomass.
+#'@param dll_64 character. Path to the 64-bit vollib.dll.
+#'@param dll_32 character. Path to the 32-bit vollib.dll.
+#'@param load_dll logical. Whether to load the DLL into the R session.
+#'@param dll_func_vol character. Entry point name in the DLL. Default "vollib2_r".
+#'@param ncore integer. Number of cores for parallel processing. Default 1.
+#'
+#'@return
+#'  data.table in long format (one row per log).
+#'
+#'@author Jacob Strunk <someone@@somewhere.com>
+#'
+#'@examples
+#'
+#'
+#' library(data.table)
+#' library(RForInvt)
+#'
+#' # --- Example 1: Basic Single-Core Usage ---
+#' df_trees <- data.table(
+#'   tree_id = 1:3,
+#'   spcd = c(202, 202, 122),
+#'   dbh = c(12.5, 24.2, 8.1),
+#'   ht = c(85, 130, 45),
+#'   region = 6,
+#'   forest = "01",
+#'   district = "01"
+#' )
+#'
+#' res <- NVEL_buck(
+#'   dfTL = df_trees,
+#'   spcdNm = "spcd",
+#'   dbhNm = "dbh",
+#'   htNm = "ht",
+#'   vol2biomass = TRUE,
+#'   ncore = 1
+#' )
+#'
+#' # View logs for the large tree (tree_id 2)
+#' print(res[tree_id == 2, .(tree_id, LG_NUM, LG_LEN, LG_DIB_SMALL, TR_TCFV_ALL)])
+#'
+#' # --- Example 2: Parallel Processing for Large Datasets ---
+#' # Create a fake dataset of 10,000 trees
+#' big_trees <- data.table(
+#'   spcd = sample(c(202, 122, 15), 10000, replace = TRUE),
+#'   dbh = runif(10000, 5, 30),
+#'   ht = runif(10000, 30, 150),
+#'   region = 6,
+#'   forest = "01",
+#'   district = "01"
+#' )
+#'
+#' # Run in parallel on 4 cores
+#' res_para <- NVEL_buck(
+#'   dfTL = big_trees,
+#'   ncore = 4,
+#'   vol2biomass = FALSE
+#' )
+#'
+#' # --- Example 3: Forcing a Specific Volume Equation ---
+#' # Use a specific equation code from the NVEL library
+#' res_forced <- NVEL_buck(
+#'   dfTL = df_trees,
+#'   voleq = "F0162521"
+#' )
+#'
+#'
+#'@export
 NVEL_buck = function(
   dfTL = data.table::data.table(dbh = 5, ht = 5)
   , voleq = NA
@@ -31,12 +138,16 @@ NVEL_buck = function(
   , ncore = 1
 ){
 
-# Debugging check
-# print(args(.load_dll))
+  # Ensure data.table awareness
+  if (!data.table::is.data.table(dfTL)) {
+    dfTL_in <- data.table::as.data.table(dfTL)
+  } else {
+    dfTL_in <- data.table::copy(dfTL)
+  }
 
   # 1. Standardize and Format Data (Once)
   dfTL0_in = .formatTL2NVEL2(
-     dfTL0=dfTL
+     dfTL0=dfTL_in
     ,voleq=voleq[1]
     ,region=region[1]
     ,forest=forest[1]
@@ -93,7 +204,10 @@ NVEL_buck = function(
 
     # FIX: Export all necessary helper functions and path variables.
     # We use parent.frame() or .GlobalEnv if debugging as a script.
-    helper_funcs = c(".fn_fortran_vol2_logs", ".load_dll", ".formatTL2NVEL2")
+    helper_funcs = c(".fn_fortran_vol2_logs", ".nvel_load_dll", ".formatTL2NVEL2")
+
+    parallel::clusterEvalQ(cl_in, library(RForInvt))
+
     parallel::clusterExport(cl_in,
                             varlist = c(
                                        "dll_64"
@@ -115,16 +229,15 @@ NVEL_buck = function(
                                       ,"stumpHtNm"
                                       ,"fclassNm"
                                       ,"dbtbhNm"
-                                      ,"btrNm"
-                                      ,helper_funcs),
+                                      ,"btrNm"),
                             envir = environment())
 
     vol_list_raw <- parallel::parLapply(cl_in, chunks, function(dt_chunk) {
       # Load data.table inside worker
       library(data.table)
 
-      #for debugging Use the local helper instead of RForInvt:::
-      .load_dll(dll_64 = dll_64, dll_32 = dll_32, dll_func = dll_func_vol)
+      #load the NVEL DLL inside each worker (package is loaded via clusterEvalQ above)
+      .nvel_load_dll(dll_64 = dll_64, dll_32 = dll_32)
 
       mapply(
          .fn_fortran_vol2_logs
@@ -145,7 +258,7 @@ NVEL_buck = function(
         ,fclass=dt_chunk[[fclassNm]]
         ,dbtbh=dt_chunk[[dbtbhNm]]
         ,btr=dt_chunk[[btrNm]]
-        ,MoreArgs=list(dll_func_vol2=dll_func_vol)
+        ,MoreArgs=list(dll_func_vol=dll_func_vol)
         ,SIMPLIFY=FALSE
           )
     })
@@ -153,7 +266,7 @@ NVEL_buck = function(
 
   } else {
     # ncore == 1
-    if(load_dll) .load_dll(dll_64, dll_32, dll_func_vol)
+    if(load_dll) .nvel_load_dll(dll_64, dll_32)
 
     vol_list = mapply(
                    .fn_fortran_vol2_logs
@@ -174,7 +287,7 @@ NVEL_buck = function(
                   ,fclass=dfTL0_in[[fclassNm]]
                   ,dbtbh=dfTL0_in[[dbtbhNm]]
                   ,btr=dfTL0_in[[btrNm]]
-                  ,MoreArgs=list(dll_func_vol2=dll_func_vol)
+                  ,MoreArgs=list(dll_func_vol=dll_func_vol)
                   ,SIMPLIFY=FALSE
                   )
   }
@@ -278,12 +391,12 @@ NVEL_buck = function(
   , fclass
   , dbtbh
   , btr
-  , dll_func_vol2
+  , dll_func_vol
 ){
 
   ### Placeholders for matrices and log count arguments
   res_vol0 = .Fortran(
-    dll_func_vol2
+    dll_func_vol
     , as.character(voleq)     # 1
     , as.integer(region)       # 2
     , as.character(forest)    # 3
@@ -388,14 +501,3 @@ NVEL_buck = function(
   }
 }
 
-.load_dll = function(
-  dll_64
-  , dll_32
-  , dll_func
-){
-  arch_in = R.Version()$arch
-  dll_loaded = "vollib" %in% names(getLoadedDLLs())
-  if(!dll_loaded){
-    if(arch_in == "x86_64") dyn.load(dll_64) else dyn.load(dll_32)
-  }
-}

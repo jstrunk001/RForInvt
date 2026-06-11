@@ -67,7 +67,7 @@ nmsVec=function(x){x=paste("c('",paste(names(x),collapse="','"),"')",sep=""); wr
   #the fvs_make_keyfiles will take this list of parameters and make a
   #separate key file for each record in the FVS_StandInit table
   
-    df_params = fvs_protype_params()
+    df_params = fvs_prototype_params()
     df_params[1:nrow(fvs_stands),]=NA
     df_params[,"std_cn"] = fvs_stands$STAND_CN
     df_params[,"std_id"] = fvs_stands$STAND_ID

@@ -108,10 +108,10 @@ NVEL_voleq = function(
 ){
 
   #load dll if needed
-  if(load_dll) .load_dll(dll_64,dll_32,dll_func )
+  if(load_dll) .nvel_load_dll(dll_64,dll_32 )
 
   #figure out how we are generating volume equations
-  if(class(dfTL) == "logical"){
+  if(is.logical(dfTL)){
 
     if( is.na(region[1]) | is.na(forest[1]) | is.na(district[1]) | is.na(spcd[1]) ) warning("dfTL not provided, and missing region,forest,district, or spcd - generic equation(s) likely returned")
 
@@ -142,51 +142,3 @@ NVEL_voleq = function(
 
 }
 
-#load dll if needed
-.load_dll = function(dll_64,dll_32,dll_func ){
-
-  arch_in = R.Version()$arch
-  loaded_dlls_in = names(getLoadedDLLs())
-  dll_loaded = "vollib" %in% loaded_dlls_in
-  if(arch_in == "x86_64" & !dll_loaded) dyn.load(dll_64)
-  if(arch_in == "x86_32" & !dll_loaded) dyn.load(dll_32)
-
-}
-
-
-#Testing
-if(F){
-
-  library(RForInvt)
-
-  NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-  NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-  NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
-  NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
-
-  if(!"dfSpp" %in% ls()){
-    library(RSQLite)
-    db0 = dbConnect(RSQLite::SQLite(), system.file("NVEL/BiomassEqns.db", package="RForInvt"))
-    dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-    dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-    dbDisconnect(db0)
-
-    set.seed=111
-    nfake=length(unique(dfCoeff$species_code))
-
-    df_fake = data.frame(
-      trid=1:(nfake)
-      ,region = 6
-      ,forest = "01"
-      ,district = "01"
-      ,dbh=10*abs(rnorm(nfake))
-      ,ht=100*abs(rnorm(nfake))
-      ,spcd = unique(dfCoeff$species_code)# sample(c("a","b","c","d") , nfake , T)
-    )
-
-  }
-
-  NVEL_voleq( dfTL = df_fake )
-
-
-}

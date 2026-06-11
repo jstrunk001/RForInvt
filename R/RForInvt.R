@@ -8,12 +8,12 @@
 #'  Tools for forest inventory estimation
 #'  currently in a preliminary stage, but some functionality present
 #'
-#'  - compilePlots
-#'  - compileTrees
+#'  - compile_plots
+#'  - compile_trees
 #'  - ols_modeling
 #'  - knn_tools
 #'  - yai_r2
-#'  - sampleSystematic
+#'  - sample_systematic
 #'  - NVEL...() related functions
 #'  - fvs..() related functions
 #'
@@ -41,14 +41,14 @@
 #'  depends on function
 #'
 #'@examples
-#'
-#'#FVS EXAMPLE
+#'\donttest{
+#'#FVS EXAMPLE (requires a local FVS executable and input database)
 #'
 #'           clus1 = parallel::makeCluster(4)
 #'
 #'           #assume a typical inventory dataset and prepare fvs parameters
-#'           stand_data = data.frame(stand=1:10, year=2000:2009)#'
-#'           df_params = fvs_protype_params()
+#'           stand_data = data.frame(stand=1:10, year=2000:2009)
+#'           df_params = fvs_prototype_params()
 #'           df_params[1:nrow(stand_data),]=NA
 #'           df_params[,"std_id"] = stand_data$stand
 #'           df_params[,"invyr"] = stand_data$year
@@ -69,47 +69,38 @@
 #'           #lastly, actually run fvs
 #'           fvs_run(df_keys, cluster = clus1)
 #'           parallel::stopCluster(clus1)
-#' #'
 #'
-#'#NVEL EXAMPLE
+#'#NVEL EXAMPLE (requires the bundled vollib.dll)
 #'
 #'         #look up volume equations
-#'          library(RSForInvt)
-#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
 #'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
 #'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
 #'          NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
 #'
-#'         #grab list of species
-#'         if(!"dfSpp" %in% ls()){
-#'           library(RSQLite)
-#'           db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RSForInvt"))
-#'           dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-#'           dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-#'           dbDisconnect(db0)
-#'         }
+#'         #grab list of species from the bundled biomass-equation database
+#'         db0 = DBI::dbConnect(RSQLite::SQLite(),
+#'                              system.file("NVEL/BiomassEqns.db", package="RForInvt"))
+#'         dfCoeff = DBI::dbGetQuery(db0, "select * from BM_EQCoefs")
+#'         DBI::dbDisconnect(db0)
 #'
 #'         #build a fake tree list
-#'         if("df_fake" %in% ls()){
-#'           set.seed=111
-#'           nfake=length(unique(dfCoeff$species_code))
-#'
-#'           df_fake = data.frame(
-#'             trid=1:(nfake)
-#'             ,region = 6
-#'             ,forest = "01"
+#'         set.seed(111)
+#'         nfake = length(unique(dfCoeff$species_code))
+#'         df_fake = data.frame(
+#'             trid     = 1:nfake
+#'             ,region   = 6
+#'             ,forest   = "01"
 #'             ,district = "01"
-#'             ,dbh=10*abs(rnorm(nfake))
-#'             ,ht=100*abs(rnorm(nfake))
-#'             ,spcd = unique(dfCoeff$species_code)#'     sample(c("a","b","c","d") , nfake , T)
+#'             ,dbh      = 10*abs(rnorm(nfake))
+#'             ,ht       = 100*abs(rnorm(nfake))
+#'             ,spcd     = unique(dfCoeff$species_code)
 #'           )
-#'
-#'         }
 #'
 #'         #get volumes
 #'         NVEL_volume( dfTL = df_fake )
+#'}
 #'
-#'@seealso \code{\link{lidR}}\cr \code{\link{RSForInvt}}\cr
+#'@seealso \code{\link{NVEL_volume}}\cr \code{\link{compile_trees}}\cr \code{\link{fvs_run}}\cr
 #'
 RForInvt=function(){}
 

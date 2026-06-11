@@ -74,54 +74,45 @@
 #'     15)	Tip volume
 #'
 #'@examples
-#'
+#'\donttest{
 #'         #look up volume equations
-#'          library(RForInvt)
-#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-#'          NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
-#'          NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
+#'          NVEL_voleq(region = 2, forest = "01", district = "01", spcd = 951)
+#'          NVEL_voleq(region = 2, forest = "01", district = "01", spcd = rep(c(951, 201), 2))
+#'          NVEL_voleq(dfTL = data.frame(region = 6, forest = "01", district = "01",
+#'                                       spcd = rep(c(951, 201), 2)))
 #'
-#'         #grab list of species
-#'         if(!"dfSpp" %in% ls()){
-#'           library(RSQLite)
-#'           db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RForInvt"))
-#'           dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-#'           dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-#'           dbDisconnect(db0)
-#'         }
+#'         #grab species codes from the bundled biomass-equation database
+#'         db0 = DBI::dbConnect(RSQLite::SQLite(),
+#'                              system.file("NVEL/BiomassEqns.db", package = "RForInvt"))
+#'         dfCoeff = DBI::dbGetQuery(db0, "select * from BM_EQCoefs")
+#'         DBI::dbDisconnect(db0)
 #'
 #'         #build a fake tree list
-#'         if("df_fake" %in% ls()){
-#'           set.seed=111
-#'           nfake=length(unique(dfCoeff$species_code))
-#'
-#'           df_fake = data.frame(
-#'             trid=1:(nfake)
-#'             ,region = 6
-#'             ,forest = "01"
+#'         set.seed(111)
+#'         nfake = length(unique(dfCoeff$species_code))
+#'         df_fake = data.frame(
+#'             trid     = 1:nfake
+#'             ,region   = 6
+#'             ,forest   = "01"
 #'             ,district = "01"
-#'             ,dbh=10*abs(rnorm(nfake))
-#'             ,ht=100*abs(rnorm(nfake))
-#'             ,spcd = unique(dfCoeff$species_code)#'     sample(c("a","b","c","d") , nfake , T)
+#'             ,dbh      = 10*abs(rnorm(nfake))
+#'             ,ht       = 100*abs(rnorm(nfake))
+#'             ,spcd     = unique(dfCoeff$species_code)
 #'           )
-#'
-#'         }
 #'
 #'         #get volumes
 #'         NVEL_volume( dfTL = df_fake )
-#'
-#'
+#'}
 #'
 #'@import plyr
 #'
-#'@export
+
 #
 #'@seealso \code{\link{NVEL_voleq}}\cr
 
 #Desired upgrades to this function:
 #
-#
+#'@export
 
 NVEL_volume=function(
 
@@ -174,7 +165,7 @@ NVEL_volume=function(
 
   options(stringsAsFactors = F)
   #load dll if needed
-  if(load_dll) .load_dll(dll_64,dll_32,dll_func_vol )
+  if(load_dll) .nvel_load_dll(dll_64,dll_32 )
 
   #test for existence of voleq
   #get_voleq = T
@@ -286,18 +277,8 @@ NVEL_volume=function(
   }
 
   #return formatted tree list with predicted volumes
-  res_in
-
-}
-
-#load dll if needed
-.load_dll = function(dll_64,dll_32,dll_func ){
-
-  arch_in = R.Version()$arch
-  loaded_dlls_in = names(getLoadedDLLs())
-  dll_loaded = "vollib" %in% loaded_dlls_in
-  if(arch_in == "x86_64" & !dll_loaded) dyn.load(dll_64)
-  if(arch_in == "x86_32" & !dll_loaded) dyn.load(dll_32)
+  #standardize on data.table for consistency across the NVEL_* family
+  data.table::as.data.table(res_in)
 
 }
 
@@ -441,70 +422,5 @@ NVEL_volume=function(
 
   #return correctly named data
   dfTL1[,nms_in]
-
-}
-#names(nms_in)[! names(nms_in)  %in% names(dfTL1) ]
-#(nms_in)[! (nms_in)  %in% names(dfTL1) ]
-
-NVEL_ht2topd = function(){
-
-
-}
-
-
-NVEL_calcdob = function(){
-
-
-}
-
-NVEL_biomass = function(){
-
-
-}
-
-
-
-
-#Testing
-if(F){
-
-  #library(RForInvt)
-
-  if(!"dfSpp" %in% ls()){
-
-    library(RSQLite)
-    db0 = dbConnect(RSQLite::SQLite(), system.file("/NVEL/BiomassEqns.db", package="RForInvt"))
-    dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-    dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-    dbDisconnect(db0)
-
-    set.seed=111
-    nfake=length(unique(dfCoeff$species_code))
-
-    dbhs = runif(nfake, 8,20 )
-    df_fake = data.frame(
-      trid=1:(nfake)
-      ,region = 6
-      ,forest = "01"
-      ,district = "01"
-      ,dbh=dbhs
-      ,ht=70*(dbhs/12)
-      ,spcd = unique(dfCoeff$species_code)# sample(c("a","b","c","d") , nfake , T)
-    )
-
-    #get FIA volumes equations
-    df_fake1 =   NVEL_nvbeq( dfTL = df_fake )
-
-    #get standard volume equations
-    df_fake2 =   NVEL_voleq( dfTL = df_fake )
-
-  }
-
-  #FIA volume
-  NVEL_volume( dfTL = df_fake1 )
-
-  #standard volume equations - both should be the same below
-  NVEL_volume( dfTL = df_fake )
-  NVEL_volume( dfTL = df_fake2 )
 
 }

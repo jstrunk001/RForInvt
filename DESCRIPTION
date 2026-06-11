@@ -1,41 +1,45 @@
 Package: RForInvt
 Type: Package
 Title: Forest Inventory Data Compilation and FVS Growth Projections
-Version: 0.3.0 
+Version: 0.3.0
 Author: Jacob Strunk
 Maintainer: Jacob Strunk <someone@somewhere.com>
 Description: A collection of data processing tools and helpers primarily motivated by forest inventory analysis. A companion package to
-        RSForTools (Remote Sensing Forestry Tools). The functionality here is still developmental - feel free to contribute.  
-        This set of tools is free to use but it is provided WITHOUT WARRANTY and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose; 
+        RSForTools (Remote Sensing Forestry Tools). The functionality here is still developmental - feel free to contribute.
+        This set of tools is free to use but it is provided WITHOUT WARRANTY and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
         you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation;
         either version 2 of the License, or (at your option) any later version: https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
-License: GPL 2 or later at users discretion
+License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.2
-Imports: 
-        bootstrap
-        ,caret
-        ,data.table
-        ,DBI
-        ,dplyr
-        ,plyr
-        ,flextable
-        ,knitr
-        ,leaps
-        ,MLmetrics
-        ,mltools
-        ,odbc
-        ,pander
-        ,parallel
-        ,plyr 
-        ,randomForest
-        ,reshape2
-        ,RODBC
-        ,RSQLite
-        ,sf
-        ,sqldf
-        ,stringr
-        ,survey
-        ,tools
-        ,yaImpute
+Imports:
+        bootstrap,
+        caret,
+        data.table,
+        DBI,
+        dplyr,
+        flextable,
+        flock,
+        knitr,
+        leaps,
+        MLmetrics,
+        mltools,
+        odbc,
+        openxlsx,
+        pander,
+        parallel,
+        plyr,
+        randomForest,
+        reshape2,
+        RODBC,
+        RSQLite,
+        sf,
+        sqldf,
+        stringr,
+        survey,
+        tools,
+        yaImpute
+Suggests:
+        testthat (>= 3.0.0),
+        withr
+Config/roxygen2/version: 8.0.0

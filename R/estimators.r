@@ -34,7 +34,8 @@
     x[,wt_nm] = N
   }
 
-  warning("calibrate, two-stage, Multi-stage Not Yet Implemented")
+  #note: "calibrate", "two-stage", and "multi-stage" types are not yet implemented
+  #(each unimplemented branch below stops with an explanatory message)
 
   if(length(resp_nm) > 1){stop("1 response at this time")}
 
