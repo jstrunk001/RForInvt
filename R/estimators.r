@@ -198,7 +198,6 @@
 .reg=function(x,resp_nm,wt_nm,ef_nm,reg_form,pop,N,type,var_type){
 
   n = nrow(x)
-  pop_mn=pop/N
 
   if(var_type[1] ==  "asym"){
 
@@ -242,7 +241,7 @@
 
     form_y=as.formula(paste("~",resp_nm))
     cb=try(calibrate(svy_srs,reg_form,population =  pop_svy))
-    if(class(cb) == "try-error"){
+    if(inherits(cb, "try-error")){
       stop(cb,"\n\n","Cause of Error: \nYou likely included an interaction in your model,but not a column for the interaction in your population totals: \ne.g. pop = data.frame( x1 = 50, x2 = 60, 'x1:x2' = 5000 ) notice the required x1:x2 column... ")
     }
     pd_m = data.frame(svymean(form_y,cb,deff=T))
@@ -333,8 +332,9 @@
     Ni_mt = pop[match(names(spl_x),pop[,strata_nm]),]
     spl_Ni=split(Ni_mt[,Ni_nm],Ni_mt[,strata_nm])
 
-    #push variance estimation to .rand function for each stratum
-    vars_str = rbind.fill(mapply(estimate,spl_x,N=spl_Ni,MoreArgs=list(resp_nm=resp_nm,wt_nm=wt_nm,var_type=var_type),SIMPLIFY = F))
+    #push variance estimation to .estimate (per stratum); returns a 1-row
+    #summary data.frame each, so rbind.fill can stack them
+    vars_str = rbind.fill(mapply(.estimate,spl_x,N=spl_Ni,MoreArgs=list(resp_nm=resp_nm,wt_nm=wt_nm,var_type=var_type),SIMPLIFY = F))
     v_t_str = sum(vars_str$se_t^2)
     t_str = sum(vars_str$total)
 

@@ -82,7 +82,7 @@ search_text=function(
 
     if(is.na(clus[1])){
 
-      res=mapply(search_text,file=files,pattern=pattern,match_string=match_string,recursive=recursive)
+      res=mapply(search_text,file=files,pattern=pattern,match_string=match_string,recursive=recursive,SIMPLIFY=FALSE)
 
     }else{
 

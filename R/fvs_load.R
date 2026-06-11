@@ -37,7 +37,7 @@
 #'
 fvs_load=function(
                         webpath = c("https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/open-fvs-code-r3840-rFVS-R.zip")
-                       , package = "RForBio"
+                       , package = "RForInvt"
                        , force_update = F
                        ){
 
@@ -59,7 +59,7 @@ fvs_load=function(
   #download files to package directory if necessary
   if(length(zips)==0 | force_update){
     if(!dir.exists(dir_rfvs)) dir.create(dir_rfvs)
-    file_path = download.file(webpath, dir_rfvs)
+    file_path = download.file(webpath, file.path(dir_rfvs, basename(webpath)))
   }
   #find most recent zip
   zips = sapply(dir_rfvs, list.files , pattern="[.]zip", full.names=T)
@@ -73,7 +73,7 @@ fvs_load=function(
     res_src = sapply(files_unzip,source)
     res_ulink = unlink(dirname(files_unzip[1]),recursive=T)
   }
-  cat("completed load of rRFVS functions /n")
+  cat("completed load of rRFVS functions \n")
 }
 
 

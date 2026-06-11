@@ -182,8 +182,8 @@ tpa = function(x,tree_nms,...){
 #'@export
 #'@rdname compile_trees
 tph = function(x,tree_nms,...){
-  if(!"nstems" %in% tree_nms)  res_df = data.frame(x, TPA = 1 / x[,tree_nms["hectares"]])
-  if("nstems" %in% tree_nms)  res_df = data.frame(x, TPA = x[,tree_nms["nstems"]]  / x[,tree_nms["hectares"]] )
+  if(!"nstems" %in% tree_nms)  res_df = data.frame(x, TPH = 1 / x[,tree_nms["hectares"]])
+  if("nstems" %in% tree_nms)  res_df = data.frame(x, TPH = x[,tree_nms["nstems"]]  / x[,tree_nms["hectares"]] )
   return(res_df)
 }
 
