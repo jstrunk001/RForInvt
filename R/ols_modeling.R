@@ -228,7 +228,7 @@
       bp1[["Sy"]]=sd(y)
       bp1[["meany"]]=mean(y)
       bp1[["err_632_pct"]]=bp1[["err_632"]]/bp1[["meany"]]*100
-      bp1[["err_632_pct_sdy"]]=bp1[["err.632"]]/bp1[["Sy"]]*100
+      bp1[["err_632_pct_sdy"]]=bp1[["err_632"]]/bp1[["Sy"]]*100
       bp1[["err_632_rsq"]]=max(0,1-(bp1[["err_632"]]/bp1[["Sy"]])^2)
       bp1[["n"]]=sum(!is.na(y))
       bp1[["n_gt_0"]]=sum(is.numeric(y) & y >0)
@@ -283,7 +283,7 @@
        lm_boot_in=function(ni,model,idx_all,data,...){
 
         mod_k=update(model,data=data[sample(idx_all,ni,replace=FALSE),])
-        data.frame(n=ni,err_632=lm_boot(mod_k,...)[["err.632"]])
+        data.frame(n=ni,err_632=lm_boot(mod_k,...)[["err_632"]])
 
        }
 
