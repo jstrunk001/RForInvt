@@ -99,10 +99,11 @@
 #' )
 #'
 #' # --- Example 3: Forcing a Specific Volume Equation ---
-#' # Use a specific equation code from the NVEL library
+#' # Use a specific equation code from the NVEL library (must be valid for the
+#' # trees' region/species, or vollib2_r returns zero volume).
 #' res_forced <- NVEL_buck(
 #'   dfTL = df_trees,
-#'   voleq = "F0162521"
+#'   voleq = "I00FW2W202"
 #' )
 #'
 #'
@@ -174,15 +175,19 @@ NVEL_buck = function(
   data.table::setDT(dfTL0_in)
   dfTL0_in[, TreeIdx := .I]
 
-  # Handle Volume Equation Lookup
-  if(is.na(voleq[1]) & (!voleqNm %in% names(dfTL0_in))){
+  # Handle Volume Equation Lookup.
+  # Check the ORIGINAL input (dfTL_in) for a user-supplied voleq column: the
+  # .formatTL2NVEL2() call above always adds a placeholder `voleq` column to
+  # dfTL0_in, so testing dfTL0_in here would always skip the lookup and leave
+  # voleq = 0 -> vollib2_r then returns zero volumes / no logs.
+  if(is.na(voleq[1]) & (!voleqNm %in% names(dfTL_in))){
     vol_eqns_in = NVEL_voleq(
-                        dfTL=dfTL
+                        dfTL=as.data.frame(dfTL0_in)   # NVEL_voleq indexes as a data.frame
                       ,regionNm=regionNm
                       ,forestNm=forestNm
                       ,districtNm=districtNm
                       ,spcdNm=spcdNm
-                      ,load_dll=FALSE
+                      ,load_dll=load_dll
                          )
     dfTL0_in[, (voleqNm) := vol_eqns_in[["voleq"]]]
     voleqNm = "voleq"
