@@ -268,36 +268,3 @@ NVEL_biomass=function(
   dfTL1[,names(nms_in)]
 
 }
-
-
-#Testing
-if(F){
-
-  library(RSForInvt)
-
-  if(!"dfSpp" %in% ls()){
-
-    library(RSQLite)
-    db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RForInvt"))
-    dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-    dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-    dbDisconnect(db0)
-
-    set.seed=111
-    nfake=length(unique(dfCoeff$species_code))
-
-    df_fake = data.frame(
-      trid=1:(nfake)
-      ,region = 6
-      ,forest = "01"
-      ,district = "01"
-      ,dbh=10*abs(rnorm(nfake))
-      ,ht=100*abs(rnorm(nfake))
-      ,spcd = unique(dfCoeff$species_code)# sample(c("a","b","c","d") , nfake , T)
-    )
-
-  }
-
-  NVEL_biomass( dfTL = df_fake , bioeq = "AFF019AST01D" )
-
-}
