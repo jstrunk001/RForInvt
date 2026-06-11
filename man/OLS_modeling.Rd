@@ -193,11 +193,8 @@ Revision History
    x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n)
  )
 
- #fit a linear model per response (named by response)
- mods <- list(
-   y1 = lm(y1 ~ x1 + x2 + x3, data = dat),
-   y2 = lm(y2 ~ x1 + x2 + x3, data = dat)
- )
+ #fit a linear model per response (named list, keyed by response)
+ mods <- lm_multi(y_vars = c("y1", "y2"), data = dat, form_y = "y~.", verbose = FALSE)
 
  #apparent + leave-one-out cross-validated fit statistics
  lm_summary(mods, data = dat)

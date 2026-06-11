@@ -106,11 +106,8 @@
 #'    x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n)
 #'  )
 #'
-#'  #fit a linear model per response (named by response)
-#'  mods <- list(
-#'    y1 = lm(y1 ~ x1 + x2 + x3, data = dat),
-#'    y2 = lm(y2 ~ x1 + x2 + x3, data = dat)
-#'  )
+#'  #fit a linear model per response (named list, keyed by response)
+#'  mods <- lm_multi(y_vars = c("y1", "y2"), data = dat, form_y = "y~.", verbose = FALSE)
 #'
 #'  #apparent + leave-one-out cross-validated fit statistics
 #'  lm_summary(mods, data = dat)
@@ -422,6 +419,10 @@
         if(verbose) print(paste("response is ",y))
         form_i = as.formula(gsub("y",y,form_y))
         lm_i=lm(form_i,data=data[,c(y,x_vars)],...)
+        #embed the actual formula object in the stored call so that update()
+        #(used by lm_summary / lm_boot) can re-evaluate the model in any frame -
+        #otherwise the call references the local symbol 'form_i' and fails
+        lm_i$call$formula = form_i
         lm_i[["response"]]=y
         lm_i
 
