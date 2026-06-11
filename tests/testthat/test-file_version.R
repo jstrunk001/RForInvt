@@ -36,14 +36,6 @@ testthat::test_that("file_version increments versions and tracks them", {
   skip_if_not_installed("plyr")
   skip_if_not_installed("stringr")
 
-  # Guard against the leaked file_version mock from test-archive_table.r
-  # (see helper-rforinvt.R). Restores the genuine closure for this test only.
-  if (!is.null(.genuine_file_version)) {
-    testthat::local_mocked_bindings(
-      file_version = .genuine_file_version, .package = "RForInvt"
-    )
-  }
-
   p <- file.path(tempdir(), paste0("fv_", as.integer(runif(1, 1, 1e9))))
 
   p1 <- file_version(file.path(p, "data.txt"), increment = TRUE,

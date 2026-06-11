@@ -22,7 +22,7 @@ testthat::test_that("CSV write succeeds with minimal setup (no globals)", {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
       path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     res = archive_table(
       data = dat,
@@ -50,7 +50,7 @@ testthat::test_that("RDS write succeeds and file can be read back", {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
       path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     res = archive_table(
       data = dat,
@@ -90,7 +90,7 @@ testthat::test_that("XLSX write sanitizes list/matrix/POSIXlt and applies option
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
       path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     res = archive_table(
       data = dat,
@@ -130,7 +130,7 @@ testthat::test_that("SQLite write succeeds with sf object when sf available", {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
       path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     res = archive_table(
       data = dat_sf,
@@ -158,7 +158,7 @@ testthat::test_that("stop_on_error = FALSE isolates failures; TRUE fails fast", 
     file_version = function(path, increment = TRUE) {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     testthat::with_mocked_bindings(
       `write.csv` = function(...) stop("csv write failed (mock)"),
@@ -184,7 +184,7 @@ testthat::test_that("stop_on_error = FALSE isolates failures; TRUE fails fast", 
     file_version = function(path, increment = TRUE) {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     testthat::with_mocked_bindings(
       `write.csv` = function(...) stop("csv write failed (mock)"),
@@ -217,7 +217,7 @@ testthat::test_that("use_subdirs logic builds base_path correctly", {
     file_version = function(path, increment = TRUE) {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     res = archive_table(
       data = dat,
@@ -244,7 +244,7 @@ testthat::test_that("duplicate column names are normalized in CSV output", {
     file_version = function(path, increment = TRUE) {
       dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE); path
     },
-    .env = env_arch,
+    .package = "RForInvt",
   {
     res = archive_table(
       data = dat,

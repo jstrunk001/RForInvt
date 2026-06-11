@@ -1,17 +1,6 @@
 # Shared test helpers for RForInvt.
 # Loaded automatically by testthat before any test-*.R file.
 
-# Capture the genuine file_version() closure NOW, before any test runs. The
-# shipped test-archive_table.r mocks file_version() in the package namespace via
-# with_mocked_bindings(..., .env = <namespace>) and does not restore it, leaking
-# the mock (`function(path, increment)`) into later tests. Helpers are sourced
-# before any test-*.R, so the binding here is still the real one; test-file_version.R
-# restores it so file_version's true behavior is reported regardless of run order.
-.genuine_file_version <- tryCatch(
-  get("file_version", envir = asNamespace("RForInvt")),
-  error = function(e) NULL
-)
-
 # ---- NVEL Fortran DLL availability -----------------------------------------
 # The NVEL family wraps inst/lib/.../vollib.dll. Tests that genuinely need the
 # DLL should skip() when it cannot be located/loaded so the suite stays green

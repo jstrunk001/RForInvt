@@ -188,20 +188,18 @@ testthat::test_that(".safe_write rethrows with [fmt] prefix when stop_on_error =
 })
 
 testthat::test_that(".safe_write muffles warnings and treats the write as success", {
-  # FAILS at baseline: the tryCatch(warning=) handler calls
-  # invokeRestart("muffleWarning") after the protected expression's stack has
-  # already unwound, so no muffleWarning restart is in scope. This raises
-  # `no 'restart' 'muffleWarning' found` instead of muffling the warning and
-  # returning success. The handler should muffle the warning and report success.
+  # Now FIXED: warnings are muffled in place via withCallingHandlers, so a
+  # warning during the protected expression no longer aborts the write. The
+  # handler muffles the warning and the write reports success.
   res <- RForInvt:::.safe_write(quote(warning("w")), "fmt", FALSE)
   testthat::expect_true(res$success)
+  testthat::expect_null(res$error)
 })
 
-testthat::test_that(".safe_write currently errors on warnings (documents baseline bug)", {
-  # Pins the current (buggy) behavior; see the FAILS-at-baseline test above for
-  # the intended behavior.
-  testthat::expect_error(
-    RForInvt:::.safe_write(quote(warning("w")), "fmt", FALSE),
-    "muffleWarning"
+testthat::test_that(".safe_write does not surface a muffleWarning restart error", {
+  # The old baseline bug raised `no 'restart' 'muffleWarning' found`; with the
+  # fix the warning is muffled silently and no error is raised.
+  testthat::expect_no_error(
+    RForInvt:::.safe_write(quote(warning("w")), "fmt", FALSE)
   )
 })

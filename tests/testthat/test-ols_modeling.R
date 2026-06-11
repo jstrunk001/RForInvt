@@ -30,9 +30,11 @@ testthat::test_that("lm_boot returns a list with a positive .632 error", {
 testthat::test_that("many_boots summarises bootstrap error over a range of sample sizes", {
   testthat::skip_if_not_installed("bootstrap")
 
-  # FAILS at baseline: internal lm_boot_in() (L286) references `modk`, but the
-  # fitted model is named `mod_k`, so evaluation errors with
-  # "object 'modk' not found". Intended behavior asserted below.
+  # Intended behavior: many_boots returns one summary row per sample size with a
+  # rsq_err_632 column. (The modk->mod_k rename was fixed; a remaining source
+  # bug in R/ols_modeling.R L286 indexes lm_boot()'s result with the wrong key
+  # "err.632" instead of "err_632", so this currently errors -- see report.)
+  set.seed(1)
   m <- lm(y ~ x1 + x2, make_model_df())
   res <- many_boots(m, n_range = c(20, 30), r_boots = 2, n_clus = 1, lm_boot = lm_boot)
 

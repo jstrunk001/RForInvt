@@ -1,11 +1,11 @@
 library(testthat)
 
 # ---------------------------------------------------------------------------
-# fvs_protype_params() - pure, builds an empty template parameter data.frame
+# fvs_prototype_params() - pure, builds an empty template parameter data.frame
 # ---------------------------------------------------------------------------
 
-testthat::test_that("fvs_protype_params returns an empty template with the expected columns", {
-  p <- fvs_protype_params()
+testthat::test_that("fvs_prototype_params returns an empty template with the expected columns", {
+  p <- fvs_prototype_params()
   testthat::expect_true(is.data.frame(p))
   testthat::expect_equal(nrow(p), 0L)
   testthat::expect_identical(
@@ -15,12 +15,12 @@ testthat::test_that("fvs_protype_params returns an empty template with the expec
   )
 })
 
-testthat::test_that("fvs_protype_params appends additional parameter columns via add_params", {
-  p1 <- fvs_protype_params(add_params = ",extra1")
+testthat::test_that("fvs_prototype_params appends additional parameter columns via add_params", {
+  p1 <- fvs_prototype_params(add_params = ",extra1")
   testthat::expect_true("extra1" %in% names(p1))
   testthat::expect_equal(length(names(p1)), 10L)
 
-  p2 <- fvs_protype_params(add_params = ",extra1,extra2")
+  p2 <- fvs_prototype_params(add_params = ",extra1,extra2")
   testthat::expect_true(all(c("extra1", "extra2") %in% names(p2)))
   testthat::expect_equal(length(names(p2)), 11L)
 })
@@ -100,7 +100,7 @@ testthat::test_that(".write_batch converts backslashes to forward slashes in sub
 testthat::test_that("fvs_make_keyfiles generates one fully-substituted keyfile per row", {
   testthat::skip_if_not_installed("RSQLite")
 
-  pd <- fvs_protype_params()
+  pd <- fvs_prototype_params()
   pd <- pd[FALSE, ]
   n <- 3L
   pd[1:n, ] <- NA
@@ -152,3 +152,4 @@ testthat::test_that("fvs_load requires network + installed-pkg writes", {
 testthat::test_that("fvs_run requires the external FVS binary", {
   testthat::skip("requires FVS binary")
 })
+

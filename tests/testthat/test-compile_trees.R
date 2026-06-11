@@ -24,13 +24,13 @@ test_that("tpa computes TPA = (nstems or 1) / acres", {
   testthat::expect_equal(x2$TPA, 20)
 })
 
-test_that("tph computes the metric analogue (value 25) but names the column TPA", {
+test_that("tph computes the metric analogue (value 25) and names the column TPH", {
   x <- tph(data.frame(hectares = 0.04), tree_nms = c(hectares = "hectares"))
   # tph divides by hectares: 1 / 0.04 == 25
-  testthat::expect_equal(x$TPA, 25)
-  # Pin current behavior: output column is (bug-ishly) named "TPA", not "TPH".
-  testthat::expect_true("TPA" %in% names(x))
-  testthat::expect_false("TPH" %in% names(x))
+  testthat::expect_equal(x$TPH, 25)
+  # Fixed behavior: output column is named "TPH", not "TPA".
+  testthat::expect_true("TPH" %in% names(x))
+  testthat::expect_false("TPA" %in% names(x))
 })
 
 test_that("dbcl assigns the diameter-class midpoint of the break interval", {

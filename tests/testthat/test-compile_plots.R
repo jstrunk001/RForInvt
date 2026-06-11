@@ -95,21 +95,20 @@ test_that("plot_lor_qmd computes weighted plot summaries", {
   testthat::expect_equal(res$meanht, 60)
 })
 
-test_that("spp_y_plot returns dominant species per plot (intended)", {
+test_that("spp_y_plot returns top-k dominant species names and proportions", {
   testthat::skip_if_not_installed("reshape2")
-  # FAILS at baseline: dom_order <- order(dfi1[,-1], decreasing = TRUE) at
-  # L593 passes a multi-column data.frame to order(), which errors with
-  # "cannot xtfrm data frames".
+  # Now FIXED: order() acts on a numeric vector of per-species totals (not a
+  # multi-column frame), so the dominant-species ranking succeeds. The function
+  # returns the top-k dominant species NAMES (dom_<spp>_<resp>_k) and their
+  # share of the plot total (dom_prop_<spp>_<resp>_k).
   dfs <- data.frame(
-    plot = c(1, 1, 2, 2),
-    dbh = c(10, 12, 8, 9),
-    spp = c("a", "b", "a", "b"),
-    TPA = 1,
+    plot = 1,
+    spp = c("a", "b", "a", "c"),
+    TPA = 10,
     ba_ft = c(1, 2, 3, 4)
   )
   tn <- list(
     plot_ids = "plot",
-    dbh = "dbh",
     spp = "spp",
     expansion = "TPA",
     domspp_y = "ba_ft"
@@ -118,7 +117,20 @@ test_that("spp_y_plot returns dominant species per plot (intended)", {
     spp_y_plot(dfs, tree_nms = tn, n_dom_spp = 2, spp_y = "ba_ft")
   )
   testthat::expect_s3_class(res, "data.frame")
-  testthat::expect_equal(nrow(res), 2L)
+
+  testthat::expect_equal(
+    names(res),
+    c("plot",
+      "dom_spp_ba_ft_1", "dom_spp_ba_ft_2",
+      "dom_prop_spp_ba_ft_1", "dom_prop_spp_ba_ft_2")
+  )
+
+  # Weighted totals: a = (1+3)*10 = 40, c = 4*10 = 40, b = 2*10 = 20.
+  # Top-2 dominant species are a and c (b excluded), each 40/100 = 0.4.
+  testthat::expect_equal(res$dom_spp_ba_ft_1, "a")
+  testthat::expect_equal(res$dom_spp_ba_ft_2, "c")
+  testthat::expect_equal(res$dom_prop_spp_ba_ft_1, 0.4)
+  testthat::expect_equal(res$dom_prop_spp_ba_ft_2, 0.4)
 })
 
 test_that(".subset_cn subsets all data.frames in a list by PLT_CN", {

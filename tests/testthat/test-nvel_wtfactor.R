@@ -23,7 +23,7 @@ testthat::test_that("NVEL_wtfactor is vectorized over spcd", {
 
 testthat::test_that(".fn_fortran_wtf returns named weight factors", {
   testthat::skip_if_not(nvel_dll_available())
-  RForInvt:::.load_dll(nvel_dll_path(), nvel_dll_path())
+  RForInvt:::.nvel_load_dll(nvel_dll_path(), nvel_dll_path())
   r <- RForInvt:::.fn_fortran_wtf(
     region            = 2L,
     forest            = "01",
