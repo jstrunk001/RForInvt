@@ -30,6 +30,25 @@ nvel_dll_available <- function() {
   TRUE
 }
 
+# ---- FVS executable discovery ----------------------------------------------
+# fvs_run() shells out to an FVS variant executable (e.g. FVSie.exe). Locate one
+# so the integration test can run; skip when none is installed. Override with
+# the RFORINVT_FVS_DIR env var (a directory containing FVS*.exe).
+fvs_exe <- function(variant = "FVSie") {
+  exe <- paste0(variant, if (.Platform$OS.type == "windows") ".exe" else "")
+  cands <- c(
+    file.path(Sys.getenv("RFORINVT_FVS_DIR"), exe),
+    file.path("C:/Users/Public/Documents/FVS/FVSbin", exe),
+    file.path("C:/FVSbin", exe),
+    unname(Sys.which(variant))
+  )
+  cands <- cands[nzchar(cands)]
+  hit <- cands[file.exists(cands)]
+  if (length(hit)) normalizePath(hit[1], winslash = "/") else ""
+}
+
+fvs_available <- function(variant = "FVSie") nzchar(fvs_exe(variant))
+
 # ---- small deterministic fixtures ------------------------------------------
 
 # A tiny, signal-heavy modeling frame: y is a near-deterministic function of

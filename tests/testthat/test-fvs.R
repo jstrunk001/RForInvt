@@ -149,7 +149,57 @@ testthat::test_that("fvs_load requires network + installed-pkg writes", {
   testthat::skip("requires network + writes to installed package dir")
 })
 
-testthat::test_that("fvs_run requires the external FVS binary", {
-  testthat::skip("requires FVS binary")
+testthat::test_that("fvs_run executes FVS end-to-end and merges the output database", {
+  # Integration test: builds a keyfile for one shipped FIA stand, runs the FVS
+  # Inland Empire executable, and checks the merged output DB. Skips cleanly
+  # when FVS is not installed (set RFORINVT_FVS_DIR to point at an FVS*.exe dir).
+  testthat::skip_if_not_installed("RSQLite")
+  testthat::skip_if_not_installed("DBI")
+  fvs <- fvs_exe("FVSie")
+  testthat::skip_if(!nzchar(fvs), "FVS executable (FVSie) not found")
+  db_src <- system.file("extdata", "FIADB_RI.db", package = "RForInvt")
+  testthat::skip_if(!nzchar(db_src) || !file.exists(db_src), "FIADB_RI.db not available")
+
+  db_src <- normalizePath(db_src, winslash = "/")
+  con <- DBI::dbConnect(RSQLite::SQLite(), db_src)
+  on.exit(try(DBI::dbDisconnect(con), silent = TRUE), add = TRUE)
+  sid <- DBI::dbGetQuery(con,
+    "SELECT STAND_ID, COUNT(*) n FROM FVS_TREEINIT_PLOT GROUP BY STAND_ID
+     ORDER BY n DESC LIMIT 1")$STAND_ID
+  inv <- DBI::dbGetQuery(con,
+    sprintf("SELECT INV_YEAR FROM FVS_STANDINIT_PLOT WHERE STAND_ID='%s'", sid))$INV_YEAR[1]
+
+  proc <- file.path(tempdir(), paste0("fvs_run_", as.integer(runif(1, 1, 1e8))))
+
+  pd <- fvs_prototype_params()
+  pd[1, ] <- NA
+  pd$std_id <- sid; pd$std_cn <- sid
+  pd$invyr <- inv; pd$timeint <- 10; pd$numcycle <- 1
+  pd$input_db <- db_src
+  pd$fvs_path <- fvs
+  pd$tree_table  <- "FVS_TREEINIT_PLOT"
+  pd$stand_table <- "FVS_STANDINIT_PLOT"
+
+  df_keys <- fvs_make_keyfiles(
+    pd, key_proto = fvs_prototype_keyfile(notriple = NULL),
+    processing_dir = proc, id = "std_id", cluster = NA
+  )
+  testthat::expect_true(file.exists(df_keys$key_path[1]))
+
+  suppressWarnings(suppressMessages(
+    fvs_run(df_keys, db_merge = "FVS_Out.db", cluster = NA,
+            merge_dbs = TRUE, delete_temp_db = FALSE)
+  ))
+
+  out_db <- file.path(dirname(df_keys$output_db[1]), "FVS_Out.db")
+  testthat::expect_true(file.exists(out_db))
+
+  con2 <- DBI::dbConnect(RSQLite::SQLite(), out_db)
+  on.exit(try(DBI::dbDisconnect(con2), silent = TRUE), add = TRUE)
+  tbs <- DBI::dbListTables(con2)
+  # FVS always records a case; a 1-cycle projection yields >=1 summary row
+  testthat::expect_true("FVS_Cases" %in% tbs)
+  testthat::expect_gt(DBI::dbGetQuery(con2, "SELECT COUNT(*) n FROM FVS_Cases")$n, 0)
+  testthat::expect_true(any(grepl("^FVS_Summary", tbs)))
 })
 
