@@ -207,15 +207,18 @@ NVEL_buck = function(
     # Split data into chunks
     chunks <- split(dfTL0_in, cut(seq_len(nrow(dfTL0_in)), ncore, labels = FALSE))
 
-    # FIX: Export all necessary helper functions and path variables.
-    # We use parent.frame() or .GlobalEnv if debugging as a script.
-    helper_funcs = c(".fn_fortran_vol2_logs", ".nvel_load_dll", ".formatTL2NVEL2")
-
-    parallel::clusterEvalQ(cl_in, library(RForInvt))
+    # Export the internal helpers to the workers directly, pulled from the
+    # namespace. Relying on clusterEvalQ(library(RForInvt)) breaks under
+    # devtools::load_all(): the worker would load a stale *installed* copy (or
+    # none) that lacks these unexported helpers (".nvel_load_dll not found").
+    .fn_fortran_vol2_logs <- get(".fn_fortran_vol2_logs", asNamespace("RForInvt"))
+    .nvel_load_dll        <- get(".nvel_load_dll",        asNamespace("RForInvt"))
 
     parallel::clusterExport(cl_in,
                             varlist = c(
-                                       "dll_64"
+                                       ".fn_fortran_vol2_logs"
+                                      ,".nvel_load_dll"
+                                      ,"dll_64"
                                       ,"dll_32"
                                       ,"dll_func_vol"
                                       ,"voleqNm"
