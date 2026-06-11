@@ -53,26 +53,37 @@
 #'  n <- 500
 #'  hts <- sample(1:150, n, TRUE)
 #'  dbhs <- abs(hts / 5 + rnorm(n) * 2)
-#'  dat_test <- data.frame(height = hts, dbh = dbhs)
-#'
-#'  #define strata from two numeric variables, with dbh (x2) nested inside height (x1)
-#'  str_test <- make_strata(
-#'    dat_test,
-#'    x1       = "height",
-#'    x2       = "dbh",
-#'    split_x1 = "qt",
-#'    split_x2 = "qt",
-#'    nest_x2  = TRUE,
-#'    n1       = 10,
-#'    n2       = 10,
-#'    min_recs = 7,
-#'    precision = 0
+#'  dat_test <- data.frame(
+#'    height     = hts,
+#'    dbh        = dbhs,
+#'    height_cat = cut(hts, 10),
+#'    dbh_cat    = cut(dbhs, 10)
 #'  )
-#'  str_test
 #'
-#'  #assign each record in the data to its stratum
+#'  #example 1: two numeric variables, dbh (x2) nested inside height (x1)
+#'  str_test <- make_strata(
+#'    dat_test, x1 = "height", x2 = "dbh",
+#'    split_x1 = "qt", split_x2 = "qt", nest_x2 = TRUE,
+#'    n1 = 10, n2 = 10, min_recs = 7, precision = 0
+#'  )
 #'  res <- assign_strata(str_test, dat_test)
 #'  head(res$stratum)
+#'
+#'  #example 2: factor x1 with a numeric x2 nested inside it
+#'  str_test2 <- make_strata(
+#'    dat_test, x1 = "height_cat", x2 = "dbh",
+#'    split_x1 = "qt", split_x2 = "qt", nest_x2 = TRUE,
+#'    n1 = 10, n2 = 10, min_recs = 7, precision = 0
+#'  )
+#'  head(assign_strata(str_test2, dat_test)$stratum)
+#'
+#'  #example 3: numeric x1 crossed with a factor x2
+#'  str_test3 <- make_strata(
+#'    dat_test, x1 = "height", x2 = "dbh_cat",
+#'    split_x1 = "qt", split_x2 = "qt", nest_x2 = FALSE,
+#'    n1 = 10, n2 = 10, min_recs = 7, precision = 0
+#'  )
+#'  head(assign_strata(str_test3, dat_test)$stratum)
 #'
 #'
 #'@export
@@ -138,6 +149,11 @@ make_strata = function(
 
     str_levels_x1 = levels(as.factor(dat_x1))
     dfStr0 = data.frame(stratum_x1 = str_levels_x1, x1.from=NA , x1.to=NA)
+    #record counts per x1 level (Freq.x1 is required by the final column selection)
+    dfStr0[, "Freq.x1"] = as.integer(table(factor(dat_x1, levels = str_levels_x1)))
+    #x1 is already categorical: its factor *is* the binned version used downstream
+    #(e.g. when nesting a numeric x2 inside a factor x1)
+    dat_x1_fct = factor(dat_x1, levels = str_levels_x1)
 
   }
   if(numeric_x1){
@@ -285,6 +301,8 @@ make_strata = function(
 
     #assign bins
     df_ct_x2 = as.data.frame(table(dat_x2_fct  ),responseName = "Freq.x2")
+    #table() names the first column after the input symbol (not always "Var1")
+    names(df_ct_x2)[1] = "Var1"
     str_levels_x1b = levels(as.factor(dfStr0[,"stratum_x1"]))
     str_levels_x2b = levels(as.factor(data_in[,x2_in_fct]))
     dfStr1 = data.frame(stratum=NA,stratum_x1 = sort(rep(str_levels_x1b,length(str_levels_x2b))) , stratum_x2 = rep(str_levels_x2b , length(str_levels_x1b))  )
@@ -301,6 +319,8 @@ make_strata = function(
     if(nest_x2) warning("Cannot next x2 in x1 if x2 is already a factor")
 
     df_ct_x2 = as.data.frame(table(dat_x2 ),responseName = "Freq.x2")
+    #table() names the first column after the input symbol (not always "Var1")
+    names(df_ct_x2)[1] = "Var1"
     str_levels_x1b = levels(as.factor(dfStr0[,"stratum_x1"]))
     str_levels_x2 = levels(as.factor(dat_x2))
     dfStr1 = data.frame(stratum=NA,stratum_x1 = sort(rep(str_levels_x1b,length(str_levels_x2))) , stratum_x2 = rep(str_levels_x2 , length(str_levels_x1b))  )
@@ -399,6 +419,14 @@ assign_strata = function(strata,data,append_definitions=F){
         ( data_in[,strata[i,"nm_x1"]] == strata[i,"stratum_x1"] ) &
         ( data_in[,strata[i,"nm_x2"]] > strata[i,"x2.from"] ) &
         ( data_in[,strata[i,"nm_x2"]] <= strata[i,"x2.to"] )
+      id_i[is.na(id_i)] = F
+      data_in[ id_i , "stratum" ] = strata[ i , "stratum" ]
+    }
+    #two factor inputs
+    if(!x1numeric & !x2numeric){
+      id_i =
+        ( data_in[,strata[i,"nm_x1"]] == strata[i,"stratum_x1"] ) &
+        ( data_in[,strata[i,"nm_x2"]] == strata[i,"stratum_x2"] )
       id_i[is.na(id_i)] = F
       data_in[ id_i , "stratum" ] = strata[ i , "stratum" ]
     }

@@ -87,26 +87,37 @@ Revision History
  n <- 500
  hts <- sample(1:150, n, TRUE)
  dbhs <- abs(hts / 5 + rnorm(n) * 2)
- dat_test <- data.frame(height = hts, dbh = dbhs)
-
- #define strata from two numeric variables, with dbh (x2) nested inside height (x1)
- str_test <- make_strata(
-   dat_test,
-   x1       = "height",
-   x2       = "dbh",
-   split_x1 = "qt",
-   split_x2 = "qt",
-   nest_x2  = TRUE,
-   n1       = 10,
-   n2       = 10,
-   min_recs = 7,
-   precision = 0
+ dat_test <- data.frame(
+   height     = hts,
+   dbh        = dbhs,
+   height_cat = cut(hts, 10),
+   dbh_cat    = cut(dbhs, 10)
  )
- str_test
 
- #assign each record in the data to its stratum
+ #example 1: two numeric variables, dbh (x2) nested inside height (x1)
+ str_test <- make_strata(
+   dat_test, x1 = "height", x2 = "dbh",
+   split_x1 = "qt", split_x2 = "qt", nest_x2 = TRUE,
+   n1 = 10, n2 = 10, min_recs = 7, precision = 0
+ )
  res <- assign_strata(str_test, dat_test)
  head(res$stratum)
+
+ #example 2: factor x1 with a numeric x2 nested inside it
+ str_test2 <- make_strata(
+   dat_test, x1 = "height_cat", x2 = "dbh",
+   split_x1 = "qt", split_x2 = "qt", nest_x2 = TRUE,
+   n1 = 10, n2 = 10, min_recs = 7, precision = 0
+ )
+ head(assign_strata(str_test2, dat_test)$stratum)
+
+ #example 3: numeric x1 crossed with a factor x2
+ str_test3 <- make_strata(
+   dat_test, x1 = "height", x2 = "dbh_cat",
+   split_x1 = "qt", split_x2 = "qt", nest_x2 = FALSE,
+   n1 = 10, n2 = 10, min_recs = 7, precision = 0
+ )
+ head(assign_strata(str_test3, dat_test)$stratum)
 
 
 }
