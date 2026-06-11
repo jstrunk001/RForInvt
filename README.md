@@ -8,7 +8,10 @@ falls into a few groups:
 - **`fia_*`** — clean and geolocate FIA (Forest Inventory and Analysis) data (`fia_clean_best_cds`, `fia_make_geom`).
 - **`fvs_*`** — build key files for and run the Forest Vegetation Simulator (`fvs_make_keyfiles`, `fvs_run`, ...).
 - **`NVEL_*`** — National Volume Estimator Library wrappers for volume, bucking, merchandizing, biomass, and weight factors.
-- **`model_archive_*` / `model_predict`** — save, list, load, and apply archived statistical models.
+- **`model_archive_*` / `model_predict`** — save, list, load, and apply archived models. The package ships a
+  registry (`extdata/models.csv`) of ~280 curated USFS biomass (NBEL, as `closed_form`) and volume (NVEL, as
+  `nvel`) equations covering common PNW and Southeast species. See `inst/examples/model_archive_Example.Rmd`
+  and `inst/docs/model_archive_spec.md`; rebuild with `data-raw/build_nbel_archive.R`.
 - Statistical and utility helpers (`make_strata`, `archive_table`, `aggregate2`, ...).
 
 This functionality is being split off of RSForInvt because of the dependency nightmare resulting from packing too much into a single package.

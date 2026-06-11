@@ -7,4 +7,5 @@
 ^[^/]*\.db$
 ^inst/NVEL/NBEL_CPP_DAL($|/)
 ^inst/tidyverse_coding_convention($|/)
+^data-raw($|/)
 ^\.git($|/)

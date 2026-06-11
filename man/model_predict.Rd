@@ -55,7 +55,16 @@ one prediction column per model. Dispatches per row on `params$model_class`.
 Dispatch:
 \itemize{
   \item `"closed_form"` (or blank, for legacy rows) — substitutes `b0..b8`
-        into `formula` and evaluates against the (renamed) input data.
+        into `formula` and evaluates against the (renamed) input data. The
+        shipped National Biomass Estimator Library (NBEL) biomass equations
+        ride here: `b0..b4` hold the published coefficients, `b5..b7` carry
+        diameter/height/biomass unit factors, and `b8` is the log
+        back-transform bias factor.
+  \item `"nvel"` — a DLL-backed National Volume Estimator Library volume
+        equation. No fit object is loaded; the adapter rebuilds a tree list
+        from `dbh`/`ht` plus the row's stored `spcd`/`region`/`forest`/
+        `district`/`voleq` and calls `NVEL_volume()`, returning the column
+        named by `nvel_out` (default `"TCFV"`).
   \item Any other class — loads the fit object referenced by
         `fit_object_path` and predicts via a class-specific adapter:
         \describe{

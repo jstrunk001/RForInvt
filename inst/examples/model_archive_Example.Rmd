@@ -1,0 +1,123 @@
+---
+title: "Model Archive: NBEL biomass & NVEL volume"
+author: "Jacob Strunk"
+date: "2026-06-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+options(scipen = 10e6, stringsAsFactors = FALSE)
+```
+
+This example shows how the shipped model archive carries USFS **National Biomass
+Estimator Library (NBEL)** equations as `closed_form` models and **National
+Volume Estimator Library (NVEL)** equations as `nvel` models, and how to
+discover and apply them with `model_archive_list()`, `model_archive_load()`, and
+`model_predict()`.
+
+```{r library}
+library(RForInvt)
+library(data.table)
+```
+
+## 1. Catalog the shipped archive
+
+`model_archive_list()` reads the shipped registry (`extdata/models.csv`) without
+loading any sidecars. Each row is one model; biomass components are named
+`bm_<component>` (e.g. `bm_stw` = stem wood, `bm_fot` = foliage total).
+
+```{r list}
+cat_all = model_archive_list(package = "RForInvt")
+
+# how many models, by region and class?
+cat_all[, .N, by = .(region_code, model_class)]
+
+# biomass components available for loblolly pine
+cat_all[spp == "pinus.taeda" & model_class == "closed_form",
+        .(model_id, response, n, r2_pd)]
+```
+
+Filter to a region / species / component:
+
+```{r filter}
+se_doug = model_archive_list(
+  filter  = quote(region_code == "se" & spp == "pinus.taeda"),
+  package = "RForInvt"
+)
+se_doug[, .(model_id, response, formula = substr(formula, 1, 40))][1:5]
+```
+
+## 2. Predict NBEL biomass on a tree list
+
+Build a small tree list, then apply one or more biomass models. Map your data
+columns to the canonical predictor names (`dbh` in inches, `ht` in feet) via
+`nms_dat_predict`. Each model appends one column named by its `response`.
+
+```{r biomass-predict}
+trees = data.table(
+  tree = 1:4,
+  DBH  = c(6, 10, 14, 18),   # inches
+  HT   = c(40, 60, 78, 92)   # feet
+)
+
+# load a few loblolly biomass components
+lobl = model_archive_load(
+  filter  = quote(spp == "pinus.taeda" & model_class == "closed_form"),
+  package = "RForInvt"
+)
+params = data.table::rbindlist(lapply(lobl, `[[`, "row"), fill = TRUE)
+
+out = model_predict(
+  dat             = trees,
+  nms_dat_predict = c(dbh = "DBH", ht = "HT"),
+  params          = params,
+  package         = "RForInvt"
+)
+out
+```
+
+Predicted biomass is in **pounds** for each component. The coefficient
+convention (published `a..e` in `b0..b4`; unit factors in `b5..b7`; log-bias in
+`b8`) is documented in `inst/docs/model_archive_spec.md`.
+
+## 3. Predict NVEL volume
+
+NVEL volume equations ride in the same archive as `model_class == "nvel"`. They
+are DLL-backed (the bundled `vollib`), so this section runs only where the DLL
+is available.
+
+```{r nvel-predict}
+nvel_ok = RForInvt:::.nvel_dll_available()
+
+if (nvel_ok) {
+  vol_models = model_archive_load(filter = quote(model_class == "nvel"),
+                                  package = "RForInvt")
+  vrow = vol_models[[1]]$row
+  vol = model_predict(
+    dat             = trees,
+    nms_dat_predict = c(dbh = "DBH", ht = "HT"),
+    params          = vrow,
+    package         = "RForInvt"
+  )
+  vol[, .(tree, DBH, HT, vol_tcf)]
+} else {
+  message("NVEL vollib DLL not available; skipping volume prediction.")
+}
+```
+
+You can register your own NVEL equation into a writable archive with
+`nvel_volume_register()`:
+
+```{r nvel-register, eval=FALSE}
+arch = file.path(tempdir(), "my_archive")
+nvel_volume_register(archive_dir = arch, spcd = 202, region = 6,
+                     spp = "pseudotsuga.menziesii", region_code = "pnw")
+```
+
+## 4. Add your own model
+
+Any model — a fitted `randomForest`/`lme4`/`xgboost` object, or a closed-form
+equation — can be saved with `model_archive_save()` into a writable
+`archive_dir`, then loaded and predicted the same way. See
+`?model_archive_save` and `inst/docs/model_archive_spec.md`.

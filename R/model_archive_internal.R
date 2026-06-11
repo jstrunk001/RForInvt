@@ -64,7 +64,11 @@
     "n", "r2_pd", "syx_pd", "r2_proj", "syx_proj",
     "x1", "x2", "x3", "x4", "x5", "predictor_spec_path",
     "fit_object_path", "vcov_path",
-    "serializer", "pkg", "pkg_version", "r_version", "lightened")
+    "serializer", "pkg", "pkg_version", "r_version", "lightened",
+    # NBEL biomass provenance (closed_form rows)
+    "comp_token", "bias_flag", "ht_unit", "source_id",
+    # NVEL volume selectors (model_class == "nvel" rows)
+    "voleq", "spcd", "forest", "district", "nvel_out")
 }
 
 # Create an empty registry CSV with the core header if it does not yet exist.
@@ -135,6 +139,7 @@
     xgboost      = "xgboost",
     systemfit    = "systemfit",
     lavaan       = "lavaan",
+    nvel         = "RForInvt",
     NA_character_
   )
 }

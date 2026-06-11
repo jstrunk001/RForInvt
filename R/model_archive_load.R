@@ -106,7 +106,12 @@ model_archive_load = function(model_id = NULL, filter = NULL, registry = NULL,
   rows_out = registry_in
 
   if (!is.null(model_id)){
-    rows_out = rows_out[rows_out$model_id %in% model_id, ]
+    # Precompute the logical in this frame: inside `rows_out[<expr>, ]`,
+    # data.table evaluates `<expr>` with the registry's columns in scope, so a
+    # bare `model_id` there would resolve to the *column* (shadowing the
+    # argument) and match every row. Compute `keep` first to avoid that.
+    keep = rows_out$model_id %in% model_id
+    rows_out = rows_out[keep, ]
   }
 
   if (!is.null(filter)){
