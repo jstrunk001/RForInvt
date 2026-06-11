@@ -79,7 +79,9 @@
   if(!"deff" %in% names(res)) deff_in = res$se_m^2 / res0$se_m^2
   deffinv_in = 1/ deff_in
 
-  rmse_srs=deff_in * res$se_m
+  #RMSE under simple random sampling: per-unit SRS standard error scaled to the
+  #sample (parallels res$rmse = se_m * sqrt(n) in the design estimators)
+  rmse_srs= res0$se_m * sqrt(res$n)
   rsq_in = round(100 * (1 - deff_in) , 1 )
 
   #res0$se_m^2 / res$se_m^2
@@ -115,7 +117,8 @@
   return(summary_in)
 }
 
-#
+#Hansen-Hurwitz (with-replacement / PPS) random-sampling estimator. Variances
+#use the with-replacement framing, so no finite-population correction is applied.
 .rand=function(x,resp_nm,wt_nm,ef_nm,pop,N,type,var_type,n_bs=400){
 
   require(survey)
@@ -134,12 +137,18 @@
 
   if(var_type[1]=="bs"){
 
+    #match weights to estimator (same rescaling as the asym branch) so the
+    #bootstrap total is on the same footing across var_type choices
+    x[, wt_nm] = x[, wt_nm] * N / mean(x[, wt_nm])
+
     fn_bs=function(i,x,resp_nm,wt_nm){
       n=nrow(x)
-      bs_ix=sample(nrow(x),prob=x[,wt_nm],replace=T)
-     # bs_ix=sample(nrow(x),replace=T)
+      #equal-probability resample of rows. The weights already carry the
+      #inclusion-probability information; resampling PROPORTIONAL to wt AND
+      #multiplying by wt inside the statistic double-counts the weighting and
+      #biases the variance (the previous behavior).
+      bs_ix=sample(nrow(x),replace=T)
       sum(x[bs_ix,resp_nm]*x[bs_ix,wt_nm]) / n
-      #N*mean(x[bs_ix,resp_nm])
     }
 
     v_t_rs = var(sapply(1:n_bs,fn_bs,x,resp_nm,wt_nm))
@@ -289,7 +298,7 @@
   require("plyr")
 
 
-  if(class(pop) != "data.frame") stop("pop should be a 2 column data frame with strata names and strata sizes: data.frame(str=c(1,3,4,5),Ni=c(500,5000,500,5000) ) ")
+  if(!inherits(pop, "data.frame")) stop("pop should be a 2 column data frame with strata names and strata sizes: data.frame(str=c(1,3,4,5),Ni=c(500,5000,500,5000) ) ")
   if(names(pop)[1] != strata_nm) stop("pop should be a 2 column data frame with strata names and strata sizes: data.frame(str=c(1,3,4,5),Ni=c(500,5000,500,5000) ) ")
 
   #get name of auxiliary attribute
@@ -308,12 +317,14 @@
     warning("Strata Merged due to insufficient ni ( < 2 )")
 
     has_one=which(ni[,"ni"]<2)
-    has_more=which(ni[,"ni"]>2)
+    has_more=which(ni[,"ni"]>=2)
 
     for(i in 1:length(has_one)){
 
       x_which_i = x[,strata_nm] == ni[has_one[i],strata_nm]
-      new_str = ni[has_more[which.min(abs(has_one-has_more))],strata_nm]
+      #merge the under-sized stratum into the nearest (by row index) stratum
+      #that has enough observations
+      new_str = ni[has_more[which.min(abs(has_one[i]-has_more))],strata_nm]
       x[x_which_i,strata_nm] = new_str
 
       pop_which_i = pop[,strata_nm] == ni[has_one[i],strata_nm]
@@ -533,13 +544,13 @@
       if(sum(si_n) > n) si_n[length(si_n)] = si_n[length(si_n)] - (sum(si_n) - n)
 
       p_i=si_n/pop_Ni
-      p_i=pi/sum(p_i)
+      p_i=p_i/sum(p_i)
       wti = 1 / p_i
 
     }
 
     s_ix=try(unlist(mapply(sample,spl_pop_ix,si_n,replace=F,SIMPLIFY = F)),silent=T)
-    if(class(s_ix)=="try-error") s_ix=unlist(mapply(sample,spl_pop_ix,si_n,replace=T,SIMPLIFY = F))
+    if(inherits(s_ix,"try-error")) s_ix=unlist(mapply(sample,spl_pop_ix,si_n,replace=T,SIMPLIFY = F))
 
   }
   if(type[1]=="two-stage"){

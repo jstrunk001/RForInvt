@@ -42,6 +42,7 @@
 #'@param  endCapStyle enable square or round plots
 #'@param  offx  named vector to set x offsets for subplots 2-4 (must have names "2","3","4")
 #'@param  offy  named vector to set y offsets for subplots 2-4 (must have names "2","3","4")
+#'@param  crs   coordinate reference system assigned to the output sf objects (passed to \code{sf::st_as_sf}); defaults to NA (unset)
 #'
 #'@return
 #'
@@ -64,7 +65,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{bbox2polys}}\cr \code{\link{sf}}\cr \code{\link{st_buffer}}\cr
+#'@seealso \code{\link[sf]{st_as_sf}}\cr \code{\link[sf]{st_buffer}}\cr
 
 #Desired upgrades to this function:
 # add declination
@@ -85,6 +86,7 @@ fia_make_geom=function(
                     , endCapStyle="ROUND"
                     , offx = c("2"=0,"3"=103.923,"4"=-103.923)
                     , offy = c("2"=120,"3"=-60,"4"=-60)
+                    , crs = NA
                     ){
 
 
@@ -93,6 +95,11 @@ fia_make_geom=function(
   requireNamespace("plyr")
   requireNamespace("sf")
   requireNamespace("dplyr")
+
+  #offx/offy are indexed by subplot number ("2","3","4"); an unnamed vector
+  #would silently yield NA coordinates for subplots 2-4
+  if(!all(c("2","3","4") %in% names(offx)) || !all(c("2","3","4") %in% names(offy)))
+    stop("offx and offy must be named vectors with names \"2\", \"3\", \"4\"")
 
   col_names["SUBPLOT"]="SUBPLOT"
   data[,col_names["SUBPLOT"]]=1
@@ -128,7 +135,7 @@ fia_make_geom=function(
   if(do_geom){
 
     #SUBPLOT geom needed for all subsequent steps
-      sf_dat0 = sf::st_as_sf(df_all,coords=col_names[c("x","y")])
+      sf_dat0 = sf::st_as_sf(df_all,coords=col_names[c("x","y")], crs = crs)
 
     #create / load sf SUBPLOT object
       if("SUBPLOT POINT" %in% output){
@@ -145,7 +152,10 @@ fia_make_geom=function(
       if(do_combine_subplots){
 
         data_in = data
+        #drop the x/y and the SUBPLOT=1 marker: SUBPLOT is meaningless on a
+        #PLOT-level multipoint/multipolygon
         data_in[,col_names[c("x","y")]] = NULL
+        data_in[,col_names["SUBPLOT"]] = NULL
 
         #group SUBPLOT points by PLOT and then merge geometrics - drop tibble
         sf_dat1 = dplyr::group_by_at(sf_dat0, .vars=col_names["PLOT"])
@@ -166,26 +176,3 @@ fia_make_geom=function(
   }
   return(return_list)
 }
-
-if(F){
-
-  df1 = data.frame(x=seq(0,1000,200), y=seq(0,1000,200))
-  df1[,"PLOT"] = 1:nrow(df1)
-  df1[,"test"] = nrow(df1):1
-  res = fia_make_geom(df1)
-
-  for(i in 1:length(res)){
-    par( mar=c(5,5,5,5), xpd=T)
-    plot(res[[i]],main=names(res)[i])
-  }
-
-  if(F){
-    plot(res[["PLOT POINT"]])
-    plot(res[["PLOT POLYGON"]])
-
-    library(leaflet)
-    l1=leaflet(data=res[1,],options=leafletOptions(crs=leafletCRS(proj4def="+proj=lcc +lat_1=47.33333333333334 +lat_2=45.83333333333334 +lat_0=45.33333333333334 +lon_0=-120.5 +x_0=500000.0001016001 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs")))
-    addPolygons(l1,data=res[1:2,])
-  }
-}
-

@@ -24,10 +24,14 @@
 #'@param clear_keys T/F delete all old key files
 #'@param cluster (Optional) parallel cluster object
 #'@param id select column to use as id field - column should be present in param_df
+#'@param key_nms named character c(prefix=, suffix=) wrapped literally around the id value to name keyfiles
+#'@param clear_db T/F clear rows from existing output databases
+#'@param clear_keys T/F delete existing .key/.out files in the keyfile directory
+#'@param key_proto (optional) prototype keyfile (character vector) from \code{fvs_prototype_keyfile}
 #'@param quotes_db T/F - recent versions of FVS variants don't accept quotes around db names in key files
 #'
 #'@return
-#'  NULL
+#'  the input \code{param_df} with added columns (input_db_q, cluster, fvs_dir, output_db, output_db_q, key_path)
 #'
 #'
 #'@examples
@@ -66,7 +70,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{fvs_run}}\cr \code{\link{fvs_keyfile_prototype}}\cr
+#'@seealso \code{\link{fvs_run}}\cr \code{\link{fvs_prototype_keyfile}}\cr
 
 fvs_make_keyfiles = function(
   param_df
@@ -74,11 +78,10 @@ fvs_make_keyfiles = function(
   ,path_key_proto = NA
   ,key_proto = NA
   ,clear_db = T
-  ,create_db = F
   ,clear_keys = T
   ,key_nms = c(prefix="",suffix="")
   ,cluster = NA
-  ,id = c("plt_id")
+  ,id = c("std_id")
   ,quotes_db = F
 ){
 
@@ -121,11 +124,11 @@ fvs_make_keyfiles = function(
     }
   })
 
-  ###clear current keyfiles
+  ###clear current keyfiles (anchor extensions so we don't match e.g. *fookey)
   if(clear_keys){
-    paths = dir(key_dir,pattern="key$",full.names=T)
+    paths = dir(key_dir,pattern="\\.key$",full.names=T)
     file.remove(paths)
-    paths = dir(key_dir,pattern="out$",full.names=T)
+    paths = dir(key_dir,pattern="\\.out$",full.names=T)
     file.remove(paths)
   }
 
@@ -146,11 +149,10 @@ fvs_make_keyfiles = function(
   ##add the keyfile path
   param_df$key_path = paste0(key_dir,"/",gsub("(\\\\|/)",".", param_df[,id[1]]),".key")
 
-  #adjust output keyword file name using prefix and suffix
+  #adjust output keyword file name using LITERAL prefix and suffix around the id
+  #value (the old code treated prefix/suffix as column names of param_df)
   if( sum(nchar(key_nms)) > 0 ){
-    nms1 = c(key_nms[["prefix"]][1],id[1],key_nms[["suffix"]][1])
-    nms2 = nms1[sapply(nms1,nchar)>0]
-    keynm_in = apply(param_df[,nms2],1,paste0,collapse="",sep="")
+    keynm_in = paste0(key_nms[["prefix"]][1], as.character(param_df[[id[1]]]), key_nms[["suffix"]][1])
     param_df$key_path = gsub("//","/",paste0(key_dir,"/",gsub("(\\\\|/)",".", keynm_in),".key"))
   }
 

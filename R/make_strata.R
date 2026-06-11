@@ -142,8 +142,19 @@ make_strata = function(
   x2_in = x2
   dat_x1 = data_in[[x1_in]]
   dat_x2 = data_in[[x2_in]]
-  numeric_x1 = is.numeric(data_in[[x1_in]])
-  numeric_x2 = is.numeric(data_in[[x2_in]])
+
+  #drop records with NA in x1 or x2 up front: range()/quantile() otherwise
+  #propagate NA or error ("missing values and NaN's not allowed")
+  na_xy = is.na(dat_x1) | is.na(dat_x2)
+  if(any(na_xy)){
+    warning(sum(na_xy), " record(s) with NA in x1/x2 dropped before stratification")
+    data_in = data_in[!na_xy, , drop = FALSE]
+    dat_x1  = dat_x1[!na_xy]
+    dat_x2  = dat_x2[!na_xy]
+  }
+
+  numeric_x1 = is.numeric(dat_x1)
+  numeric_x2 = is.numeric(dat_x2)
 
   if( !numeric_x1){
 
@@ -172,9 +183,14 @@ make_strata = function(
       )
     }
     if(split_x1[1] == "eq" ){
+      #equal-interval breaks: drop the two ENDPOINTS (positions 1 and length),
+      #keeping the interior cut points. The old [-c(1,n1)] dropped position n1
+      #instead of the last point (n1+1), leaving a double-width top stratum and
+      #a permanently empty bin.
+      eq_x1 = seq(r_x1[1],r_x1[2],dr_x1/n1)
       str_levels_x1 = c(
         r_x1[1] - dr_x1
-        ,seq(r_x1[1],r_x1[2],dr_x1/n1)[-c(1,n1)]
+        ,eq_x1[-c(1,length(eq_x1))]
         ,r_x1[2]+ dr_x1
       )
     }
@@ -232,9 +248,10 @@ make_strata = function(
           )
         }
         if(split_x2[1] == "eq" ){
+          eq_x2 = seq(ri[1],ri[2],dri/n2i)
           str_levels_x2 = c(
             ri[1]-dri
-            ,seq(ri[1],ri[2],dri/n2i)[-c(1,n2i)]
+            ,eq_x2[-c(1,length(eq_x2))]
             ,ri[2]+dri
           )
 
@@ -274,17 +291,21 @@ make_strata = function(
 
     if(split_x2[1] == "qt" ){
 
+      #use n2 (not n1) for the x2 splits, and pad the UPPER sentinel from the
+      #max (r_x2[2]), not the min (r_x2[1]) - otherwise the top break equals the
+      #training max and any future value above it gets an NA stratum.
       str_levels_x2 = c(
         r_x2[1]-dr_x2
-        ,quantile(dat_x2 ,seq(1/n1,1-1/n1,1/n1))
-        ,r_x2[1]+dr_x2
+        ,quantile(dat_x2 ,seq(1/n2,1-1/n2,1/n2))
+        ,r_x2[2]+dr_x2
       )
     }
     if(split_x2[1] == "eq" ){
+      eq_x2 = seq(r_x2[1],r_x2[2],dr_x2/n2)
       str_levels_x2 = c(
         r_x2[1] - dr_x2
-        ,seq(r_x2[1],r_x2[2],dr_x2/n1)[-c(1,n1)]
-        ,r_x2[1]+ dr_x2
+        ,eq_x2[-c(1,length(eq_x2))]
+        ,r_x2[2]+ dr_x2
       )
     }
 
@@ -316,7 +337,7 @@ make_strata = function(
   #handle group 2 that is a factor - cannot be nested
   if( !numeric_x2){
 
-    if(nest_x2) warning("Cannot next x2 in x1 if x2 is already a factor")
+    if(nest_x2) warning("Cannot nest x2 in x1 if x2 is already a factor")
 
     df_ct_x2 = as.data.frame(table(dat_x2 ),responseName = "Freq.x2")
     #table() names the first column after the input symbol (not always "Var1")
@@ -345,12 +366,14 @@ make_strata = function(
 
       warning("currently 'collapse=T' uses a cheap fix - empty bins are merged into the nearest occupied bin by bin sequence")
 
-      #grab nearest bin based on bin sequence
+      #grab nearest occupied bin based on bin sequence. which.min() returns a
+      #POSITION within idx_good, so index back into idx_good to get the actual
+      #dfStr2 row of the nearest occupied stratum.
       idx_bad = sort(which(missing_idx))
       idx_good = sort(which(!missing_idx))
       idx_new = c()
       for(i in 1:length(idx_bad)){
-        idx_new = c(idx_new, which.min(abs(idx_bad[i]-idx_good)))
+        idx_new = c(idx_new, idx_good[which.min(abs(idx_bad[i]-idx_good))])
       }
 
       #replace original ids with replacement ids
@@ -383,8 +406,8 @@ make_strata = function(
 
 }
 
-##' @export
-##' @rdname make_strata
+#' @export
+#' @rdname make_strata
 
 assign_strata = function(strata,data,append_definitions=F){
 
@@ -439,88 +462,5 @@ assign_strata = function(strata,data,append_definitions=F){
   }
 
   data_in
-
-}
-
-
-
-
-if(F){
-  #stratify on vegetation type and height
-
-  n=500
-  hts = sample(1:150,n,T)
-  dbhs = abs(hts/5 + rnorm(n)*2)
-  dat_test = data.frame(height = hts , dbh = dbhs, height_cat = cut(hts,10) , dbh_cat = cut(dbhs,10))
-
-  plot(dbhs,hts)
-
-  #make strata with numeric and factorial groups
-  str_test = make_strata(
-    dat_test
-    , x2="height_cat"
-    , x1="dbh"
-    , split_x1 =c("qt","eq")[1]
-    , split_x2 =c("qt","eq")[1]
-    , nest_x2 =  T
-    , n1 = 10
-    , n2 = 10
-    #, type_x1 = "factor"
-    #, type_x2 = "numeric"
-    , min_recs = 7
-    , precision = 0
-  )
-
-
-  res = assign_strata(
-    str_test
-    ,dat_test
-  )
-
-  res$stratum
-
-  summary(lm(height ~ dbh , data = res))
-  summary(lm(height ~ dbh_cat , data = res))
-  summary(lm(height ~ stratum , data = res))
-
-  str_test1 = make_strata(
-    dat_test
-    , x1="height"
-    , x2="dbh"
-    , split_x1 =c("qt","eq")[1]
-    , split_x2 =c("qt","eq")[1]
-    , nest_x2 =  T
-    , n1 = 10
-    , n2 = 10
-    # , type_x1 = "numeric"
-    # , type_x2 = "numeric"
-    , min_recs = 7
-    , precision = 0
-  )
-
-  res1 = assign_strata(
-    str_test1
-    ,dat_test
-  )
-
-  str_test2 = make_strata(
-    dat_test
-    , x1="height"
-    , x2="dbh_cat"
-    , split_x1 =c("qt","eq")[1]
-    , split_x2 =c("qt","eq")[1]
-    , nest_x2 =  T
-    , n1 = 10
-    , n2 = 10
-    , type_x1 = "numeric"
-    , type_x2 = "factor"
-    , min_recs = 7
-    , precision = 0
-  )
-
-  res2 = assign_strata(
-    str_test2
-    ,dat_test
-  )
 
 }

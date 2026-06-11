@@ -188,6 +188,11 @@ model_archive_save = function(fit, registry_row, predictor_spec = NULL,
     .model_archive_atomic_saveRDS(vcov, vcov_file)
     row_out[, vcov_path := file.path("vcov", paste0(system_id_chr, ".rds"))]
   }
+  # don't silently drop a supplied vcov: it can only be persisted with a system_id
+  if (!is.null(vcov) && !has_system){
+    warning("model_archive_save(): a 'vcov' was supplied but 'system_id' is empty/NA; ",
+            "vcov sidecars are keyed by system_id, so the vcov was NOT saved.")
+  }
 
   # 3. predictor-spec JSON
   if (!is.null(predictor_spec)){
@@ -200,7 +205,13 @@ model_archive_save = function(fit, registry_row, predictor_spec = NULL,
     spec_file = file.path(dir_specs, paste0(spec_id_chr, ".json"))
     spec_tmp = paste0(spec_file, ".tmp")
     jsonlite::write_json(predictor_spec, spec_tmp, pretty = TRUE, auto_unbox = TRUE, null = "null")
-    file.rename(spec_tmp, spec_file)
+    #checked atomic rename (like the RDS/registry writers): a failed rename
+    #otherwise leaves a stale .tmp and a row pointing at a missing spec
+    ok = file.rename(spec_tmp, spec_file)
+    if (!ok){
+      if (file.exists(spec_tmp)) file.remove(spec_tmp)
+      stop("model_archive_save(): atomic rename failed for ", spec_file)
+    }
     row_out[, predictor_spec_path := file.path("predictor_specs", paste0(spec_id_chr, ".json"))]
   }
 
@@ -215,15 +226,17 @@ model_archive_save = function(fit, registry_row, predictor_spec = NULL,
   # 1. read existing registry preserving column order
   existing = data.table::fread(registry_full_path, na.strings = c("", "NA"))
 
-  # 2. uniqueness guard on model_id
+  # 2. uniqueness guard on model_id (compare as character so a stored "1" and a
+  #    supplied 1L are treated as the same id rather than slipping past as a dup)
   model_id_new = row_with_paths$model_id[1]
-  if (nrow(existing) > 0 && "model_id" %in% names(existing) && model_id_new %in% existing$model_id){
+  if (nrow(existing) > 0 && "model_id" %in% names(existing) &&
+      as.character(model_id_new) %in% as.character(existing$model_id)){
     if (!overwrite){
       stop("model_archive_save(): model_id ", model_id_new,
            " already exists in ", basename(registry_full_path),
            ". Pass overwrite = TRUE to replace it.")
     }
-    existing = existing[existing$model_id != model_id_new, ]
+    existing = existing[as.character(existing$model_id) != as.character(model_id_new), ]
   }
 
   # 3. union columns: fill missing on each side with NA

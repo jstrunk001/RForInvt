@@ -33,7 +33,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{fvs_run}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_keyfile_prototype}}\cr \code{\link{fvs_param_prototype}}\cr
+#'@seealso \code{\link{fvs_run}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_prototype_keyfile}}\cr \code{\link{fvs_prototype_params}}\cr
 #'
 fvs_load=function(
                         webpath = c("https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/open-fvs-code-r3840-rFVS-R.zip")
@@ -44,27 +44,23 @@ fvs_load=function(
   #find location of package
   dir_pkg = find.package(package)
   dir_rfvs = file.path(dir_pkg,"rfvs")
-  #dir_temp = file.path(dir_rfvs,"temp")
-  zips = sapply(dir_rfvs, list.files , pattern="[.]zip", full.names=T)
 
   #create rfvs directory if needed
-  res_dir = sapply(dir_rfvs,function(x)if(!dir.exists(x)) dir.create(x))
+  if(!dir.exists(dir_rfvs)) dir.create(dir_rfvs, recursive = TRUE)
 
-  #see if zip files present
-  if(length(zips)>0){
-    zip_time = file.mtime(zips)
-    max_zip = zips[which.max(zip_time)]
-  }
+  #see if zip files present (use list.files directly: sapply over a length-1
+  #directory returns a list of length 1, so length(zips)==0 was never TRUE and
+  #the first-run auto-download never fired)
+  zips = list.files(dir_rfvs, pattern="\\.zip$", full.names=TRUE)
 
   #download files to package directory if necessary
   if(length(zips)==0 | force_update){
-    if(!dir.exists(dir_rfvs)) dir.create(dir_rfvs)
-    file_path = download.file(webpath, file.path(dir_rfvs, basename(webpath)))
+    download.file(webpath, file.path(dir_rfvs, basename(webpath)))
+    zips = list.files(dir_rfvs, pattern="\\.zip$", full.names=TRUE)
   }
+
   #find most recent zip
-  zips = sapply(dir_rfvs, list.files , pattern="[.]zip", full.names=T)
-  zip_time = file.mtime(zips)
-  max_zip = zips[which.max(zip_time)]
+  max_zip = if(length(zips) > 0) zips[which.max(file.mtime(zips))] else character(0)
 
   #source files
   if(length(max_zip)==1){

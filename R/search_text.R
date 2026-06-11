@@ -68,7 +68,7 @@ search_text=function(
   match_string=""
   ,directory=NA
   ,file=NA
-  ,pattern=".r"
+  ,pattern="\\.[rR]$"
   ,pattern_omit=c(NA,"dev_")
   ,recursive=T
   ,clus=NA
@@ -94,7 +94,11 @@ search_text=function(
       if(is.numeric(clus)) clus_in=makeCluster(clus)
       else clus_in=clus
 
-      res=clusterMap(clus_in,search_text,pattern=pattern,match_string=match_string,recursive=recursive,SIMPLIFY=F)
+      #map over the FILES (the previous call never passed file=files, so every
+      #worker re-entered the directory branch with file=NA and errored)
+      res=clusterMap(clus_in,search_text,file=files
+                     ,MoreArgs=list(pattern=pattern,match_string=match_string,recursive=recursive)
+                     ,SIMPLIFY=F)
       if(is.numeric(clus)) stopCluster(clus_in)
     }
 

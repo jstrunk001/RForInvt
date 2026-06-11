@@ -36,7 +36,7 @@
 #'@param append T/F if the output db already exists, should it be appended or wiped
 #'
 #'@return
-#'  NULL
+#'  invisibly, a list of the captured \code{system()} outputs for each FVS run
 #'
 #'@examples
 #'
@@ -75,7 +75,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{fvs_load}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_keyfile_prototype}}\cr \code{\link{fvs_param_prototype}}\cr
+#'@seealso \code{\link{fvs_load}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_prototype_keyfile}}\cr \code{\link{fvs_prototype_params}}\cr
 
 fvs_run = function(
   key_df
@@ -96,6 +96,12 @@ fvs_run = function(
   if(merge_dbs & db_merge == basename(db_merge) ){ out_db = file.path(dirname(key_df$output_db[1]), db_merge)
   }else out_db = db_merge
 
+  #the unique per-run output DBs. Computed once up front so the temp-DB cleanup
+  #below works even when merge_dbs = FALSE (previously unq_db was defined only
+  #inside the merge block, so cleanup with merge_dbs=FALSE threw 'object unq_db
+  #not found' AFTER FVS had already run).
+  unq_db = unique(key_df$output_db)
+
   if(clear_db){
     sapply(unique(key_df$output_db),function(x){
       output_con =  RSQLite::dbConnect( RSQLite::SQLite(),x)
@@ -108,8 +114,10 @@ fvs_run = function(
     })
   }
 
-  #prepare fvs commands
-  fvs_runs = paste0(key_df$fvs_path," --keywordfile=",gsub("\\\\\\\\", "\\\\",gsub("/","\\\\",key_df$key_path)  ) )
+  #prepare fvs commands. Quote the executable and keyword-file paths so paths
+  #containing spaces (e.g. under "Program Files") do not break system().
+  key_paths_win = gsub("\\\\\\\\", "\\\\", gsub("/","\\\\",key_df$key_path) )
+  fvs_runs = paste0(shQuote(key_df$fvs_path)," --keywordfile=",shQuote(key_paths_win) )
   if(!is.na(fvs_commands)  ){
 
     dir_cmds = file.path(key_df$fvs_dir[1], "commands")
@@ -127,29 +135,40 @@ fvs_run = function(
     })
   }
 
-  ###run in parallel but split so each cluster uses the same DB in series
+  ###run in parallel. Group commands by their output DB and run each group as
+  ###one serial task on a worker, so no two FVS processes write the same SQLite
+  ###file concurrently (the per-cluster-DB design only prevents corruption if
+  ###each DB is written serially - parLapplyLB over individual commands did not
+  ###enforce that).
   if(!is.na(cluster[1])){
-    res_fvs =  parallel::parLapplyLB(cluster,fvs_runs, function(x)try(system(x,intern=T)) )
+    groups = split(fvs_runs, key_df$output_db)
+    res_grp = parallel::parLapply(cluster, groups, function(g) lapply(g, function(x) try(system(x,intern=T))))
+    res_fvs = unlist(res_grp, recursive = FALSE)
   }
 
   #merge multiple databases into single database
   if(merge_dbs){
 
-    unq_db = noquote(unique(key_df$output_db))
-
     #make database for all
-    if(!append & file.exists(out_db)) unlink(out_db)
+    if(!append & file.exists(out_db)){
+      warning("fvs_run: overwriting existing merge database (append=FALSE): ", out_db)
+      unlink(out_db)
+    }
     con_dbmrg =  DBI::dbConnect( RSQLite::SQLite(),out_db)
 
     for(i in 1:length(unq_db)){
 
-      #connect and get lists from dbs
+      #connect and get lists from dbs; always disconnect this iteration's
+      #connection (an open SQLite handle also blocks unlink() of the temp db on
+      #Windows). The previous code only closed con_dbi inside the non-empty branch.
       unq_db_i = unq_db[i]
       con_dbi =  RSQLite::dbConnect( RSQLite::SQLite(),unq_db_i)
       tbs_i = dbListTables(con_dbi)
 
-      if((length(tbs_i) == 0) & !skip_empty) stop("input db empty, nothing to merge")
-      if((length(tbs_i) == 0) & !skip_empty) RSQLite::dbDisconnect( con_dbi)
+      if((length(tbs_i) == 0) & !skip_empty){
+        RSQLite::dbDisconnect( con_dbi)
+        stop("input db empty, nothing to merge")
+      }
 
       if((length(tbs_i) > 0) ){
 
@@ -161,11 +180,11 @@ fvs_run = function(
           if(nrow(tbj)>0) dbWriteTable(con_dbmrg,tbs_i[j], tbj ,append=T )
 
         }
-        #disconnect from intermediate database
-        RSQLite::dbDisconnect( con_dbi)
 
       }
 
+      #disconnect from intermediate database (every iteration)
+      RSQLite::dbDisconnect( con_dbi)
 
     }
     #disconnect from merge database

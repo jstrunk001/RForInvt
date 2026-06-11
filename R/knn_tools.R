@@ -170,7 +170,9 @@ yai_id=function(
 	#assign plot ids to rows
 	row.names(data)=data[,idNm]
 
-	if(!is.null(omity)) yai_in=yai( x = fx , y = fy , data = data[ , omity ] , ... ) #for crossvalidation
+	#omity is a vector of ROW indices to drop (e.g. for cross-validation); the
+	#old code did data[, omity], which subset COLUMNS instead of omitting records
+	if(!is.null(omity)) yai_in=yai( x = fx , y = fy , data = data[ -omity , ] , ... )
 	else yai_in=yai( x = fx , y = fy , data = data , ... )
 
 	#yai_in$updateID=names(id_y)[1]
@@ -198,6 +200,12 @@ newtargets_id=function(
 	#update column names with idNm column
 	row.names(data)=data[,idNm]
 
+	#warn if any target id collides with a reference id: yaImpute keys on row
+	#names, so a colliding target is silently treated as an existing reference
+	ref_ids = rownames(yai_mod$xRefs)
+	if(!is.null(ref_ids) && any(as.character(data[[idNm]]) %in% ref_ids))
+		warning("some target ids collide with reference ids; yaImpute keys on row names, so colliding targets may be dropped or mis-imputed")
+
 	#get new targets
 	yai_in=newtargets(object=yai_mod,newdata=data,k=k,ann=ann)
 
@@ -217,9 +225,12 @@ impute_id = function(
 
 	requireNamespace("yaImpute")
 
-	#update column names with idNm column
+	#update column names with idNm column. Accept either tag name: newtargets_id()
+	#stores `update_id` while yai_id() stores `updateID` - read whichever is set
+	#so impute_id() works on either object.
+	id_tag = if(!is.null(newtargs_id[["update_id"]])) newtargs_id[["update_id"]] else newtargs_id[["updateID"]]
 	imp_in=data.frame(cbind(names_in=newtargs_id[["trgRows"]],impute(newtargs_id,...)))
-	names(imp_in)[1]=newtargs_id[["update_id"]]
+	names(imp_in)[1]=id_tag
 	row.names(imp_in)=NULL
 	imp_in
 
@@ -259,7 +270,9 @@ yai_weights=function(
   	#calculate distances
   	if(dtype[1]=="invdist") wt_in = (1/dist_in)/apply(1/dist_in,1,sum,na.rm=TRUE)
   	if(dtype[1]=="invdist2") wt_in = (1/dist_in^2)/apply(1/dist_in^2,1,sum,na.rm=TRUE)
-  	if(dtype[1]=="eq") wt_in = rep(1/(ncol(dist_in)),ndist,na.rm=TRUE)
+  	#equal weights: an n x k frame of 1/k (the old rep() returned a length-n
+  	#vector with no weight columns, so tl_impute melted zero weights downstream)
+  	if(dtype[1]=="eq") wt_in = dist_in*0 + 1/ncol(dist_in)
   	#wt_in=data.frame(dist_id,wt_in,stringsAsFactors=FALSE)
   	names(wt_in)=gsub("Dst[.]","wt.",names(wt_in))
   	
@@ -416,8 +429,8 @@ yai_cv=function(
 
 		data_in = data.frame(data,row.names = 1:nrow(data))
 		cv_df=plyr::rbind.fill(mapply(.fn_cv,samp=samples_in,MoreArgs = list(xNm=xNm,yNm=yNm,pdNm=pdNm,k=k,idNm=idNm,dat_cv=data_in,method=method,method_impute=method_impute),SIMPLIFY = F))
-		nm_obs=grep(".o$",names(cv_df),value=T)
-		nm_pred=gsub(".o$","",nm_obs)
+		nm_obs=grep("\\.o$",names(cv_df),value=T)
+		nm_pred=gsub("\\.o$","",nm_obs)
 
 		fn_err=function(
 			i
@@ -432,14 +445,18 @@ yai_cv=function(
 			table_y=table(yy0[,idNm])
 			p_i=(table_y/sum(table_y))[as.character(yy0[,idNm])]/sum((table_y/sum(table_y))[as.character(yy0[,idNm])])
 
+			#weighted MSE INCLUDING bias (the old code subtracted mean(ei) before
+			#squaring, which yields the error SD, not RMSE, and silently dropped
+			#the bias component). sd_e is reported separately for the debiased spread.
+			wmse = sum(1/p_i * ei^2, na.rm=T) / sum(1/p_i, na.rm=T)
 			data.frame(
 				varb=nms_y[i]
 				,bias=sum(ei/p_i,na.rm=T)/sum(1/p_i,na.rm=T)
 				,bias_pct_mn=sum(ei/p_i,na.rm=T)/sum(1/p_i,na.rm=T)/mean(y0,na.rm=T)*100
-				,rmse=sqrt(sum(1/p_i*(ei-mean(ei,na.rm=T))^2)/sum(1/p_i,na.rm=T))
-				,rmse_pct_mn=sqrt(sum(1/p_i*(ei-mean(ei,na.rm=T))^2,na.rm=T)/sum(1/p_i,na.rm=T))/mean(y0,na.rm=T)*100
-				,rsq=1-(sum(1/p_i*(ei-mean(ei,na.rm=T))^2,na.rm=T)/sum(1/p_i,na.rm=T))/var(y0,na.rm=T)
-				,rmse_pct_sd=sqrt(sum(1/p_i*(ei-mean(ei,na.rm=T))^2,na.rm=T)/sum(1/p_i,na.rm=T))/sd(y0,na.rm=T)*100,meany=mean(y0,na.rm=T),sdy=sd(y0,na.rm=T)
+				,rmse=sqrt(wmse)
+				,rmse_pct_mn=sqrt(wmse)/mean(y0,na.rm=T)*100
+				,rsq=1-wmse/var(y0,na.rm=T)
+				,rmse_pct_sd=sqrt(wmse)/sd(y0,na.rm=T)*100,meany=mean(y0,na.rm=T),sdy=sd(y0,na.rm=T)
 			)
 
 		}

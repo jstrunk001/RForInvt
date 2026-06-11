@@ -30,7 +30,10 @@
 #'@param row_id should row ids be returned
 #'
 #'@return
-#'  <Delete and Replace>
+#'  a data.frame whose first column is the id column of \code{idxy2} and whose
+#'  remaining columns (one per row of \code{idxy1}, named by \code{idxy1}'s ids)
+#'  hold the Euclidean distances from each \code{idxy1} point to every
+#'  \code{idxy2} point
 #'
 #'@examples
 #'  dat1 = data.frame(id=1:25, x=25:49, y=61:85)
@@ -62,27 +65,33 @@ dist_vec = function(
               ,row_id=T
   ){
 
-  #get distances for single vector
-  if(is.null(dim(idxy1)[1])){
-    if(row_id){
-      di = data.frame(id=idxy2[1],apply(sweep(as.matrix(idxy2[,-1]),2,as.matrix(as.numeric(idxy1[-1]))),1,function(x)sqrt(sum(x^2))))
-      names(di) = c(names(idxy2)[1],idxy1[1])
-    }
-    if(!row_id){
-      di = data.frame(V1=apply(sweep(as.matrix(idxy2[,-1]),2,as.matrix(as.numeric(idxy1[-1]))),1,function(x)sqrt(sum(x^2))))
-      names(di)[1] = idxy1[1]
-    }
-  }
-  #get distances for two vectors
-  if(!is.null(dim(idxy1)[1])){
-    di = data.frame(id=idxy2[1],do.call(cbind,apply(idxy1,1,dist_vec, idxy2,row_id=F)  ))
-    names(di) = c(names(idxy1)[1], idxy1[,1])
-  }
-  return(di)
-}
+  #coords of the second set (numeric matrix, id column dropped)
+  coords2 = as.matrix(idxy2[, -1, drop = FALSE])
+  storage.mode(coords2) = "double"
 
-if(F){
-  dat1 = data.frame(id=1:25, x=25:49, y=61:85)
-  dat2 = data.frame(id=LETTERS[1:10], x=rnorm(10), y=runif(10))
-  dist_vec(dat1, dat2)
+  #single reference point supplied as a (named) vector: distances from it to
+  #every row of idxy2. Keep coordinates numeric - the previous apply()-over-rows
+  #form round-tripped mixed id+coord rows through character.
+  if(is.null(dim(idxy1))){
+    p = as.numeric(idxy1[-1])
+    d = sqrt(rowSums(sweep(coords2, 2, p)^2))
+    if(row_id){
+      di = data.frame(idxy2[[1]], d, stringsAsFactors = FALSE, check.names = FALSE)
+      names(di) = c(names(idxy2)[1], as.character(idxy1[1]))
+    } else {
+      di = data.frame(d, check.names = FALSE)
+      names(di)[1] = as.character(idxy1[1])
+    }
+    return(di)
+  }
+
+  #two point sets: one distance column per row of idxy1, keyed by idxy2's id
+  coords1 = as.matrix(idxy1[, -1, drop = FALSE])
+  storage.mode(coords1) = "double"
+  d_mat = sapply(seq_len(nrow(idxy1)), function(i) sqrt(rowSums(sweep(coords2, 2, coords1[i, ])^2)))
+  d_mat = as.data.frame(d_mat, check.names = FALSE)
+  names(d_mat) = as.character(idxy1[[1]])
+  di = data.frame(idxy2[[1]], d_mat, stringsAsFactors = FALSE, check.names = FALSE)
+  names(di)[1] = names(idxy1)[1]
+  return(di)
 }

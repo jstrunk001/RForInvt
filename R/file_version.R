@@ -97,7 +97,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{filestamp}}\cr
+#'@seealso \code{\link{file_stamp}}\cr
 
 #the code below with a single comment symbol is not part of the official roxygen code
 #
@@ -142,6 +142,13 @@ file_version = function(
 
     # get / make current version
       #version_in = .version_get( path , increment = increment, digits = version_digits ,  stamp = version_stamp , markers = version_markers , sep = version_sep , all_versions = return_all_versions)
+
+    #serialize the read-modify-write of _tracking.csv: two concurrent callers
+    #could otherwise both read the same last_id, create the same version id, and
+    #the second write would clobber the first. flock is already a dependency.
+    lock_path = file.path(path, "_tracking.lock")
+    lk = flock::lock(lock_path)
+    on.exit(flock::unlock(lk), add = TRUE)
 
     #fix broken paths in file trackers caused by file copying
     if(update_path) .update_paths(path)
@@ -205,7 +212,6 @@ file_version = function(
 
       versions_exist = file.exists(trk_in[,"version"])
       trk_in = trk_in[versions_exist,]
-      last_id = max(trk_in$id)
 
       write.csv(trk_in, path_trk , row.names=F)
 
@@ -275,7 +281,7 @@ file_version = function(
 
     #write to file
     err = try(write.csv(trk_update, path_trk,row.names=F))
-    if(class(err) == "try-error") warning("please close ", path_trk, " before creating a new version")
+    if(inherits(err, "try-error")) warning("could not write ", path_trk, " (close it if open); the new version id may be reused on the next call")
 
     #update internal tracking object
     trk_in = trk_update
@@ -296,84 +302,21 @@ file_version = function(
       if(file.exists(path_trk)){
         version_in = read.csv(path_trk)
 
-        #see which paths match
-        bad_paths_A = normalizePath(version_in$file) != normalizePath(path)
-        bad_paths_B = normalizePath(dirname(version_in$version)) != normalizePath(path)
+        #see which paths match (suppress normalizePath's missing-file warnings)
+        bad_paths_A = suppressWarnings(normalizePath(version_in$file, mustWork = FALSE))   != suppressWarnings(normalizePath(path, mustWork = FALSE))
+        bad_paths_B = suppressWarnings(normalizePath(dirname(version_in$version), mustWork = FALSE)) != suppressWarnings(normalizePath(path, mustWork = FALSE))
 
         #fix bad paths
         if(sum(bad_paths_A ) > 0) version_in$file[bad_paths_A] = path
         if(sum(bad_paths_B ) > 0) version_in$version[bad_paths_B] = file.path(path,basename(version_in$version[bad_paths_B]))
 
-        #write updated paths to output
-        err = try(write.csv(version_in, path_trk,row.names=F))
-        if(class(err) == "try-error") warning("please close ", path_trk, " before creating a new version")
+        #only rewrite the ledger when something actually changed (this is called
+        #on every file_version() call, including read-only ones, so an
+        #unconditional write churned the file and widened the race window)
+        if(sum(bad_paths_A) + sum(bad_paths_B) > 0){
+          err = try(write.csv(version_in, path_trk,row.names=F))
+          if(inherits(err, "try-error")) warning("could not update paths in ", path_trk, " (close it if open)")
+        }
       }
 
 }
-
-
-#Testing code
-if(T){
-
-  #reset for experimenting
-  if(F){
-    unlink("c:/temp/dataNoIncrement.txt",recursive = T)
-    unlink("c:/temp/dataIncrement.txt",recursive = T)
-  }
-
-  if(F){
-
-    #edit on the same file over and over
-    vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
-    writeLines(letters,vs_test1)
-    file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
-  }
-  if(F){
-
-    #update version every time
-    vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
-    writeLines(letters,vs_test2)
-    file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T , purge_missing_versions = T)
-    vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
-    vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T, purge_missing_versions = F); vs_test2
-    writeLines(letters,vs_test2)
-    file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T , purge_missing_versions = F)
-
-  }
-
-  #increment folder instead of file
-  if(F){
-
-    #update version every time
-    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
-    dir.create(vs_test2)
-    writeLines(letters,file.path(vs_test2,"letters.txt"))
-
-    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
-    dir.create(vs_test2)
-    writeLines(letters,file.path(vs_test2,"letters.txt"))
-
-    file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_missing_versions = F)
-
-  }
-
-  #only label file with version
-  if(F){
-
-    #update version every time
-    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
-    dir.create(vs_test2)
-    writeLines(letters,file.path(vs_test2,"letters.txt"))
-
-    vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
-    dir.create(vs_test2)
-    writeLines(letters,file.path(vs_test2,"letters.txt"))
-
-    file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_missing_versions = F)
-
-  }
-
-
-
-}
-

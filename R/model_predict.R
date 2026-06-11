@@ -65,7 +65,7 @@
 #'   default `"formula"`) and `params` (parameter columns to substitute,
 #'   default `paste0("b", 0:8)`).
 #' @param suffix_predict Reserved for future use (prediction column suffix);
-#'   currently not appended.
+#'   currently not appended. Defaults to `NULL`.
 #' @param archive_dir Optional archive root for resolving `fit_object_path` /
 #'   `predictor_spec_path`. When `NULL`, the shipped `extdata/` of `package`
 #'   is used.
@@ -96,7 +96,7 @@ model_predict = function(
                         , nms_dat_predict = c(tpa1="tpa",hd1="ht",age1="age")
                         , params
                         , nms_params = list(formula = "formula", params = paste0("b", 0:8))
-                        , suffix_predict = ".pd"
+                        , suffix_predict = NULL
                         , archive_dir = NULL
                         , package = "RForInvt"
                         , ...
@@ -106,6 +106,7 @@ model_predict = function(
   dat_in    = data.table::as.data.table(dat)
   params_in = data.table::as.data.table(params)
   nms_pd    = params_in[["response"]]
+  if (is.null(nms_pd)) stop("model_predict(): `params` must include a 'response' column naming each prediction column.")
 
   # 2. rename columns to canonical predictor names
   data.table::setnames(dat_in, old = c(nms_dat_predict), new = names(c(nms_dat_predict)), skip_absent = TRUE)
@@ -168,11 +169,37 @@ model_predict = function(
   form_parse = parse(text = form_text)
   form_in    = eval(form_parse, envir = params)
 
-  if (is.call(form_in)) res = eval(form_in, envir = dat)
-  else res = eval(parse(text = form_in), envir = dat)
+  # Evaluate the (coefficient-substituted) formula against the data columns in a
+  # SANDBOXED enclosure that exposes only arithmetic/math operators. The formula
+  # text comes from a registry CSV that, for writable archives, may be third
+  # party; restricting the enclosure to a math allow-list (parent = emptyenv())
+  # blocks arbitrary calls (e.g. system()) - unknown symbols simply fail to
+  # resolve rather than reaching base/global.
+  safe_env = .mp_safe_env()
+  if (is.call(form_in)) res = eval(form_in, envir = dat, enclos = safe_env)
+  else res = eval(parse(text = form_in), envir = dat, enclos = safe_env)
+
+  # constant-only formulas (e.g. formula = "b0") evaluate to a scalar; recycle
+  # to the number of rows so the assigned prediction column is well formed
+  if (length(res) == 1L) res = rep(res, nrow(dat))
 
   res
 
+}
+
+#' @keywords internal
+#' @noRd
+# Restricted evaluation environment for closed-form formulas: only arithmetic
+# and common math functions are bound; parent is emptyenv() so nothing else
+# (system, eval, etc.) is reachable.
+.mp_safe_env = function(){
+  allowed = c("+","-","*","/","^","(","{","[",
+              "exp","log","log10","log2","log1p","sqrt","abs",
+              "sin","cos","tan","pmin","pmax","min","max","ifelse",
+              "c","sum","mean")
+  e = new.env(parent = emptyenv())
+  for (f in allowed) assign(f, get(f, envir = baseenv()), envir = e)
+  e
 }
 
 #' @keywords internal
@@ -245,7 +272,20 @@ model_predict = function(
     dat[[nm]] = switch(tf,
       log         = log(x),
       sqrt        = sqrt(x),
-      standardize = (x - mean(x, na.rm = TRUE)) / stats::sd(x, na.rm = TRUE),
+      standardize = {
+        #standardization MUST reuse the training center/scale, not recompute
+        #from newdata (which makes predictions depend on the batch composition
+        #and gives NaN for a single-row newdata). Read them from the spec.
+        ctr = p$center; scl = p$scale
+        if (is.null(ctr) || is.null(scl)){
+          warning("model_predict(): 'standardize' for predictor '", nm,
+                  "' lacks stored center/scale in the predictor spec; ",
+                  "cannot reproduce training standardization. Left unchanged.")
+          x
+        } else {
+          (x - as.numeric(ctr)) / as.numeric(scl)
+        }
+      },
       {
         warning("model_predict(): unknown transform '", tf, "' for predictor '", nm, "'; left unchanged.")
         x

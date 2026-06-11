@@ -125,9 +125,10 @@ fia_clean_best_cds = function(
 
   #check arguments
 
-  if("filter_pts" %in% sequential_steps){
+  #the step is named "filter_cds" in sequential_steps; the previous code checked
+  #"filter_pts" so the documented filters were never applied with defaults
+  if("filter_cds" %in% sequential_steps){
 
-    warning("filter_pts argument has not been tested - test me!!")
     filters_in = paste(filters,collapse=" & ")
     str_call = paste("dplyr::filter(df_best_in,",filters_in,")")
     df_best_in = eval(parse(text=str_call))
@@ -136,17 +137,24 @@ fia_clean_best_cds = function(
 
   if("remove_duplicates" %in% sequential_steps ){
 
-    #prioritize HPGNSS
-    df_HPGNSS = df_best_in[df_best_in$PC_COORD_METHOD_NAME == "HPGPS",]
-    df_HPGNSS = df_HPGNSS[!duplicated(df_HPGNSS$PLOT),]
+    #physical-plot key: FIA PLOT numbers repeat across state/county, so dedupe on
+    #the composite (whichever of STATECD/COUNTYCD/PLOT are present), not PLOT alone
+    plot_key = function(d){
+      cols = intersect(c("STATECD","COUNTYCD","PLOT"), names(d))
+      if(length(cols)==0) cols = "PLOT"
+      do.call(paste, c(as.list(d[, cols, drop=FALSE]), sep="_"))
+    }
+
+    #prioritize HPGNSS (use %in% so NA method codes do not inject all-NA rows)
+    df_HPGNSS = df_best_in[df_best_in$PC_COORD_METHOD_NAME %in% "HPGPS",]
+    df_HPGNSS = df_HPGNSS[!duplicated(plot_key(df_HPGNSS)),]
     #second is GNSS
-    df_GNSS = df_best_in[df_best_in$PC_COORD_METHOD_NAME == "GPS",]
-    df_GNSS = df_GNSS[!df_GNSS$PLOT %in% df_HPGNSS$PLOT, ]
-    df_GNSS = df_GNSS[!duplicated(df_GNSS$PLOT),]
+    df_GNSS = df_best_in[df_best_in$PC_COORD_METHOD_NAME %in% "GPS",]
+    df_GNSS = df_GNSS[!plot_key(df_GNSS) %in% plot_key(df_HPGNSS), ]
+    df_GNSS = df_GNSS[!duplicated(plot_key(df_GNSS)),]
 
     #last is the remainder
-    df_non_GNSS = df_best_in[(!df_best_in$PLOT %in% c(df_GNSS$PLOT,df_HPGNSS$PLOT)) & !duplicated(df_best_in$PLOT),]
-    #plot(PC_LAT_Y~PC_LON_X, data = df_non_GNSS)
+    df_non_GNSS = df_best_in[(!plot_key(df_best_in) %in% c(plot_key(df_GNSS),plot_key(df_HPGNSS))) & !duplicated(plot_key(df_best_in)),]
 
     #compile in hierarchy without duplicates
     df_best_in = rbind(df_HPGNSS,df_GNSS, df_non_GNSS)
@@ -158,7 +166,7 @@ fia_clean_best_cds = function(
   #initiate results
   res_in = list()
 
-  if("cds_wide_to_long" %in% sequential_steps | TRUE){ #must do this
+  if("cds_wide_to_long" %in% sequential_steps){ #required for any geometry output
 
     #manually take wide coordinates to long and rename coordinates into single column
     df_best_in_sp1 = data.frame(unqid = 1:nrow(df_best_in),df_best_in[,id_nms], SUBPLOT = 1, LAT_Y = df_best_in$PC_LAT_Y, LON_X = df_best_in$PC_LON_X )
@@ -212,15 +220,15 @@ fia_clean_best_cds = function(
       spl_combine = lapply(spl_id_in , .fn_combine, crs_out)
       pl_mult_in = sf::st_as_sf( plyr::rbind.fill(spl_combine))
 
-      res_in[["PLOT POINT"]] = pl_mult_in
-      #plot(sf::st_geometry(pl_mult_in[1:nrow(pl_mult_in),]))
+      #only return PLOT POINT when it was actually requested
+      if("PLOT POINT" %in% geom_type) res_in[["PLOT POINT"]] = pl_mult_in
     }
 
-    #buffer points
+    #buffer points (key spelled exactly as documented: "PLOT POLYGON")
     if("PLOT POLYGON" %in% geom_type){
 
       pl_mult_in_ply = sf::st_buffer(pl_mult_in, dist=ply_radius)
-      res_in[["PLOT Polygon"]] = pl_mult_in_ply
+      res_in[["PLOT POLYGON"]] = pl_mult_in_ply
 
     }
 
@@ -237,18 +245,7 @@ fia_clean_best_cds = function(
     sf::st_geometry(x_in) = geom_i
   }
   if(nrow(x)==1){
-    x_in = st_cast(x, "MULTIPOINT")
+    x_in = sf::st_cast(x, "MULTIPOINT")
   }
   x_in
-}
-
-if(F){
-
-  #test data
-    if(!"cds_all" %in% ls() ){
-      cds_all = readRDS(path_cds_today_rds)
-      cds_5k = cds_all[sample(nrow(cds_all), 5000),]
-    }
-
-  res1 = fia_clean_best_cds(cds_5k)
 }

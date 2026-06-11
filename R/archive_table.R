@@ -215,23 +215,22 @@ archive_table = function(data,
 
 #' @keywords internal
 .normalize_colnames = function(names_vec) {
-  lower_names = tolower(names_vec)
-  dup_count = integer(length(lower_names))
-  seen = list()
-  for (i in 1:length(lower_names)) {
-    nm = lower_names[i]
-    if (!(nm %in% names(seen))) {
-      seen[[nm]] = 1
-    } else {
-      seen[[nm]] = seen[[nm]] + 1
-      dup_count[i] = seen[[nm]]
+  out  = character(length(names_vec))
+  seen = character(0)
+  for (i in seq_along(names_vec)) {
+    cand = names_vec[i]
+    k = 1L
+    #bump the suffix until the candidate is unique case-insensitively against
+    #ALL names already emitted (so a generated "A.2" cannot collide with a
+    #pre-existing "a.2")
+    while (tolower(cand) %in% tolower(seen)) {
+      k = k + 1L
+      cand = paste0(names_vec[i], ".", k)
     }
+    out[i] = cand
+    seen   = c(seen, cand)
   }
-  new_names = names_vec
-  for (i in 1:length(new_names)) {
-    if (dup_count[i] > 0) new_names[i] = paste0(names_vec[i], ".", dup_count[i])
-  }
-  new_names
+  out
 }
 
 #' @keywords internal
@@ -309,10 +308,17 @@ archive_table = function(data,
 }
 
 #' @keywords internal
+# NOTE: file_version() is invoked INSIDE the .safe_write() expression in every
+# writer below (not before it) so that a versioning failure is isolated by
+# stop_on_error just like the write itself - otherwise a failure in one format
+# would abort the whole archive_table() call even with stop_on_error = FALSE.
 .write_csv = function(data, base_path, ext, row_names, increment, stop_on_error) {
   target = paste0(base_path, ext)
-  path   = file_version(path = target, increment = increment)
-  res    = .safe_write(expr = quote(utils::write.csv(data, path, row.names = row_names)),
+  path   = NULL
+  res    = .safe_write(expr = quote({
+                         path = file_version(path = target, increment = increment)
+                         utils::write.csv(data, path, row.names = row_names)
+                       }),
                        fmt_name = "csv",
                        stop_on_error = stop_on_error,
                        eval_env = environment())
@@ -323,8 +329,11 @@ archive_table = function(data,
 #' @keywords internal
 .write_rds = function(data, base_path, ext, increment, stop_on_error) {
   target = paste0(base_path, ext)
-  path   = file_version(path = target, increment = increment)
-  res    = .safe_write(expr = quote(saveRDS(data, path)),
+  path   = NULL
+  res    = .safe_write(expr = quote({
+                         path = file_version(path = target, increment = increment)
+                         saveRDS(data, path)
+                       }),
                        fmt_name = "rds",
                        stop_on_error = stop_on_error,
                        eval_env = environment())
@@ -340,13 +349,16 @@ archive_table = function(data,
     return(list(success = FALSE, path = NULL, error = msg))
   }
   target = paste0(base_path, ext)
-  path   = file_version(path = target, increment = increment)
+  path   = NULL
   # No class checks on `data` (as requested)
-  res    = .safe_write(expr = quote(sf::st_write(obj = data,
-                                                 dsn = path,
-                                                 layer = table_nm,
-                                                 driver = "SQLite",
-                                                 delete_dsn = FALSE)),
+  res    = .safe_write(expr = quote({
+                         path = file_version(path = target, increment = increment)
+                         sf::st_write(obj = data,
+                                      dsn = path,
+                                      layer = table_nm,
+                                      driver = "SQLite",
+                                      delete_dsn = FALSE)
+                       }),
                        fmt_name = "sqlite",
                        stop_on_error = stop_on_error,
                        eval_env = environment())
@@ -366,37 +378,38 @@ archive_table = function(data,
     return(list(success = FALSE, path = NULL, error = msg))
   }
 
-  target    = paste0(base_path, ext)
-  path      = file_version(path = target, increment = increment)
-  data_xlsx = .prepare_for_xlsx(df = data,
-                                drop_geometry   = drop_geometry,
-                                collapse_lists  = collapse_lists,
-                                matrix_collapse = matrix_collapse,
-                                time_tz         = time_tz)
-
-  res = .safe_write(expr = quote(openxlsx::write.xlsx(x = data_xlsx,
-                                                      file = path,
-                                                      sheetName = sheet_name,
-                                                      rowNames = row_names)),
+  target = paste0(base_path, ext)
+  path   = NULL
+  # version, prepare, write, AND datetime-style all run inside .safe_write so a
+  # failure in any of them (e.g. matrix_collapse='error', a locked workbook on
+  # OneDrive) is isolated per stop_on_error rather than aborting other formats.
+  res = .safe_write(expr = quote({
+                      path      = file_version(path = target, increment = increment)
+                      data_xlsx = .prepare_for_xlsx(df = data,
+                                                    drop_geometry   = drop_geometry,
+                                                    collapse_lists  = collapse_lists,
+                                                    matrix_collapse = matrix_collapse,
+                                                    time_tz         = time_tz)
+                      openxlsx::write.xlsx(x = data_xlsx, file = path,
+                                           sheetName = sheet_name, rowNames = row_names)
+                      if (!is.na(datetime_format)) {
+                        wb = openxlsx::loadWorkbook(file = path)
+                        posix_cols = integer(0)
+                        for (j in 1:ncol(data_xlsx)) if (inherits(data_xlsx[[j]], "POSIXct")) posix_cols = c(posix_cols, j)
+                        if (length(posix_cols) > 0) {
+                          st = openxlsx::createStyle(numFmt = datetime_format)
+                          nrows = nrow(data_xlsx) + 1
+                          for (cc in posix_cols) {
+                            openxlsx::addStyle(wb, sheet = sheet_name, style = st,
+                                               rows = 2:nrows, cols = cc, gridExpand = TRUE, stack = TRUE)
+                          }
+                          openxlsx::saveWorkbook(wb, file = path, overwrite = TRUE)
+                        }
+                      }
+                    }),
                     fmt_name = "xlsx",
                     stop_on_error = stop_on_error,
                     eval_env = environment())
-
-  # Optional: apply datetime style
-  if (isTRUE(res$success) && !is.na(datetime_format)) {
-    wb = openxlsx::loadWorkbook(file = path)
-    posix_cols = integer(0)
-    for (j in 1:ncol(data_xlsx)) if (inherits(data_xlsx[[j]], "POSIXct")) posix_cols = c(posix_cols, j)
-    if (length(posix_cols) > 0) {
-      st = openxlsx::createStyle(numFmt = datetime_format)
-      nrows = nrow(data_xlsx) + 1
-      for (c in posix_cols) {
-        openxlsx::addStyle(wb, sheet = sheet_name, style = st,
-                           rows = 2:nrows, cols = c, gridExpand = TRUE, stack = TRUE)
-      }
-      openxlsx::saveWorkbook(wb, file = path, overwrite = TRUE)
-    }
-  }
 
   res$path = if (isTRUE(res$success)) path else NULL
   res
