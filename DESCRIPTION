@@ -40,6 +40,7 @@ Imports:
         tools,
         yaImpute
 Suggests:
+        simex,
         testthat (>= 3.0.0),
         withr
 Config/roxygen2/version: 8.0.0
