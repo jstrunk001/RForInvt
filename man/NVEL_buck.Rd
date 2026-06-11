@@ -162,10 +162,11 @@ res_para <- NVEL_buck(
 )
 
 # --- Example 3: Forcing a Specific Volume Equation ---
-# Use a specific equation code from the NVEL library
+# Use a specific equation code from the NVEL library (must be valid for the
+# trees' region/species, or vollib2_r returns zero volume).
 res_forced <- NVEL_buck(
   dfTL = df_trees,
-  voleq = "F0162521"
+  voleq = "I00FW2W202"
 )
 
 

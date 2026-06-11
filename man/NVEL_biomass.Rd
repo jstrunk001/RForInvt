@@ -79,43 +79,22 @@ Revision History
 }
 }
 \examples{
+\donttest{
+        #a small inline tree list (USFS species codes, dbh in inches, ht in feet)
+        df_fake <- data.frame(
+            trid     = 1:4,
+            region   = 6,
+            forest   = "01",
+            district = "01",
+            dbh      = c(8, 12, 18, 24),
+            ht       = c(45, 70, 95, 110),
+            cl       = c(20, 35, 45, 55),
+            spcd     = c(202, 122, 242, 263)
+        )
 
-        #look up volume equations
-         library(RSForInvt)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
-         NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
-
-        #grab list of species
-        if(!"dfSpp" \%in\% ls()){
-          library(RSQLite)
-          db0 = dbConnect(RSQLite::SQLite(), system.file("misc/NBEL/BiomassEqns.db", package="RSForInvt"))
-          dfSpp = dbGetQuery(db0, paste("select * from tblspp"))
-          dfCoeff = dbGetQuery(db0, paste("select * from BM_EQCoefs"))
-          dbDisconnect(db0)
-        }
-
-        #build a fake tree list
-        if("df_fake" \%in\% ls()){
-          set.seed=111
-          nfake=length(unique(dfCoeff$species_code))
-
-          df_fake = data.frame(
-            trid=1:(nfake)
-            ,region = 6
-            ,forest = "01"
-            ,district = "01"
-            ,dbh=10*abs(rnorm(nfake))
-            ,ht=100*abs(rnorm(nfake))
-            ,spcd = unique(dfCoeff$species_code)#'     sample(c("a","b","c","d") , nfake , T)
-          )
-
-        }
-
-        #get volumes
-        NVEL_volume( dfTL = df_fake )
-
+        #predict green / dry biomass (requires the bundled vollib.dll)
+        NVEL_biomass(dfTL = df_fake)
+}
 
 
 }

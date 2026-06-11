@@ -72,27 +72,18 @@ Revision History
 #NVEL EXAMPLE (requires the bundled vollib.dll)
 
         #look up volume equations
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=951)
-         NVEL_voleq(region = 2, forest = "01",district = "01", spcd=rep(c(951,201),2))
-         NVEL_voleq(dfTL=data.frame(region = 6, forest = "01",district = "01", spcd=rep(c(951,201),2)))
+        NVEL_voleq(region = 2, forest = "01", district = "01", spcd = 951)
+        NVEL_voleq(region = 2, forest = "01", district = "01", spcd = rep(c(951, 201), 2))
 
-        #grab list of species from the bundled biomass-equation database
-        db0 = DBI::dbConnect(RSQLite::SQLite(),
-                             system.file("NVEL/BiomassEqns.db", package="RForInvt"))
-        dfCoeff = DBI::dbGetQuery(db0, "select * from BM_EQCoefs")
-        DBI::dbDisconnect(db0)
-
-        #build a fake tree list
-        set.seed(111)
-        nfake = length(unique(dfCoeff$species_code))
+        #a small inline tree list (USFS species codes, dbh in inches, ht in feet)
         df_fake = data.frame(
-            trid     = 1:nfake
+            trid     = 1:4
             ,region   = 6
             ,forest   = "01"
             ,district = "01"
-            ,dbh      = 10*abs(rnorm(nfake))
-            ,ht       = 100*abs(rnorm(nfake))
-            ,spcd     = unique(dfCoeff$species_code)
+            ,dbh      = c(8, 12, 18, 24)
+            ,ht       = c(45, 70, 95, 110)
+            ,spcd     = c(202, 122, 242, 263)
           )
 
         #get volumes
