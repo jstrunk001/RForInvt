@@ -23,10 +23,16 @@
 #'@param all T/F return all duplicates
 #'
 #'@return
-#'  vector of duplicates
+#'  logical vector flagging duplicated elements
 #'
 #'@examples
-#' something
+#'  x <- c("a", "b", "a", "c", "b")
+#'
+#'  # base duplicated() flags only the 2nd+ occurrence
+#'  duplicated2(x, all = FALSE)
+#'
+#'  # all = TRUE flags every element that has a duplicate
+#'  duplicated2(x, all = TRUE)
 #'
 #'@export
 #

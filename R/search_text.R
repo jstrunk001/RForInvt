@@ -47,14 +47,18 @@
 #
 #
 #'@examples
-#'test=search_text(directory="//Dnrfsoly107/fr_data/forest_info_1/fris3/R/functions",pattern="[.]r",pattern_omit="dev_",match_string="require(plyr)")
-#'print(test)
-#'test=search_text(directory="//Dnrfsoly107/fr_data/forest_info_1/fris3/R/functions",pattern="[.]r",pattern_omit="dev_",match_string="library(plyr)")
-#'print(test)
-#'test=search_text(directory="//Dnrfsoly107/fr_data/forest_info_1/fris3/R/functions",pattern="[.]r",pattern_omit="dev_",match_string="data.table")
-#'print(test)
-#'test=search_text("c:\\temp\\process_gridmetrics",pattern="2015_Wed_Jul_29_17p01p50.*[.]bat$",match_string = "46896")
-#'print(test)
+#'  #create a small temporary directory with a couple of text files to search
+#'  tmp_dir <- file.path(tempdir(), "search_text_demo")
+#'  dir.create(tmp_dir, showWarnings = FALSE)
+#'  writeLines(c("x <- 1", "require(plyr)"),        file.path(tmp_dir, "a.R"))
+#'  writeLines(c("y <- 2", "library(data.table)"),  file.path(tmp_dir, "b.R"))
+#'
+#'  #find the .R files (and line numbers) containing "plyr"
+#'  test <- search_text(directory = tmp_dir, pattern = "[.]R$", match_string = "plyr")
+#'  print(test)
+#'
+#'  #clean up
+#'  unlink(tmp_dir, recursive = TRUE)
 #'
 #'@import plyr
 #'

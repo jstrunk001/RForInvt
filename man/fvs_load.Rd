@@ -7,7 +7,7 @@
 fvs_load(
   webpath =
     c("https://sourceforge.net/code-snapshots/svn/o/op/open-fvs/code/open-fvs-code-r3840-rFVS-R.zip"),
-  package = "RForBio",
+  package = "RForInvt",
   force_update = F
 )
 }
@@ -34,11 +34,11 @@ Revision History
 }
 }
 \examples{
-
-#this brings in functions to run FVS inside R
+\dontrun{
+#downloads the rFVS scripts over the network and sources them into R
+#(writes into the installed package directory)
  fvs_load()
-
-
+}
 
 }
 \seealso{

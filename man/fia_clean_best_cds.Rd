@@ -68,9 +68,30 @@ Revision History
 }
 }
 \examples{
+\donttest{
+ #build a tiny self-contained "best coordinates" table (3 plots, 4 subplots each)
+ set.seed(1)
+ np <- 3
+ cds_5k <- data.frame(
+   INV_PLOT_ID          = 1:np,
+   STATECD              = 41,
+   REGION               = 6,
+   COUNTYCD             = 1,
+   PLOT                 = 100 + 1:np,
+   PLOT_PUBLIC          = 100 + 1:np,
+   NFS_PLOT_NUMBER      = 1:np,
+   COORD_TYPE_NAME      = "SP1",
+   PC_COORD_METHOD_NAME = c("HPGPS", "GPS", "HPGPS"),
+   PC_SRID              = 4269,
+   PC_LAT_Y  = 44.00 + 1:np / 100, PC_LON_X  = -123.00 - 1:np / 100,
+   SP2_LAT_Y = 44.01 + 1:np / 100, SP2_LON_X = -123.01 - 1:np / 100,
+   SP3_LAT_Y = 44.02 + 1:np / 100, SP3_LON_X = -123.02 - 1:np / 100,
+   SP4_LAT_Y = 44.03 + 1:np / 100, SP4_LON_X = -123.03 - 1:np / 100
+ )
 
-res1 = fia_clean_best_cds(cds_5k)
-
+ res1 <- fia_clean_best_cds(cds_5k)
+ names(res1)
+}
 
 
 }

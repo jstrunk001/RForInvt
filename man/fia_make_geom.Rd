@@ -20,6 +20,8 @@ fia_make_geom(
 
 \item{col_names}{a named vector with serves as a lookup a table for the input data - must use provided names: PLOT, x, y}
 
+\item{output}{character vector of products to return; any of "SUBPLOT data.frame", "SUBPLOT POINT", "SUBPLOT POLYGON", "PLOT POINT", "PLOT POLYGON"}
+
 \item{subplot_radius}{radius or side length  of SUBPLOT}
 
 \item{endCapStyle}{enable square or round plots}
@@ -27,8 +29,6 @@ fia_make_geom(
 \item{offx}{named vector to set x offsets for subplots 2-4 (must have names "2","3","4")}
 
 \item{offy}{named vector to set y offsets for subplots 2-4 (must have names "2","3","4")}
-
-\item{create_polys}{TRUE / FALSE create polygons or just return theoretical SUBPLOT centers}
 }
 \value{
 a named list with possible elements output = c("SUBPLOT data.frame","SUBPLOT POINT","SUBPLOT POLYGON","PLOT POINT","PLOT POLYGON"):
@@ -57,7 +57,9 @@ supply fia PLOT centers (x,y NOT lat,long) and generate SUBPLOT locations as a m
  either version 2 of the License, or (at your option) any later version.
 }
 \details{
-<Delete and Replace>
+Given PLOT centers, the function offsets subplots 2-4 from subplot 1 using
+ \code{offx}/\code{offy} (defaults are the standard FIA layout in feet) and
+ returns the requested subset of geometry/data products listed in \code{output}.
 
 \cr
 Revision History
@@ -66,8 +68,10 @@ Revision History
 }
 }
 \examples{
-
-   res= fia_make_geom(data.frame(PLOT=1:10, x=101:110*10000, y=101:110*10000),create_polys=T)
+\donttest{
+   res <- fia_make_geom(data.frame(PLOT = 1:10, x = 101:110 * 10000, y = 101:110 * 10000))
+   names(res)
+}
 
 }
 \seealso{

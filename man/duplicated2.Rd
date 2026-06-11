@@ -12,7 +12,7 @@ duplicated2(..., all = T)
 \item{all}{T/F return all duplicates}
 }
 \value{
-vector of duplicates
+logical vector flagging duplicated elements
 }
 \description{
 same as duplicated but argument to show all duplicates
@@ -27,7 +27,13 @@ Revision History
 }
 }
 \examples{
-something
+ x <- c("a", "b", "a", "c", "b")
+
+ # base duplicated() flags only the 2nd+ occurrence
+ duplicated2(x, all = FALSE)
+
+ # all = TRUE flags every element that has a duplicate
+ duplicated2(x, all = TRUE)
 
 }
 \seealso{

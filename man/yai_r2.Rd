@@ -36,20 +36,28 @@ Revision History
 }
 }
 \examples{
+\donttest{
+ #simulated auxiliary (x) and response (y) variables
+ set.seed(1)
+ n <- 50
+ dat <- data.frame(
+   x1 = rnorm(n), x2 = rnorm(n),
+   y1 = rnorm(n), y2 = rnorm(n)
+ )
+ rownames(dat) <- seq_len(n)
 
- #fit model using one set of responses
- yaimod1 = yaImpute::yai( x = dat6[,c(vEnvironment1)	], y = dat6[,vBA1] , method = "gnn" )
+ #fit a knn model (euclidean distance requires no extra packages)
+ yaimod <- yaImpute::yai(x = dat[, c("x1", "x2")], y = dat[, c("y1", "y2")],
+                         method = "euclidean", k = 3)
 
- #impute a second set
- imp1 = impute(yaimod3,dat6[,vResp3])
-
- #compute R2
- yai_r2(imp1)
-
+ #impute observed + predicted values, then compute R2 per response
+ imp <- yaImpute::impute(yaimod, observed = TRUE)
+ yai_r2(imp)
+}
 
 }
 \seealso{
-\code{\link{yaImpute::yai}}\cr \code{\link{yaImpute::impute}}\cr
+\code{\link[yaImpute]{yai}}\cr \code{\link[yaImpute]{impute.yai}}\cr
 }
 \author{
 Jacob Strunk <someone@somewhere.com>

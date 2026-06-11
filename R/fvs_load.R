@@ -25,11 +25,11 @@
 #'  NA
 #'
 #'@examples
-#'
-#' #this brings in functions to run FVS inside R
+#'\dontrun{
+#' #downloads the rFVS scripts over the network and sources them into R
+#' #(writes into the installed package directory)
 #'  fvs_load()
-#'
-#'
+#'}
 #'
 #'@export
 #
