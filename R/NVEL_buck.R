@@ -52,8 +52,9 @@
 #'@author Jacob Strunk <someone@@somewhere.com>
 #'
 #'@examples
-#'
-#'
+#'\donttest{
+#' # NVEL_buck requires the bundled Windows vollib.dll; Example 2 spawns a
+#' # cluster, so the whole block is wrapped in \donttest{}.
 #' library(data.table)
 #' library(RForInvt)
 #'
@@ -91,10 +92,10 @@
 #'   district = "01"
 #' )
 #'
-#' # Run in parallel on 4 cores
+#' # Run in parallel (2 cores; raise ncore on your own hardware)
 #' res_para <- NVEL_buck(
 #'   dfTL = big_trees,
-#'   ncore = 4,
+#'   ncore = 2,
 #'   vol2biomass = FALSE
 #' )
 #'
@@ -105,7 +106,7 @@
 #'   dfTL = df_trees,
 #'   voleq = "I00FW2W202"
 #' )
-#'
+#'}
 #'
 #'@export
 NVEL_buck = function(
