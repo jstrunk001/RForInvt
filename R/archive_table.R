@@ -196,16 +196,19 @@ archive_table = function(data,
 #' @keywords internal
 .safe_write = function(expr, fmt_name, stop_on_error, eval_env = parent.frame()) {
   tryCatch(
-    {
-      value = eval(expr, envir = eval_env)
-      list(success = TRUE, error = NULL)
-    },
+    # Muffle warnings *in place* with withCallingHandlers so evaluation
+    # continues; a tryCatch(warning=) handler unwinds the stack first, after
+    # which invokeRestart("muffleWarning") no longer has a restart to find.
+    withCallingHandlers(
+      {
+        value = eval(expr, envir = eval_env)
+        list(success = TRUE, error = NULL)
+      },
+      warning = function(w) invokeRestart("muffleWarning")
+    ),
     error = function(e) {
       if (stop_on_error) stop(sprintf("[%s] %s", fmt_name, conditionMessage(e)), call. = FALSE)
       list(success = FALSE, error = conditionMessage(e))
-    },
-    warning = function(w) {
-      invokeRestart("muffleWarning")
     }
   )
 }

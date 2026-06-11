@@ -584,23 +584,23 @@ spp_y_plot = function(
     mi = reshape2::melt( tr_in[,c(tree_nms[["plot_ids"]],tree_nms[["spp"]],tree_nms[["domspp_y"]][i]) ] , id.vars = c(tree_nms[["plot_ids"]],tree_nms[["spp"]]) )
     fi = as.formula(paste("variable  + ", paste(tree_nms[["plot_ids"]],collapse = "+")," ~ ",tree_nms[["spp"]], sep=""))
     dfi = reshape2::dcast( mi , formula =  fi , fun.aggregate = sum )[,-1]
-    dfi1=dfi
 
-    #get dominant species by y
-    n_dom = min(ncol(dfi1)-1, n_dom_spp)
-    dom_order = order(dfi1[,-1] , decreasing = T)
-    spp_nms = names(dfi)[-1]
-    nms_mx = paste("dom", tree_nms[["spp"]], tree_nms[["domspp_y"]][i],1:n_dom, sep="_")
-    nms_mx_prop = paste("dom_prop", tree_nms[["spp"]], tree_nms[["domspp_y"]][i],1:n_dom, sep="_")
-    dfi[,nms_mx] = spp_nms[dom_order][1:n_dom]
+    #get dominant species by response value (one plot at a time). order() must
+    #act on a numeric vector of per-species totals, not the multi-column frame.
+    spp_nms  = setdiff(names(dfi), tree_nms[["plot_ids"]])
+    spp_vals = colSums(dfi[, spp_nms, drop = FALSE], na.rm = TRUE)
+    dom_order = order(spp_vals, decreasing = TRUE)
+    n_dom = min(length(spp_nms), n_dom_spp)
 
-    #get proportion by species
-    nms_mx_p = paste(spp_nms, tree_nms[["domspp_y"]][i],"p", sep="_")
-    y_ord_ndom = dfi1[,-1][dom_order][1:n_dom]
-    dfi[,nms_mx_p] = y_ord_ndom / sum(y_ord_ndom)
+    nms_mx      = paste("dom",      tree_nms[["spp"]], tree_nms[["domspp_y"]][i], 1:n_dom, sep="_")
+    nms_mx_prop = paste("dom_prop", tree_nms[["spp"]], tree_nms[["domspp_y"]][i], 1:n_dom, sep="_")
+
+    #names of the top n_dom species and their share of the plot total
+    dfi[, nms_mx]      = as.list(spp_nms[dom_order][1:n_dom])
+    dfi[, nms_mx_prop] = as.list(unname((spp_vals[dom_order] / sum(spp_vals))[1:n_dom]))
 
     #merge data
-    res_in = merge(res_in, dfi[,c(tree_nms[["plot_ids"]],nms_mx,nms_mx_p)] , by=tree_nms[["plot_ids"]])
+    res_in = merge(res_in, dfi[,c(tree_nms[["plot_ids"]],nms_mx,nms_mx_prop)] , by=tree_nms[["plot_ids"]])
 
   }
   return(res_in)
