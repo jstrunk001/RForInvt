@@ -14,7 +14,10 @@ dist_vec(idxy1, idxy2, row_id = T)
 \item{row_id}{should row ids be returned}
 }
 \value{
-<Delete and Replace>
+a data.frame whose first column is the id column of \code{idxy2} and whose
+ remaining columns (one per row of \code{idxy1}, named by \code{idxy1}'s ids)
+ hold the Euclidean distances from each \code{idxy1} point to every
+ \code{idxy2} point
 }
 \description{
 compute distances between two vectors of points

@@ -13,10 +13,13 @@ fvs_prototype_params(add_params = NULL)
 data.frame with parameters for FVS key files
 }
 \description{
-make keyfiles for each row in the input data frame
+build an empty (0-row) template data.frame of the FVS parameter columns
+expected by \code{fvs_make_keyfiles}/\code{fvs_run}
 }
 \details{
-make keyfiles for each row in the input data frame
+returns a 0-row data.frame whose columns are the standard FVS run parameters
+(\code{std_cn}, \code{std_id}, \code{invyr}, ...); \code{add_params} appends
+extra column names for any custom \code{@token@} substitutions
 
 \cr
 Revision History
@@ -26,13 +29,16 @@ Revision History
 }
 \examples{
 
-clus1 = parallel::makeCluster(4)
+#empty template
+df_params = fvs_prototype_params()
+str(df_params)
 
+\dontrun{
 #assume a typical inventory dataset and prepare fvs parameters
-stand_data = data.frame(stand=1:10, year=2000:2009)#'
+stand_data = data.frame(stand=1:10, year=2000:2009)
 df_params = fvs_prototype_params()
 df_params[1:nrow(stand_data),]=NA
-df_params[,"cn"] = stand_data$stand
+df_params[,"std_id"] = stand_data$stand
 df_params[,"invyr"] = stand_data$year
 df_params[,"timeint"] = 1
 df_params[,"numcycle"] = 1
@@ -40,19 +46,16 @@ df_params[,"input_db"] = "c:/temp/fordata.db"
 df_params[,"fvs_path"] = "C:/FVSbin/FVSca.exe"
 df_params[,"tree_table"] = "fvs_treeinit"
 df_params[,"stand_table"] = "fvs_standinit"
-df_params
 
 #prepare prototype key file
 key_proto = fvs_prototype_keyfile(invyr = "InvYear       2001", notriple=NULL)
 
-#convert prototype key file into series of key files associated with each cn
-df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1, id="cn")
-
-#lastly, actually run fvs
+#convert prototype key file into series of key files associated with each stand
+clus1 = parallel::makeCluster(2)
+df_keys = fvs_make_keyfiles(df_params, key_proto = key_proto, cluster = clus1, id="std_id")
 fvs_run(df_keys, cluster = clus1)
 parallel::stopCluster(clus1)
-
-
+}
 
 
 }

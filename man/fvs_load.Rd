@@ -42,7 +42,7 @@ Revision History
 
 }
 \seealso{
-\code{\link{fvs_run}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_keyfile_prototype}}\cr \code{\link{fvs_param_prototype}}\cr
+\code{\link{fvs_run}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_prototype_keyfile}}\cr \code{\link{fvs_prototype_params}}\cr
 }
 \author{
 Jacob Strunk <someone@somewhere.com>

@@ -116,7 +116,7 @@ file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_m
 
 }
 \seealso{
-\code{\link{filestamp}}\cr
+\code{\link{file_stamp}}\cr
 }
 \author{
 Some Body <some.body@somewhere.com>

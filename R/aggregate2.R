@@ -88,7 +88,7 @@ aggregate2 = function(
                     ){
 
   #tradition aggregate
-  ag_in = aggregate(x,...)
+  ag_in = stats::aggregate(x,...)
 
   #identify problematic columns
   cl_in = sapply(ag_in, class)
@@ -114,26 +114,6 @@ aggregate2 = function(
 
   #return
   ag_in
-
-}
-
-if(F){
-
-  #test datasets
-  test1 = data.frame(x=1:50,y=1:10)
-  test2 = data.frame(x=1:50,y=1:10, z=50:1)
-
-  #traditional aggregate with strange x column that is a nested matrix
-  ag1 = aggregate(x~y, test1, FUN = function(x,...){ c(sd=sd(x,...), mean=mean(x,...)) } )
-  str(ag1)
-
-  #upgraded aggregate function with simple data.frame output
-  ag2 = aggregate2(x~y, test1, FUN = function(x,...){ c(sd=sd(x,...), mean=mean(x,...)) } , nm_sep="_" )
-  str(ag2)
-
-  #upgraded aggregate function with simple data.frame output - multiple response summations
-  ag3 = aggregate2(cbind(x,z)~y, test2, FUN = function(x,...){ c(sd=sd(x,...), mean=mean(x,...), n=length(x)) } , nm_sep="." )
-  str(ag3)
 
 }
 

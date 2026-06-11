@@ -8,7 +8,7 @@ search_text(
   match_string = "",
   directory = NA,
   file = NA,
-  pattern = ".r",
+  pattern = "\\\\.[rR]$",
   pattern_omit = c(NA, "dev_"),
   recursive = T,
   clus = NA

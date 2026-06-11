@@ -25,26 +25,30 @@
 #'
 #'Some Body <some.body@@somewhere.com>
 #'
-#'@param path  location for file, defaults to tempfile()
+#'@param path  directory for the file, defaults to tempdir()
 #'@param stamp  how to label file - default is a custom format time
 #'@param prefix  some sort of label like function name or analysis
 #'@param suffix  file extension or other details
 #'@param quiet  If TRUE, suppress printing file_stamp to the console
 #'
 #'@return
-#'  character string with some new d
+#'  a character string: \code{file.path(path, paste0(prefix, stamp, suffix))}
 #'
 #'@examples
 #'
+#' #defaults: a timestamped file name under tempdir()
 #' file_stamp()
-#' file_stamp(format(Sys.time(), "%Y_%m_%d_%H%M%S"))
-#' file_stamp("1.1")
-#' file_stamp("V1.1",prefix = "c:/temp/project1/myfile_",suffix=".RDS")
+#'
+#' #supply the stamp explicitly (note: stamp= is the SECOND argument; the first
+#' #argument is the directory `path`)
+#' file_stamp(stamp = format(Sys.time(), "%Y_%m_%d_%H%M%S"))
+#' file_stamp(stamp = "1.1")
+#' file_stamp(path = "c:/temp/project1", stamp = "V1.1", prefix = "myfile_", suffix = ".RDS")
 #'
 #'
 #'@export
 #
-#'@seealso \code{\link{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr \code{\link{tempfile}}\cr
+#'@seealso \code{\link[utils]{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr \code{\link{tempfile}}\cr
 
 #the code below with a single comment symbol is not part of the official roxygen code
 #
@@ -72,12 +76,6 @@ file_stamp = function(
                       ,quiet = T
                       )
 {
-  file.path(path, timestamp(stamp=stamp, prefix=prefix,suffix = suffix, quiet=quiet))
+  file.path(path, utils::timestamp(stamp=stamp, prefix=prefix,suffix = suffix, quiet=quiet))
 }
-
-
-# file_stamp()
-# file_stamp(format(Sys.time(), "%Y_%m_%d_%H%M%S"))
-# file_stamp("1.1")
-# file_stamp("V1.1",prefix = "c:/temp/project1/myfile_",suffix=".RDS")
 

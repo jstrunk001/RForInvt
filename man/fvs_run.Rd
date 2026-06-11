@@ -31,6 +31,9 @@ fvs_run(
 
 \item{append}{T/F if the output db already exists, should it be appended or wiped}
 }
+\value{
+invisibly, a list of the captured \code{system()} outputs for each FVS run
+}
 \description{
 run fvs after preparing key files
 1. prepare parameters
@@ -86,7 +89,7 @@ parallel::stopCluster(clus1)
 
 }
 \seealso{
-\code{\link{fvs_load}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_keyfile_prototype}}\cr \code{\link{fvs_param_prototype}}\cr
+\code{\link{fvs_load}}\cr \code{\link{fvs_make_keyfiles}}\cr \code{\link{fvs_prototype_keyfile}}\cr \code{\link{fvs_prototype_params}}\cr
 }
 \author{
 Jacob Strunk <someone@somewhere.com>

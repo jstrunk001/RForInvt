@@ -10,11 +10,10 @@ fvs_make_keyfiles(
   path_key_proto = NA,
   key_proto = NA,
   clear_db = T,
-  create_db = F,
   clear_keys = T,
   key_nms = c(prefix = "", suffix = ""),
   cluster = NA,
-  id = c("plt_id"),
+  id = c("std_id"),
   quotes_db = F
 )
 }
@@ -25,13 +24,22 @@ fvs_make_keyfiles(
 
 \item{path_key_proto}{(optional) template key file - e.g. use FVS gui}
 
-\item{clear_keys}{T/F delete all old key files}
+\item{key_proto}{(optional) prototype keyfile (character vector) from \code{fvs_prototype_keyfile}}
+
+\item{clear_db}{T/F clear rows from existing output databases}
+
+\item{clear_keys}{T/F delete existing .key/.out files in the keyfile directory}
+
+\item{key_nms}{named character c(prefix=, suffix=) wrapped literally around the id value to name keyfiles}
 
 \item{cluster}{(Optional) parallel cluster object}
 
 \item{id}{select column to use as id field - column should be present in param_df}
 
 \item{quotes_db}{T/F - recent versions of FVS variants don't accept quotes around db names in key files}
+}
+\value{
+the input \code{param_df} with added columns (input_db_q, cluster, fvs_dir, output_db, output_db_q, key_path)
 }
 \description{
 make keyfiles for each row in the input data frame
@@ -79,7 +87,7 @@ parallel::stopCluster(clus1)
 
 }
 \seealso{
-\code{\link{fvs_run}}\cr \code{\link{fvs_keyfile_prototype}}\cr
+\code{\link{fvs_run}}\cr \code{\link{fvs_prototype_keyfile}}\cr
 }
 \author{
 Jacob Strunk <someone@somewhere.com>

@@ -13,7 +13,7 @@ file_stamp(
 )
 }
 \arguments{
-\item{path}{location for file, defaults to tempfile()}
+\item{path}{directory for the file, defaults to tempdir()}
 
 \item{stamp}{how to label file - default is a custom format time}
 
@@ -24,7 +24,7 @@ file_stamp(
 \item{quiet}{If TRUE, suppress printing file_stamp to the console}
 }
 \value{
-character string with some new d
+a character string: \code{file.path(path, paste0(prefix, stamp, suffix))}
 }
 \description{
 create a date based version of a file name leveraging timestamp function and data format codes
@@ -47,15 +47,19 @@ Revision History
 }
 \examples{
 
+#defaults: a timestamped file name under tempdir()
 file_stamp()
-file_stamp(format(Sys.time(), "\%Y_\%m_\%d_\%H\%M\%S"))
-file_stamp("1.1")
-file_stamp("V1.1",prefix = "c:/temp/project1/myfile_",suffix=".RDS")
+
+#supply the stamp explicitly (note: stamp= is the SECOND argument; the first
+#argument is the directory `path`)
+file_stamp(stamp = format(Sys.time(), "\%Y_\%m_\%d_\%H\%M\%S"))
+file_stamp(stamp = "1.1")
+file_stamp(path = "c:/temp/project1", stamp = "V1.1", prefix = "myfile_", suffix = ".RDS")
 
 
 }
 \seealso{
-\code{\link{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr \code{\link{tempfile}}\cr
+\code{\link[utils]{timestamp}}\cr \code{\link{format}}\cr  \code{\link{Sys.time}}\cr \code{\link{tempfile}}\cr
 }
 \author{
 Some Body <some.body@somewhere.com>

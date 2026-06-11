@@ -12,7 +12,8 @@ fia_make_geom(
   subplot_radius = 24,
   endCapStyle = "ROUND",
   offx = c(`2` = 0, `3` = 103.923, `4` = -103.923),
-  offy = c(`2` = 120, `3` = -60, `4` = -60)
+  offy = c(`2` = 120, `3` = -60, `4` = -60),
+  crs = NA
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ fia_make_geom(
 \item{offx}{named vector to set x offsets for subplots 2-4 (must have names "2","3","4")}
 
 \item{offy}{named vector to set y offsets for subplots 2-4 (must have names "2","3","4")}
+
+\item{crs}{coordinate reference system assigned to the output sf objects (passed to \code{sf::st_as_sf}); defaults to NA (unset)}
 }
 \value{
 a named list with possible elements output = c("SUBPLOT data.frame","SUBPLOT POINT","SUBPLOT POLYGON","PLOT POINT","PLOT POLYGON"):
@@ -75,7 +78,7 @@ Revision History
 
 }
 \seealso{
-\code{\link{bbox2polys}}\cr \code{\link{sf}}\cr \code{\link{st_buffer}}\cr
+\code{\link[sf]{st_as_sf}}\cr \code{\link[sf]{st_buffer}}\cr
 }
 \author{
 Jacob Strunk <strunky@gmail.com>

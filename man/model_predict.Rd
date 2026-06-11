@@ -9,7 +9,7 @@ model_predict(
   nms_dat_predict = c(tpa1 = "tpa", hd1 = "ht", age1 = "age"),
   params,
   nms_params = list(formula = "formula", params = paste0("b", 0:8)),
-  suffix_predict = ".pd",
+  suffix_predict = NULL,
   archive_dir = NULL,
   package = "RForInvt",
   ...
@@ -32,7 +32,7 @@ default `"formula"`) and `params` (parameter columns to substitute,
 default `paste0("b", 0:8)`).}
 
 \item{suffix_predict}{Reserved for future use (prediction column suffix);
-currently not appended.}
+currently not appended. Defaults to `NULL`.}
 
 \item{archive_dir}{Optional archive root for resolving `fit_object_path` /
 `predictor_spec_path`. When `NULL`, the shipped `extdata/` of `package`
