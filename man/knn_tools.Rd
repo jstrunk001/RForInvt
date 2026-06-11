@@ -168,15 +168,37 @@ Revision History
 }
 }
 \examples{
+\donttest{
+ #simulated data: an id column, two auxiliary (x) and two response (y) variables
+ set.seed(1)
+ n <- 50
+ dat <- data.frame(
+   id = 1:n,
+   x1 = rnorm(n), x2 = rnorm(n),
+   y1 = rnorm(n), y2 = rnorm(n)
+ )
+ ref <- dat[1:40, ]    #reference (training) plots
+ tgt <- dat[41:50, ]   #new target plots
 
-<Delete and Replace>
+ #fit a knn imputation model keyed on the id column (euclidean needs no extra deps)
+ mod <- yai_id(
+   xNms = c("x1", "x2"),
+   yNms = c("y1", "y2"),
+   idNm = "id",
+   data = ref,
+   method = "euclidean",
+   k = 3
+ )
 
-
-
+ #impute to the new targets and pull the neighbour weights
+ newt <- newtargets_id(mod, idNm = "id", data = tgt, k = 3, ann = FALSE)
+ wts <- yai_weights(newt, dtype = "invdist")
+ head(wts$wts)
+}
 
 }
 \seealso{
-\code{\link{yaImpute}}\cr \code{\link{fit_pdf}}\cr
+\code{\link{yaImpute}}\cr
 }
 \author{
 Jacob Strunk <Jacob.strunk@usgda.gov>

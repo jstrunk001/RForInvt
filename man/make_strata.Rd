@@ -82,79 +82,31 @@ Revision History
 }
 \examples{
 
-      #prepare pseudo data
-      n=500
-      hts = sample(1:150,n,T)
-      dbhs = abs(hts/5 + rnorm(#' )*2)
-      dat_test = data.frame(height = hts , dbh = dbhs, height_cat = cut(hts,10) , dbh_cat = cut(dbhs,10))
-      plot(dbhs,hts)
+ #prepare pseudo data
+ set.seed(1)
+ n <- 500
+ hts <- sample(1:150, n, TRUE)
+ dbhs <- abs(hts / 5 + rnorm(n) * 2)
+ dat_test <- data.frame(height = hts, dbh = dbhs)
 
-      #example 1 factor and numeric
-      str_test = make_strata(
-        dat_test
-        , x1="height_cat"
-        , x2="dbh"
-        , split_x1 =c("qt","eq")[1]
-        , split_x2 =c("qt","eq")[1]
-        , nest_x2 =  T
-        , n1 = 10
-        , n2 = 10
-        , min_recs = 7
-        , precision = 0
-      )
+ #define strata from two numeric variables, with dbh (x2) nested inside height (x1)
+ str_test <- make_strata(
+   dat_test,
+   x1       = "height",
+   x2       = "dbh",
+   split_x1 = "qt",
+   split_x2 = "qt",
+   nest_x2  = TRUE,
+   n1       = 10,
+   n2       = 10,
+   min_recs = 7,
+   precision = 0
+ )
+ str_test
 
-
-      res = assign_strata(
-       str_test
-        ,dat_test
-      )
-
-      res$stratum
-
-      summary(lm(height ~ dbh , data = res))
-      summary(lm(height ~ dbh_cat , data = res))
-      summary(lm(height ~ stratum , data = res))
-
-      #example 2 numeric and numeric
-      str_test1 = make_strata(
-        dat_test
-        , x1="height"
-        , x2="dbh"
-        , split_x1 =c("qt","eq")[1]
-        , split_x2 =c("qt","eq")[1]
-        , nest_x2 =  T
-        , n1 = 10
-        , n2 = 10
-        , min_recs = 7
-        , precision = 0
-      )
-
-      res1 = assign_strata(
-        str_test1
-        ,dat_test
-      )
-
-      #example 3 numeric and factor
-      str_test2 = make_strata(
-        dat_test
-        , x1="height"
-        , x2="dbh_cat"
-        , split_x1 =c("qt","eq")[1]
-        , split_x2 =c("qt","eq")[1]
-        , nest_x2 =  T
-        , n1 = 10
-        , n2 = 10
-        , type_x1 = "numeric"
-        , type_x2 = "factor"
-        , min_recs = 7
-        , precision = 0
-      )
-
-      res2 = assign_strata(
-        str_test2
-        ,dat_test
-      )
-
+ #assign each record in the data to its stratum
+ res <- assign_strata(str_test, dat_test)
+ head(res$stratum)
 
 
 }

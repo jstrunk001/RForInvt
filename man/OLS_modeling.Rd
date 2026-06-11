@@ -71,105 +71,148 @@ multi_bs(mods_list, n_boot = 50, n_clus, lm_boot)
 lm_summary(mods_list, data, resids = FALSE)
 }
 \arguments{
-\item{dat_yx}{tbd}
+\item{dat_yx}{data.frame whose first column is the response and the remaining columns are candidate predictors}
 
-\item{reg_obj}{tbd}
+\item{reg_obj}{an object returned by \code{leaps::regsubsets} for the response}
 
-\item{rank}{tbd}
+\item{rank}{which ranked model to extract (1 = best by \code{rank_by})}
 
-\item{rank_by}{tbd}
+\item{rank_by}{criterion used to rank models: one of "bic","rsq","rss","adjr2","cp"}
 
-\item{debug}{tbd}
+\item{debug}{if TRUE, drop into \code{browser()}}
 
-\item{...}{tbd
+\item{...}{additional arguments passed on to the underlying function (\code{lm}, \code{regsubsets}, or \code{lm_boot})
 \cr\cr
-\bold{pred_multi() parameters:}}
+\bold{lm_boot() parameters:}}
 
-\item{model}{tbd}
+\item{model}{an \code{lm} object, or a formula to be fit with \code{data}}
 
-\item{y}{tbd}
+\item{y}{response vector (defaults to the model response)}
 
-\item{data}{tbd}
+\item{data}{data.frame used to fit the model (defaults to the model frame)}
 
-\item{n_boot}{tbd}
+\item{n_boot}{number of bootstrap replicates for the \code{.632+} estimator
+\cr\cr
+\bold{many_boots() parameters:}}
 
-\item{n_range}{tbd}
+\item{n_range}{vector of sample sizes to evaluate}
 
-\item{r_boots}{tbd}
+\item{r_boots}{number of bootstrap repetitions per sample size
+\cr\cr
+\bold{reg_multi() / lm_multi() parameters:}}
 
-\item{n_clus}{tbd}
+\item{n_clus}{number of cores to use (>1 runs in parallel)}
 
-\item{lm_boot}{tbd
+\item{lm_boot}{the \code{lm_boot} function (passed explicitly so parallel workers can find it)
 \cr\cr
 \bold{lm_summary() parameters:}}
 
-\item{y_vars}{tbd}
+\item{y_vars}{character vector of response column names}
 
-\item{form_y}{tbd}
+\item{form_y}{model-form template using "y" as the response placeholder (e.g. "y~." or "y~.*.")}
 
-\item{n_v_max}{tbd}
+\item{n_v_max}{maximum number of predictors (\code{regsubsets} nvmax)}
 
-\item{n_best}{tbd}
+\item{n_best}{number of best models retained per subset size (\code{regsubsets} nbest)}
 
-\item{really_big}{tbd}
+\item{really_big}{passed to \code{regsubsets} \code{really.big}}
 
-\item{mods_list}{list of models where each element is named with response name}
+\item{verbose}{if TRUE, print the response being fit
+\cr\cr
+\bold{mod_multi() parameters:}}
 
-\item{dat0}{tbd}
+\item{mods_list}{a list of models: a \code{reg_multi} result (for \code{mod_multi}) or fitted \code{lm} objects (for \code{pred_multi}/\code{multi_bs}/\code{lm_summary})
+\cr\cr
+\bold{pred_multi() parameters:}}
 
-\item{id_col}{tbd}
+\item{dat0}{optional original response values used to clamp implausible predictions}
 
-\item{clus}{tbd}
+\item{id_col}{name of the unique observation-id column in \code{data}}
 
-\item{out_dir}{tbd}
+\item{clus}{optional pre-built cluster object (otherwise one is created)}
 
-\item{se_fit}{tbd}
+\item{out_dir}{optional directory to write predictions to}
 
-\item{return}{tbd}
+\item{se_fit}{if TRUE, also compute standard errors of prediction}
 
-\item{fix_outliers}{tbd}
+\item{return}{if TRUE, return the predictions}
 
-\item{outlier_fun}{tbd
+\item{fix_outliers}{if TRUE, clamp implausible predictions with \code{outlier_fun}}
+
+\item{outlier_fun}{function used to clamp out-of-range predictions
 \cr\cr
 \bold{multi_bs() parameters:}}
 
-\item{resids}{tbd}
-
-\item{mods}{tbd}
+\item{resids}{if TRUE, also return per-observation residuals}
 }
 \value{
-reg_model:
-lm_boot:
-many_boots:
-reg_multi:
-mod_multi:
-pred_multi:
-multi_bs:
-lm_summary:
+\code{reg_model} / \code{mod_multi} return fitted \code{lm} object(s);
+ \code{reg_multi} returns a named list of \code{regsubsets} objects;
+ \code{lm_multi} returns a named list of \code{lm} objects;
+ \code{lm_boot} returns a list of \code{.632+} error statistics;
+ \code{multi_bs}, \code{many_boots} and \code{lm_summary} return data.frames of
+ bootstrap / cross-validated fit statistics; \code{pred_multi} returns a
+ data.frame of predictions keyed by \code{id_col}.
 }
 \description{
-<Delete and Replace>
+A family of helpers for ordinary-least-squares (OLS) modeling: best-subsets
+ variable selection (via \code{leaps::regsubsets}), \code{.632+} bootstrap error
+ estimation, fitting/predicting many response models at once, and summarising
+ cross-validated fit statistics.
 }
 \details{
-<Delete and Replace>
+The functions are designed to be chained together when building many models
+ (one per response) from a shared set of candidate predictors:
+
+ \itemize{
+   \item \code{reg_model} - extract a single ranked \code{lm} from a \code{regsubsets} object.
+   \item \code{reg_multi} - run \code{regsubsets} for several responses.
+   \item \code{lm_multi}  - fit a plain \code{lm} for several responses.
+   \item \code{mod_multi} - turn a \code{reg_multi} result into fitted \code{lm} objects.
+   \item \code{lm_boot}   - \code{.632+} bootstrap RMSE / R2 for one model.
+   \item \code{multi_bs}  - \code{lm_boot} applied across a list of models.
+   \item \code{many_boots}- bootstrap properties across a range of sample sizes.
+   \item \code{pred_multi}- predict a list of models onto new (e.g. wall-to-wall) data.
+   \item \code{lm_summary}- apparent + leave-one-out cross-validated fit statistics.
+ }
 
 \cr
 
 Revision History
 \tabular{ll}{
-1.0 \tab date and revisions.. \cr
+1.0 \tab 2014 Mar 06 Ported from prior work \cr
 }
 }
 \examples{
 
-<Delete and Replace>
+ #simulated data: two responses, three predictors
+ set.seed(1)
+ n <- 60
+ dat <- data.frame(
+   y1 = rnorm(n), y2 = rnorm(n),
+   x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n)
+ )
 
+ #fit a linear model per response (named by response)
+ mods <- list(
+   y1 = lm(y1 ~ x1 + x2 + x3, data = dat),
+   y2 = lm(y2 ~ x1 + x2 + x3, data = dat)
+ )
 
+ #apparent + leave-one-out cross-validated fit statistics
+ lm_summary(mods, data = dat)
 
+ \donttest{
+ #.632+ bootstrap error for a single model
+ lm_boot(mods[["y1"]], n_boot = 20)
+
+ #bootstrap a whole list of models
+ multi_bs(mods, n_boot = 20, n_clus = 1, lm_boot = lm_boot)
+ }
 
 }
 \seealso{
-\code{\link{regsubsets}}\cr
+\code{\link[leaps]{regsubsets}}\cr
 }
 \author{
 Jacob Strunk <someone@somewhere.com>

@@ -9,18 +9,25 @@ gsub_vec(pattern, replacement, x, ...)
 \arguments{
 \item{pattern}{vector of patterns}
 
-\item{replacement}{vector of replacements}
+\item{replacement}{vector of replacements (same length as \code{pattern})}
+
+\item{x}{a character vector where matches are sought}
 
 \item{...}{all other values as described in gsub}
 }
 \value{
-<Delete and Replace>
+a character vector the same length as \code{x} with all substitutions applied
 }
 \description{
-<Delete and Replace>
+Apply \code{\link{gsub}} repeatedly using parallel vectors of patterns and
+ replacements, substituting each \code{pattern[i]} with \code{replacement[i]} in turn.
 }
 \details{
-<Delete and Replace>
+The substitutions are applied sequentially in the order supplied, so a later
+ pattern may match text introduced by an earlier replacement. \code{pattern}
+ and \code{replacement} must have the same length. Any additional arguments in
+ \code{...} (e.g. \code{fixed}, \code{ignore.case}, \code{perl}) are passed
+ through to \code{\link{gsub}}.
 
 
  This program is free software but it is provided WITHOUT WARRANTY
@@ -38,7 +45,13 @@ Revision History
 }
 }
 \examples{
- <Delete and Replace>
+ # replace several codes with their labels in one pass
+ x <- c("spp=DF ht=tall", "spp=WH ht=short")
+ gsub_vec(
+   pattern     = c("DF", "WH", "tall", "short"),
+   replacement = c("Douglas-fir", "western hemlock", "120", "40"),
+   x           = x
+ )
 
 }
 \seealso{

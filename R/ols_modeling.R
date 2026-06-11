@@ -5,17 +5,33 @@
 #'
 #'@description
 #'
-#'<Delete and Replace>
+#'  A family of helpers for ordinary-least-squares (OLS) modeling: best-subsets
+#'  variable selection (via \code{leaps::regsubsets}), \code{.632+} bootstrap error
+#'  estimation, fitting/predicting many response models at once, and summarising
+#'  cross-validated fit statistics.
 #'
 #'@details
 #'
-#'<Delete and Replace>
+#'  The functions are designed to be chained together when building many models
+#'  (one per response) from a shared set of candidate predictors:
+#'
+#'  \itemize{
+#'    \item \code{reg_model} - extract a single ranked \code{lm} from a \code{regsubsets} object.
+#'    \item \code{reg_multi} - run \code{regsubsets} for several responses.
+#'    \item \code{lm_multi}  - fit a plain \code{lm} for several responses.
+#'    \item \code{mod_multi} - turn a \code{reg_multi} result into fitted \code{lm} objects.
+#'    \item \code{lm_boot}   - \code{.632+} bootstrap RMSE / R2 for one model.
+#'    \item \code{multi_bs}  - \code{lm_boot} applied across a list of models.
+#'    \item \code{many_boots}- bootstrap properties across a range of sample sizes.
+#'    \item \code{pred_multi}- predict a list of models onto new (e.g. wall-to-wall) data.
+#'    \item \code{lm_summary}- apparent + leave-one-out cross-validated fit statistics.
+#'  }
 #'
 #'\cr
 #'
 #'Revision History
 #' \tabular{ll}{
-#'1.0 \tab date and revisions.. \cr
+#'1.0 \tab 2014 Mar 06 Ported from prior work \cr
 #'}
 #'
 #'
@@ -24,86 +40,90 @@
 #'Jacob Strunk <someone@@somewhere.com>
 #'
 #'
-#'@param dat_yx tbd
-#'@param reg_obj tbd
-#'@param rank tbd
-#'@param rank_by tbd
-#'@param debug tbd
-#'@param ... tbd
+#'@param dat_yx data.frame whose first column is the response and the remaining columns are candidate predictors
+#'@param reg_obj an object returned by \code{leaps::regsubsets} for the response
+#'@param rank which ranked model to extract (1 = best by \code{rank_by})
+#'@param rank_by criterion used to rank models: one of "bic","rsq","rss","adjr2","cp"
+#'@param debug if TRUE, drop into \code{browser()}
+#'@param ... additional arguments passed on to the underlying function (\code{lm}, \code{regsubsets}, or \code{lm_boot})
 #'\cr\cr
 #' \bold{lm_boot() parameters:}
-#'@param model tbd
-#'@param y tbd
-#'@param data tbd
-#'@param n_boot tbd
+#'@param model an \code{lm} object, or a formula to be fit with \code{data}
+#'@param y response vector (defaults to the model response)
+#'@param data data.frame used to fit the model (defaults to the model frame)
+#'@param n_boot number of bootstrap replicates for the \code{.632+} estimator
 #'\cr\cr
 #' \bold{many_boots() parameters:}
-#'@param model tbd
-#'@param n_range tbd
-#'@param r_boots tbd
-#'@param n_clus tbd
-#'@param lm_boot tbd
-#'@param ... tbd
+#'@param n_range vector of sample sizes to evaluate
+#'@param r_boots number of bootstrap repetitions per sample size
 #'\cr\cr
-#' \bold{reg_multi() parameters:}
-#'@param y_vars tbd
-#'@param data tbd
-#'@param form_y tbd
-#'@param n_v_max tbd
-#'@param n_best tbd
-#'@param really_big tbd
-#'@param n_clus tbd
-#'@param ... tbd
+#' \bold{reg_multi() / lm_multi() parameters:}
+#'@param y_vars character vector of response column names
+#'@param form_y model-form template using "y" as the response placeholder (e.g. "y~." or "y~.*.")
+#'@param n_v_max maximum number of predictors (\code{regsubsets} nvmax)
+#'@param n_best number of best models retained per subset size (\code{regsubsets} nbest)
+#'@param really_big passed to \code{regsubsets} \code{really.big}
+#'@param n_clus number of cores to use (>1 runs in parallel)
+#'@param verbose if TRUE, print the response being fit
 #'\cr\cr
 #' \bold{mod_multi() parameters:}
-#'@param mods_list tbd
-#'@param data tbd
-#'@param ... tbd
+#'@param mods_list a list of models: a \code{reg_multi} result (for \code{mod_multi}) or fitted \code{lm} objects (for \code{pred_multi}/\code{multi_bs}/\code{lm_summary})
 #'\cr\cr
 #' \bold{pred_multi() parameters:}
-#'@param mods_list tbd
-#'@param data tbd
-#'@param dat0 tbd
-#'@param id_col tbd
-#'@param n_clus tbd
-#'@param clus tbd
-#'@param out_dir tbd
-#'@param se_fit tbd
-#'@param return tbd
-#'@param fix_outliers tbd
-#'@param outlier_fun tbd
+#'@param dat0 optional original response values used to clamp implausible predictions
+#'@param id_col name of the unique observation-id column in \code{data}
+#'@param clus optional pre-built cluster object (otherwise one is created)
+#'@param out_dir optional directory to write predictions to
+#'@param se_fit if TRUE, also compute standard errors of prediction
+#'@param return if TRUE, return the predictions
+#'@param fix_outliers if TRUE, clamp implausible predictions with \code{outlier_fun}
+#'@param outlier_fun function used to clamp out-of-range predictions
 #'\cr\cr
 #' \bold{multi_bs() parameters:}
-#'@param mods  tbd
-#'@param n_boot tbd
-#'@param n_clus tbd
-#'@param lm_boot tbd
+#'@param lm_boot the \code{lm_boot} function (passed explicitly so parallel workers can find it)
 #'\cr\cr
 #' \bold{lm_summary() parameters:}
-#'@param mods_list list of models where each element is named with response name
-#'@param data tbd
-#'@param resids tbd
+#'@param resids if TRUE, also return per-observation residuals
 #'
 #'
 #'@return
 #'
-#'reg_model:
-#'lm_boot:
-#'many_boots:
-#'reg_multi:
-#'mod_multi:
-#'pred_multi:
-#'multi_bs:
-#'lm_summary:
+#'  \code{reg_model} / \code{mod_multi} return fitted \code{lm} object(s);
+#'  \code{reg_multi} returns a named list of \code{regsubsets} objects;
+#'  \code{lm_multi} returns a named list of \code{lm} objects;
+#'  \code{lm_boot} returns a list of \code{.632+} error statistics;
+#'  \code{multi_bs}, \code{many_boots} and \code{lm_summary} return data.frames of
+#'  bootstrap / cross-validated fit statistics; \code{pred_multi} returns a
+#'  data.frame of predictions keyed by \code{id_col}.
 #'
 #'@examples
 #'
-#'<Delete and Replace>
+#'  #simulated data: two responses, three predictors
+#'  set.seed(1)
+#'  n <- 60
+#'  dat <- data.frame(
+#'    y1 = rnorm(n), y2 = rnorm(n),
+#'    x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n)
+#'  )
 #'
+#'  #fit a linear model per response (named by response)
+#'  mods <- list(
+#'    y1 = lm(y1 ~ x1 + x2 + x3, data = dat),
+#'    y2 = lm(y2 ~ x1 + x2 + x3, data = dat)
+#'  )
 #'
+#'  #apparent + leave-one-out cross-validated fit statistics
+#'  lm_summary(mods, data = dat)
 #'
+#'  \donttest{
+#'  #.632+ bootstrap error for a single model
+#'  lm_boot(mods[["y1"]], n_boot = 20)
 #'
-#'@seealso \code{\link{regsubsets}}\cr
+#'  #bootstrap a whole list of models
+#'  multi_bs(mods, n_boot = 20, n_clus = 1, lm_boot = lm_boot)
+#'  }
+#'
+#'@seealso \code{\link[leaps]{regsubsets}}\cr
 #'
 #'@import leaps bootstrap parallel
 #'
