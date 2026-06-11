@@ -3,13 +3,16 @@ library(testthat)
 # Tests for the tree-level compilation helpers in R/compile_trees.R.
 # All behaviors below WORK at the pre-refactor baseline.
 
-test_that("ba_ft adds ba_ft = 0.005454 * dbh^2", {
+# exact basal-area constant = (pi/4)/144
+bac <- 0.005454154
+
+test_that("ba_ft adds ba_ft = 0.005454154 * dbh^2", {
   x <- ba_ft(data.frame(dbh = c(10, 20)), tree_nms = c(dbh = "dbh"))
   testthat::expect_true("ba_ft" %in% names(x))
-  testthat::expect_equal(x$ba_ft, c(0.5454, 2.1816))
+  testthat::expect_equal(x$ba_ft, bac * c(10, 20)^2)
 
   x2 <- ba_ft(data.frame(dbh = c(30, 5, 15)), tree_nms = c(dbh = "dbh"))
-  testthat::expect_equal(x2$ba_ft, c(4.9086, 0.13635, 1.22715))
+  testthat::expect_equal(x2$ba_ft, bac * c(30, 5, 15)^2)
 })
 
 test_that("tpa computes TPA = (nstems or 1) / acres", {
@@ -64,8 +67,8 @@ test_that("dbcl_y spreads a grouped variable across diameter classes", {
   testthat::expect_true(all(c("ba_ft_dbcl6", "ba_ft_dbcl14") %in% names(res)))
 
   # value lands in own class, NA elsewhere
-  testthat::expect_equal(res$ba_ft_dbcl6, c(0.13635, 0.13635, NA, NA))
-  testthat::expect_equal(res$ba_ft_dbcl14, c(NA, NA, 1.22715, 1.22715))
+  testthat::expect_equal(res$ba_ft_dbcl6, c(bac * 25, bac * 25, NA, NA))
+  testthat::expect_equal(res$ba_ft_dbcl14, c(NA, NA, bac * 225, bac * 225))
 })
 
 test_that("spp_y spreads a grouped variable across species", {
@@ -83,8 +86,8 @@ test_that("spp_y spreads a grouped variable across species", {
   testthat::expect_true(all(c("ba_ft_spp_a", "ba_ft_spp_b") %in% names(res)))
 
   # rows for spp "a" (ids 1,3) carry ba_ft in ba_ft_spp_a; "b" rows NA there.
-  testthat::expect_equal(res$ba_ft_spp_a, c(0.13635, NA, 1.22715, NA))
-  testthat::expect_equal(res$ba_ft_spp_b, c(NA, 0.13635, NA, 1.22715))
+  testthat::expect_equal(res$ba_ft_spp_a, c(bac * 25, NA, bac * 225, NA))
+  testthat::expect_equal(res$ba_ft_spp_b, c(NA, bac * 25, NA, bac * 225))
 })
 
 test_that("dbcl_spp_y spreads a grouped variable across species x dbcl crosses", {
@@ -102,7 +105,7 @@ test_that("dbcl_spp_y spreads a grouped variable across species x dbcl crosses",
   testthat::expect_true("ba_ft_spp_a_dbcl_6" %in% names(res))
 
   # id 1 is spp a, dbcl 6 -> value in ba_ft_spp_a_dbcl_6; others NA there.
-  testthat::expect_equal(res$ba_ft_spp_a_dbcl_6, c(0.13635, NA, NA, NA))
+  testthat::expect_equal(res$ba_ft_spp_a_dbcl_6, c(bac * 25, NA, NA, NA))
 })
 
 test_that("compile_trees applies a list of functions, preserving row count", {
@@ -122,5 +125,5 @@ test_that("compile_trees applies a list of functions, preserving row count", {
   testthat::expect_s3_class(res, "data.frame")
   testthat::expect_equal(nrow(res), nrow(df))
   testthat::expect_true(all(c("TPA", "ba_ft", "dbcl") %in% names(res)))
-  testthat::expect_equal(res$ba_ft, 0.005454 * res$dbh^2)
+  testthat::expect_equal(res$ba_ft, bac * res$dbh^2)
 })

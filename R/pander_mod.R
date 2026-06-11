@@ -92,7 +92,7 @@ pander_mod.lm=function(x
     y0=df0[,resp_nm]
     er_in=pd_in - y0
     n=length(y$residuals)
-    n0=length(er_in)
+    n0=sum(!is.na(er_in))
     n_param=y$df[1]
     degfr=n0-n_param
     sigma_in= sqrt(sum(er_in^2,na.rm=T)/degfr)
@@ -104,11 +104,11 @@ pander_mod.lm=function(x
       Resp.               = resp_nm,
       'n'                 = n,
       n0                  = n0,
-      'Resis. Std. Error' = sigma_in,
+      'Resid. Std. Error' = sigma_in,
       '$R^2$'             = round(r2,3),
       'Adjusted $R^2$'    = round(r2_adj,3),
       '$DE^{-1}$'         = definv,
-      Predictors          = paste(as.character(attr(y$terms,"term.labels")),collapse=" "),
+      Predictors          = paste(as.character(attr(y$terms,"term.labels")),collapse=" + "),
       check.names = FALSE)
   }
 
@@ -122,6 +122,9 @@ pander_mod.simex=function(x
                          ,...
 ){
 
+  if(!inherits(df0,"data.frame"))
+    stop("pander_mod.simex requires an out-of-sample validation data.frame 'df0'")
+
   y=summary(x$model)
 
   resp_nm=row.names(attr(y$terms,"factors"))[1]
@@ -129,7 +132,7 @@ pander_mod.simex=function(x
   y0=df0[,resp_nm]
   er_in=pd_in - y0
   n=length(y$residuals)
-  n0=length(er_in)
+  n0=sum(!is.na(er_in))
   n_param=y$df[1]
   degfr=n0-n_param
   sigma_in= sqrt(sum(er_in^2,na.rm=T)/degfr)

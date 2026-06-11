@@ -91,7 +91,7 @@ lm_summary(mods_list, data, resids = FALSE)
 
 \item{data}{data.frame used to fit the model (defaults to the model frame)}
 
-\item{n_boot}{number of bootstrap replicates for the \code{.632+} estimator
+\item{n_boot}{number of bootstrap replicates for the \code{.632} estimator
 \cr\cr
 \bold{many_boots() parameters:}}
 
@@ -149,14 +149,14 @@ lm_summary(mods_list, data, resids = FALSE)
 \code{reg_model} / \code{mod_multi} return fitted \code{lm} object(s);
  \code{reg_multi} returns a named list of \code{regsubsets} objects;
  \code{lm_multi} returns a named list of \code{lm} objects;
- \code{lm_boot} returns a list of \code{.632+} error statistics;
+ \code{lm_boot} returns a list of \code{.632} error statistics;
  \code{multi_bs}, \code{many_boots} and \code{lm_summary} return data.frames of
  bootstrap / cross-validated fit statistics; \code{pred_multi} returns a
  data.frame of predictions keyed by \code{id_col}.
 }
 \description{
 A family of helpers for ordinary-least-squares (OLS) modeling: best-subsets
- variable selection (via \code{leaps::regsubsets}), \code{.632+} bootstrap error
+ variable selection (via \code{leaps::regsubsets}), \code{.632} bootstrap error
  estimation, fitting/predicting many response models at once, and summarising
  cross-validated fit statistics.
 }
@@ -169,7 +169,7 @@ The functions are designed to be chained together when building many models
    \item \code{reg_multi} - run \code{regsubsets} for several responses.
    \item \code{lm_multi}  - fit a plain \code{lm} for several responses.
    \item \code{mod_multi} - turn a \code{reg_multi} result into fitted \code{lm} objects.
-   \item \code{lm_boot}   - \code{.632+} bootstrap RMSE / R2 for one model.
+   \item \code{lm_boot}   - \code{.632} bootstrap RMSE / R2 for one model.
    \item \code{multi_bs}  - \code{lm_boot} applied across a list of models.
    \item \code{many_boots}- bootstrap properties across a range of sample sizes.
    \item \code{pred_multi}- predict a list of models onto new (e.g. wall-to-wall) data.

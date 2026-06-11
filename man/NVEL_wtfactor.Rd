@@ -23,11 +23,11 @@ NVEL_wtfactor(
 \arguments{
 \item{dfTL}{data.frame/data.table with tree records (region, forest, species columns)}
 
-\item{region}{(optional) scalar region; supercedes the dfTL regionNm column}
+\item{region}{(optional) scalar region; used only when dfTL is not supplied}
 
-\item{forest}{(optional) scalar forest; supercedes the dfTL forestNm column}
+\item{forest}{(optional) scalar forest; used only when dfTL is not supplied}
 
-\item{spcd}{(optional) scalar USFS species code; supercedes the dfTL spcdNm column}
+\item{spcd}{(optional) scalar USFS species code; used only when dfTL is not supplied}
 
 \item{regionNm}{column name in dfTL holding the region}
 

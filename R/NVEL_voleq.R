@@ -19,15 +19,16 @@
 #'
 #'
 #'@param dfTL data.frame with tree records
-#'@param region (optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm, districtNm
-#'@param forest (optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm, districtNm
-#'@param district (optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm, districtNm
-#'@param regionNm (optional) column name in DFTL:provide region, forest, district for every tree in dfTL
-#'@param forestNm (optional) column name in DFTL:provide region, forest, district for every tree in dfTL
-#'@param districtNm (optional) column name in DFTL: provide region, forest, district for every tree in dfTL
-#'@param spcdNm (required) column name in DFTL: USFS species code
+#'@param region scalar region; used only when dfTL is not supplied (otherwise the regionNm column is used)
+#'@param forest scalar forest; used only when dfTL is not supplied (otherwise the forestNm column is used)
+#'@param district scalar district; used only when dfTL is not supplied (otherwise the districtNm column is used)
+#'@param spcd scalar USFS species code; used only when dfTL is not supplied (otherwise the spcdNm column is used)
+#'@param regionNm (optional) column name in dfTL holding the region for every tree
+#'@param forestNm (optional) column name in dfTL holding the forest for every tree
+#'@param districtNm (optional) column name in dfTL holding the district for every tree
+#'@param spcdNm (required) column name in dfTL: USFS species code
 #'@param dll_64  path to 64bit dll
-#'@param dll_32  path to 64bit dll
+#'@param dll_32  path to 32bit dll
 #'@param load_dll T/F should dll be loaded (in case it is already loaded)
 #'@param dll_func_voleq name of volume equation chooser function call in NVEL .dll
 #'
@@ -67,7 +68,7 @@
 
 NVEL_voleq = function(
 
-  dfTL = list(NA, data.frame(spcd=201, dbh=5 ,ht=5 ,region = 0 , forest = "01", district = "01") )[[1]]
+  dfTL = NA
 
   #optional, but these supercede values in dfTL columns regionNm,forestNm, districtNm
   ,region = NA
@@ -92,7 +93,7 @@ NVEL_voleq = function(
   if(load_dll) .nvel_load_dll(dll_64,dll_32 )
 
   #figure out how we are generating volume equations
-  if(is.logical(dfTL)){
+  if(is.null(dfTL) || is.logical(dfTL)){
 
     if( is.na(region[1]) | is.na(forest[1]) | is.na(district[1]) | is.na(spcd[1]) ) warning("dfTL not provided, and missing region,forest,district, or spcd - generic equation(s) likely returned")
 

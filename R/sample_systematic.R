@@ -88,8 +88,9 @@ sample_systematic = function(
    vec_k = c(start,sample(c(k_min,k_max),n-1,replace=T,prob=c(k_min_p,k_max_p)))
    idx = cumsum(vec_k)
 
-   #get rid of too large indices
-   idx=idx[idx<N]
+   #get rid of too large indices (keep index N itself: <= not <, otherwise the
+   #last frame unit has ~zero inclusion probability)
+   idx=idx[idx<=N]
 
    #force the vector length to be n - otherwise could be off by 1
    #subsample idx to size n, or add missing idx with random supplement

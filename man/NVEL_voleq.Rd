@@ -5,8 +5,7 @@
 \title{Select Appropriate Volume equation for Region, Forest, District, Tree species from National Volume Estimator Library (NVEL)}
 \usage{
 NVEL_voleq(
-  dfTL = list(NA, data.frame(spcd = 201, dbh = 5, ht = 5, region = 0, forest = "01",
-    district = "01"))[[1]],
+  dfTL = NA,
   region = NA,
   forest = NA,
   district = NA,
@@ -26,23 +25,25 @@ NVEL_voleq(
 \arguments{
 \item{dfTL}{data.frame with tree records}
 
-\item{region}{(optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm, districtNm}
+\item{region}{scalar region; used only when dfTL is not supplied (otherwise the regionNm column is used)}
 
-\item{forest}{(optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm, districtNm}
+\item{forest}{scalar forest; used only when dfTL is not supplied (otherwise the forestNm column is used)}
 
-\item{district}{(optional) region,forest,district but these supercede values in dfTL columns regionNm,forestNm, districtNm}
+\item{district}{scalar district; used only when dfTL is not supplied (otherwise the districtNm column is used)}
 
-\item{regionNm}{(optional) column name in DFTL:provide region, forest, district for every tree in dfTL}
+\item{spcd}{scalar USFS species code; used only when dfTL is not supplied (otherwise the spcdNm column is used)}
 
-\item{forestNm}{(optional) column name in DFTL:provide region, forest, district for every tree in dfTL}
+\item{regionNm}{(optional) column name in dfTL holding the region for every tree}
 
-\item{districtNm}{(optional) column name in DFTL: provide region, forest, district for every tree in dfTL}
+\item{forestNm}{(optional) column name in dfTL holding the forest for every tree}
 
-\item{spcdNm}{(required) column name in DFTL: USFS species code}
+\item{districtNm}{(optional) column name in dfTL holding the district for every tree}
+
+\item{spcdNm}{(required) column name in dfTL: USFS species code}
 
 \item{dll_64}{path to 64bit dll}
 
-\item{dll_32}{path to 64bit dll}
+\item{dll_32}{path to 32bit dll}
 
 \item{dll_func_voleq}{name of volume equation chooser function call in NVEL .dll}
 

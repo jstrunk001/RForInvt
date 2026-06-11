@@ -7,7 +7,7 @@
 NVEL_volume(
   dfTL = data.frame(dbh = 5, ht = 5),
   voleq = NA,
-  region = 1,
+  region = NA,
   forest = NA,
   district = NA,
   voleqNm = c("voleq"),
@@ -86,18 +86,16 @@ NVEL_volume(
 
 \item{dll_64}{path to 64bit dll}
 
-\item{dll_32}{path to 64bit dll}
+\item{dll_32}{path to 32bit dll}
 
 \item{load_dll}{T/F should dll be loaded (in case it is already loaded)}
 
 \item{dll_func_vol}{name of volume prediction function call in NVEL .dll}
 
 \item{dll_func_voleq}{name of volume equation chooser function call in NVEL .dll}
-
-\item{nclus}{number of cores to use}
 }
 \value{
-a data.frame reformatted to include all of the original columns, any missing columns for the NVEL .dll, 15 columns of predicted volumes, and an error column
+a data.table reformatted to include all of the original columns, any missing columns for the NVEL .dll, 15 columns of predicted volumes, and an error column
 
  predicted volumes:
     1)	Total Cubic Volume from ground to tip

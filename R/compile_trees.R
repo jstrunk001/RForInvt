@@ -150,7 +150,7 @@ compile_trees = function(
 
     fni = fns_compute[[i]]
     tr_df_in = fni( tr_df_in ,tree_nms=tree_nms, ... )
-    if(class( tr_df_in) != "data.frame" & class( tr_df_in) != "data.table") stop("All functions provided in 'fns_compute = list()' argument must return a dataframe composed of df_tree and any new columns created.")
+    if(!inherits(tr_df_in, c("data.frame","data.table"))) stop("All functions provided in 'fns_compute = list()' argument must return a dataframe composed of df_tree and any new columns created.")
 
   }
 
@@ -163,7 +163,8 @@ compile_trees = function(
 #'@rdname compile_trees
 ba_ft = function(x,tree_nms,...){
   x_in = x
-  x_in[,"ba_ft"] = 0.005454 * (x[,tree_nms["dbh"]]^2)
+  #basal area (ft^2) = (pi/4)/144 * DBH^2 ; the exact constant is 0.005454154
+  x_in[,"ba_ft"] = 0.005454154 * (x[,tree_nms["dbh"]]^2)
   x_in
 }
 
@@ -173,8 +174,9 @@ ba_ft = function(x,tree_nms,...){
 #'@export
 #'@rdname compile_trees
 tpa = function(x,tree_nms,...){
-  if(!"nstems" %in% tree_nms)  res_df = data.frame(x, TPA = 1 / x[,tree_nms["acres"]])
-  if("nstems" %in% tree_nms)  res_df = data.frame(x, TPA = x[,tree_nms["nstems"]]  / x[,tree_nms["acres"]] )
+  #test for a `nstems` MAPPING (a name in tree_nms), not a value of tree_nms
+  if(!"nstems" %in% names(tree_nms))  res_df = data.frame(x, TPA = 1 / x[,tree_nms["acres"]])
+  if("nstems" %in% names(tree_nms))  res_df = data.frame(x, TPA = x[,tree_nms["nstems"]]  / x[,tree_nms["acres"]] )
   return(res_df)
 }
 
@@ -182,8 +184,9 @@ tpa = function(x,tree_nms,...){
 #'@export
 #'@rdname compile_trees
 tph = function(x,tree_nms,...){
-  if(!"nstems" %in% tree_nms)  res_df = data.frame(x, TPH = 1 / x[,tree_nms["hectares"]])
-  if("nstems" %in% tree_nms)  res_df = data.frame(x, TPH = x[,tree_nms["nstems"]]  / x[,tree_nms["hectares"]] )
+  #test for a `nstems` MAPPING (a name in tree_nms), not a value of tree_nms
+  if(!"nstems" %in% names(tree_nms))  res_df = data.frame(x, TPH = 1 / x[,tree_nms["hectares"]])
+  if("nstems" %in% names(tree_nms))  res_df = data.frame(x, TPH = x[,tree_nms["nstems"]]  / x[,tree_nms["hectares"]] )
   return(res_df)
 }
 
@@ -279,59 +282,4 @@ dbcl_spp_y = function(x,tree_nms,vars_group,...){
   return(x_in)
 }
 
-if(F){
-  test=data.frame(id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T))
-  test1 = ba_ft(test,tree_nms=c(dbh="dbh",dbcl="dbcl") )
-  test2 = dbcl(test1,tree_nms=c(dbh="dbh",dbcl="dbcl") )
-  test3 = dbcl_y(test2,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl"), vars_dbcl= c("ba_ft","dbh"))
-  test4 = spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
-  test5 = dbcl_spp_y(test3,tree_nms=c(tree_ids="id",dbh="dbh",dbcl="dbcl",spp="spp"), vars_group= c("ba_ft"))
-}
-
-#test this code
-# if(F){
-#
-#   set.seed=111
-#   nfake=50
-#   dbh_fk = 10*abs(rnorm(nfake))
-#   df_fake = data.frame(
-#     pltId = sample((1:7),nfake,replace=T)
-#     ,trid=1:50
-#     ,db= dbh_fk
-#     ,ht=75*dbh_fk + rnorm(nfake)*10
-#     ,spp = sample(c("df","wh","cw","ra") , nfake , T)
-#     ,acres = 0.1
-#     ,trees = round(1+ abs(rnorm(nfake)/3))
-#
-#   )
-#
-#   testTL =
-#     compile_trees(
-#       df_fake
-#       ,tr_id = "trid"
-#       ,spp_nm = "spp"
-#       ,db_nm = "db"
-#       ,htNm = "ht"
-#       ,dbcl_nm = "dbcl"
-#       ,dbcl = c(seq(0,32,4),50,1000)
-#       ,dbcl_y = c("ba_ft")
-#       ,spp_y = c("ba_ft")
-#       ,spp_dbcl_y = c("ba_ft")
-#       ,acres_nm = "acres"
-#       ,ntrees_nm = NA
-#
-#       ,fns_compute =
-#         list(
-#           tpa
-#           ,ba_ft
-#           ,dbcl
-#           ,dbcl_y
-#           ,spp_y
-#           ,dbcl_spp_y
-#         )
-#     )
-#
-#   testTL
-#
-# }
 

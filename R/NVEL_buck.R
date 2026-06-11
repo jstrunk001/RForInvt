@@ -111,7 +111,7 @@
 NVEL_buck = function(
   dfTL = data.table::data.table(dbh = 5, ht = 5)
   , voleq = NA
-  , region = 1
+  , region = NA
   , forest = NA
   , district = NA
   , voleqNm = "voleq"
@@ -189,8 +189,10 @@ NVEL_buck = function(
                       ,spcdNm=spcdNm
                       ,load_dll=load_dll
                          )
+    #write equations into the user-supplied voleq column; do NOT reset voleqNm
+    #to "voleq" afterwards or the mapply below would read a non-existent column
+    #when a custom voleqNm was supplied.
     dfTL0_in[, (voleqNm) := vol_eqns_in[["voleq"]]]
-    voleqNm = "voleq"
   }
 
   # Fill NAs with 0
@@ -311,7 +313,9 @@ NVEL_buck = function(
   res_in = merge(dfTL0_in, vol_pd0_df, by = "TreeIdx", all.x = TRUE)
 
   if(vol2biomass){
-    wts_in = NVEL_wtfactor(dfTL = dfTL0_in[, .SD, .SDcols = c(regionNm, forestNm, spcdNm)], spcdNm = spcdNm)
+    wts_in = NVEL_wtfactor(dfTL = dfTL0_in[, .SD, .SDcols = c(regionNm, forestNm, spcdNm)]
+                           , regionNm = regionNm, forestNm = forestNm, spcdNm = spcdNm
+                           , load_dll = FALSE)
     data.table::setDT(wts_in)[, TreeIdx := .I]
     res_in = merge(res_in, wts_in[, .(TreeIdx, WFGRN_LBSCFT, WFDRY_LBSCFT)], by = "TreeIdx", all.x = TRUE)
     res_in[, `:=`(TR_TBIOGRN_LBS = WFGRN_LBSCFT * TR_TCFV_ALL, TR_TBIODRY_LBS = WFDRY_LBSCFT * TR_TCFV_ALL)]

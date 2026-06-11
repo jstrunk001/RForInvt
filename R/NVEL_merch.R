@@ -78,8 +78,7 @@ NVEL_merch <- function(df_logs,
   dt_logs <- data.table::as.data.table(data.table::copy(df_logs))
   dt_specs <- data.table::as.data.table(data.table::copy(df_specs))
 
-  # Use data.table::set instead of := to avoid the 'cedta' environment error
-  # This creates a unique ID for every log row
+  # Tag every log row with a unique id used to merge results back later
   data.table::set(dt_logs, j = "..log_id..", value = seq_len(nrow(dt_logs)))
 
   # Define the join conditions (Non-Equi Join)
@@ -106,20 +105,28 @@ NVEL_merch <- function(df_logs,
     return(dt_logs)
   }
 
-  # Selection Logic: Pick the record with the best Rank (lowest value) for each log
-  # 1. Sort by log ID and then by Rank
+  # Selection Logic: pick the best (lowest Rank) applicable spec for each log.
+  # Sort by log id then Rank, and keep the first row per log id.
   data.table::setorderv(matched, c("..log_id..", spec_map$rank))
+  best_matches <- unique(matched, by = "..log_id..")
 
-  # 2. Keep the first occurrence of each log ID
-  best_matches <- matched[, .SD[1], by = "..log_id.."]
+  # IMPORTANT: in a data.table non-equi join, the join columns in `matched`
+  # carry the i-side (log) values, not the x-side (spec) values. So the
+  # MinDib/MinDbh/MinLen columns in `matched` are actually the log's
+  # dib/dbh/len, NOT the spec minimums. Recover the true spec rows by joining
+  # the winning (species, rank) back to the original spec table, where the
+  # equality-join columns take the (correct) winner values and the remaining
+  # spec columns (including the true MinDib/MinDbh/MinLen) come from df_specs.
+  spec_key <- c(spec_map$spp, spec_map$rank)
+  winners <- best_matches[, c("..log_id..", spec_key), with = FALSE]
+  true_specs <- dt_specs[winners, on = spec_key, allow.cartesian = TRUE]
 
-  # Clean up: matched table contains extra columns from the join criteria
-  # Keep only the original spec columns and the merge key
+  # Keep the merge key plus the original spec columns (now carrying true values)
   keep_cols <- c("..log_id..", names(df_specs))
-  best_matches <- best_matches[, ..keep_cols]
+  true_specs <- true_specs[, ..keep_cols]
 
-  # Merge back to the original logs to ensure 'Culls' (non-matches) are preserved
-  res <- best_matches[dt_logs, on = "..log_id.."]
+  # Merge back to the original logs so 'Culls' (non-matches) are preserved
+  res <- true_specs[dt_logs, on = "..log_id.."]
 
   # Remove the temporary row ID
   data.table::set(res, j = "..log_id..", value = NULL)

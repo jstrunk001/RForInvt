@@ -47,14 +47,13 @@
 #'@param btrNm  (optional) column name in DFTL: Bark thickness ratio given as the percent of diameter inside bark to diameter outside bark.  (dib/dob *100).
 #'@param vol2biomass T/F Compute total drye and green biomass in lbs using weight factors and append weight factors (lbs / cubic foot)
 #'@param dll_64  path to 64bit dll
-#'@param dll_32  path to 64bit dll
+#'@param dll_32  path to 32bit dll
 #'@param load_dll T/F should dll be loaded (in case it is already loaded)
 #'@param dll_func_vol name of volume prediction function call in NVEL .dll
 #'@param dll_func_voleq name of volume equation chooser function call in NVEL .dll
-#'@param nclus number of cores to use
 #'
 #'@return
-#'  a data.frame reformatted to include all of the original columns, any missing columns for the NVEL .dll, 15 columns of predicted volumes, and an error column
+#'  a data.table reformatted to include all of the original columns, any missing columns for the NVEL .dll, 15 columns of predicted volumes, and an error column
 #'
 #'  predicted volumes:
 #'     1)	Total Cubic Volume from ground to tip
@@ -112,7 +111,7 @@ NVEL_volume=function(
   ,voleq = NA
 
   #optional, but these supercede values in dfTL columns regionNm,forestNm, districtNm
-  ,region = 1
+  ,region = NA
   ,forest = NA
   ,district = NA
 
@@ -153,29 +152,28 @@ NVEL_volume=function(
 
   ){
 
-  options(stringsAsFactors = F)
   #load dll if needed
   if(load_dll) .nvel_load_dll(dll_64,dll_32 )
 
-  #test for existence of voleq
-  #get_voleq = T
-  #if(!is.na(voleq)) get_voleq = F
-  #if(!is.na(voleqNm)[1]) if((voleqNm)[1] %in% names(dfTL)) if( sum(sapply(dfTL[,voleqNm],nchar)==0 ) == 0 ) get_voleq = F
+  #work in data.frame semantics so single-name `[,` indexing returns vectors
+  #(a data.table input would otherwise mis-interpret dfTL0_in[,voleqNm])
+  dfTL = as.data.frame(dfTL)
 
-  #deal with column names, add all columns / rename
-  dfTL0_in = .formatTL2NVEL(
+  #deal with column names: add any missing NVEL columns (filled 0), preserve all
+  #original columns, and apply any scalar region/forest/district/voleq overrides.
+  dfTL0_in = .formatTL2NVEL2(
                      dfTL0 = dfTL
                      ,voleq  = voleq[1]
                      ,region  = region[1]
                      ,forest  = forest[1]
                      ,district  = district[1]
-                     ,voleqNm = voleqNm[1]
-                     ,regionNm = regionNm[1]
-                     ,forestNm  =  forestNm[1]
-                     ,districtNm  =  districtNm[1]
-                     ,spcdNm = spcdNm[1]
-                     ,dbhNm  = dbhNm[1]
-                     ,htNm  = htNm[1]
+                     ,voleqNm = voleqNm
+                     ,regionNm = regionNm
+                     ,forestNm  =  forestNm
+                     ,districtNm  =  districtNm
+                     ,spcdNm = spcdNm
+                     ,dbhNm  = dbhNm
+                     ,htNm  = htNm
 
                      ,pulpDbNm = pulpDbNm
                      ,sawDbNm = sawDbNm
@@ -193,28 +191,27 @@ NVEL_volume=function(
 
                      )
 
-
-
-  #get volume equations
-  if( is.na(voleq[1]) & (!voleqNm %in% names(dfTL)) ){
+  #get volume equations for trees lacking a forced/column equation. Use the
+  #FORMATTED table and forward the user column names so scalar
+  #region/forest/district and custom *Nm mappings reach the chooser.
+  if( is.na(voleq[1]) & (!voleqNm[1] %in% names(dfTL)) ){
     vol_eqns_in = NVEL_voleq(
-                      dfTL = dfTL
-                      #optional, provide region, forest, district for every tree
-                      ,regionNm = "region"
-                      ,forestNm = "forest"
-                      ,districtNm = "district"
-                      ,spcdNm = "spcd"
-                      #,dll_func_voleq = dll_func_voleq
+                      dfTL = dfTL0_in
+                      ,regionNm = regionNm[1]
+                      ,forestNm = forestNm[1]
+                      ,districtNm = districtNm[1]
+                      ,spcdNm = spcdNm[1]
+                      ,dll_func_voleq = dll_func_voleq
                       ,load_dll = F
                       )
-    dfTL0_in[,"voleq"] = vol_eqns_in[,"voleq"]
-    voleqNm = "voleq"
+    dfTL0_in[,voleqNm[1]] = vol_eqns_in[,"voleq"]
   }
 
 
     #turn of warnings temporarily, this generates scads of them
   defaultW <- getOption("warn")
   options(warn = -1)
+  on.exit(options(warn = defaultW), add = TRUE)
 
   #fix bad values
   dfTL0_in[is.na(dfTL0_in)] = 0
@@ -257,13 +254,21 @@ NVEL_volume=function(
 
   if(vol2biomass){
 
-    #compute total biomass
-    wts_in = NVEL_wtfactor( dfTL = dfTL0_in[,c(regionNm,forestNm,spcdNm)] , spcdNm = spcdNm )
-    res_in[,"TBIOGRN_LBS"] = wts_in[,"WFGRN_LBSCFT"]*res_in[,"TCFV"]
-    res_in[,"TBIODRY_LBS"] = wts_in[,"WFDRY_LBSCFT"]*res_in[,"TCFV"]
+    #compute total biomass; forward region/forest column names so custom
+    #*Nm mappings reach NVEL_wtfactor (which otherwise defaults to region/forest)
+    wts_in = NVEL_wtfactor(
+                 dfTL = dfTL0_in[,c(regionNm[1],forestNm[1],spcdNm[1])]
+                 , regionNm = regionNm[1]
+                 , forestNm = forestNm[1]
+                 , spcdNm = spcdNm[1]
+                 , load_dll = FALSE
+                 )
+    res_in[,"TBIOGRN_LBS"] = wts_in[["WFGRN_LBSCFT"]]*res_in[,"TCFV"]
+    res_in[,"TBIODRY_LBS"] = wts_in[["WFDRY_LBSCFT"]]*res_in[,"TCFV"]
 
     #append weight factors
-    res_in = data.frame(res_in,wts_in[,c("WFGRN_LBSCFT","WFDRY_LBSCFT")])
+    res_in[,"WFGRN_LBSCFT"] = wts_in[["WFGRN_LBSCFT"]]
+    res_in[,"WFDRY_LBSCFT"] = wts_in[["WFDRY_LBSCFT"]]
   }
 
   #return formatted tree list with predicted volumes
@@ -280,7 +285,6 @@ NVEL_volume=function(
                     ,district
                     ,spcd
                     ,dbh
-                    ,merchDb
                     ,ht
                     ,pulpDb
                     ,sawDb
@@ -325,92 +329,6 @@ NVEL_volume=function(
 
 }
 
-
-
-#data tree list and format it for these functions
-#typically not needed by users
-.formatTL2NVEL = function(
-  dfTL0
-
-  ,voleq
-  ,region
-  ,forest
-  ,district
-
-  ,voleqNm
-  ,regionNm
-  ,forestNm
-  ,districtNm
-  ,spcdNm
-  ,dbhNm
-  ,htNm
-
-  ,pulpDbNm
-  ,sawDbNm
-
-  ,htPrd1Nm
-  ,htPrd2Nm
-
-  ,upHt1Nm
-  ,upDb1Nm
-  ,stumpHtNm
-
-  ,fclassNm
-  ,dbtbhNm
-  ,btrNm
-
-
-
-){
-
-  dfTL1 = dfTL0
-
-  nms_in = c(
-    voleq= voleqNm[1]
-    ,region = regionNm[1]
-    ,forest  =  forestNm[1]
-    ,district  =  districtNm[1]
-    ,spcd = spcdNm[1]
-    ,dbh  = dbhNm[1]
-    ,ht  = htNm[1]
-
-    ,pulpDb = pulpDbNm
-    ,sawDb = sawDbNm
-
-    ,htPrd1 = htPrd1Nm
-    ,htPrd2 = htPrd2Nm
-
-    ,upHt1 = upHt1Nm
-    ,upDb1 = upDb1Nm
-    ,stumpHt = stumpHtNm
-
-    ,fclass = fclassNm
-    ,dbtbh = dbtbhNm
-    ,btr = btrNm
-  )
-
-  #add columns with na in nms
-  na_nms = is.na(nms_in)
-  nms_fill_NA = names(nms_in)[na_nms]
-  dfTL1[,nms_fill_NA] = 0
-
-  #add missing columns
-  na_nms1 =! nms_in %in% names(dfTL1)
-  nms_fill_NA1 = names(nms_in)[na_nms1]
-  dfTL1[,nms_fill_NA1] = 0
-
-  #update existing column names with fixed column names
-  nms_in[na_nms] = names(nms_in)[na_nms]
-  nms_in[na_nms1] = names(nms_in)[na_nms1]
-  names(dfTL1[,nms_in]) = names(nms_in)
-
-  #overwrite names
-  if(!is.na(voleq)) dfTL1[,"voleq"] = voleq
-  if(!is.na(region)) dfTL1[,"region"] = region
-  if(!is.na(forest)) dfTL1[,"forest"] = forest
-  if(!is.na(district)) dfTL1[,"district"] = district
-
-  #return correctly named data
-  dfTL1[,nms_in]
-
-}
+# NOTE: the former .formatTL2NVEL() helper has been removed. NVEL_volume() now
+# shares the single, sound formatter .formatTL2NVEL2() defined in NVEL_buck.R,
+# which preserves all original columns and keys by the user-supplied *Nm names.

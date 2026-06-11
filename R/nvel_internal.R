@@ -22,20 +22,26 @@ NULL
 }
 
 # Load the architecture-appropriate vollib.dll if it is not already loaded.
-# Mirrors the most robust of the former per-file copies (NVEL_wtfactor): it
-# checks the file exists and warns rather than erroring cryptically.
+# vollib is a Windows-only Fortran binary; on other platforms (where dyn.load
+# of the bundled .dll would throw an opaque loader error) and when the file is
+# missing, fail fast with a clear message instead of letting the eventual
+# .Fortran() call die with '"vollib_r" not available'.
 .nvel_load_dll = function(dll_64, dll_32){
 
-  arch_in = R.Version()$arch
-  dll_loaded = "vollib" %in% names(getLoadedDLLs())
-  if(dll_loaded) return(invisible(TRUE))
-
-  target_dll = if(arch_in == "x86_64") dll_64 else dll_32
-  if(file.exists(target_dll)){
-    dyn.load(target_dll)
-    invisible(TRUE)
-  } else {
-    warning("NVEL DLL not found at specified path: ", target_dll)
-    invisible(FALSE)
+  if(.Platform$OS.type != "windows"){
+    stop("The NVEL volume library (vollib.dll) is Windows-only; ",
+         "NVEL_* functions cannot run on this platform (",
+         .Platform$OS.type, ").")
   }
+
+  if("vollib" %in% names(getLoadedDLLs())) return(invisible(TRUE))
+
+  arch_in = R.Version()$arch
+  target_dll = if(arch_in == "x86_64") dll_64 else dll_32
+  if(!file.exists(target_dll)){
+    stop("NVEL DLL not found at: ", target_dll,
+         ". Reinstall RForInvt or supply dll_64/dll_32 explicitly.")
+  }
+  dyn.load(target_dll)
+  invisible(TRUE)
 }

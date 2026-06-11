@@ -64,7 +64,7 @@
 yai_r2 = function (x, vars = NULL, ...){
   if (missing(x))
     stop("x required.")
-  if (class(x)[1] == "yai")
+  if (inherits(x, "yai"))
     x = impute.yai(x, vars = vars, observed = TRUE,...)
   if (is.null(x))
     stop("no imputations found using this x")
@@ -97,10 +97,14 @@ yai_r2 = function (x, vars = NULL, ...){
   vo = paste(both, "o", sep = ".")
   R2_in = data.frame(rep(NA, length(vo)), row.names = both)
   names(R2_in) = "R2_in"
-  for (i in 1:length(both)) {
+  for (i in seq_along(both)) {
     if (!is.factor(x[, both[i]])) {
 
-      R2_in[i, 1] = 1- var(x[, both[i]])  / var(x[,vo[i]])
+      #R2 = 1 - var(observed - predicted) / var(observed), where vo[i] is the
+      #observed (".o") column and both[i] is the imputed/predicted column.
+      #(The previous formula 1 - var(predicted)/var(observed) was not R2:
+      #perfect imputation returned 0 and a constant prediction returned 1.)
+      R2_in[i, 1] = 1 - var(x[, vo[i]] - x[, both[i]]) / var(x[, vo[i]])
 
     }
   }

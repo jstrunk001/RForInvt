@@ -22,9 +22,9 @@
 #'
 #'
 #'@param dfTL data.frame/data.table with tree records (region, forest, species columns)
-#'@param region (optional) scalar region; supercedes the dfTL regionNm column
-#'@param forest (optional) scalar forest; supercedes the dfTL forestNm column
-#'@param spcd (optional) scalar USFS species code; supercedes the dfTL spcdNm column
+#'@param region (optional) scalar region; used only when dfTL is not supplied
+#'@param forest (optional) scalar forest; used only when dfTL is not supplied
+#'@param spcd (optional) scalar USFS species code; used only when dfTL is not supplied
 #'@param regionNm column name in dfTL holding the region
 #'@param forestNm column name in dfTL holding the forest
 #'@param spcdNm (required) column name in dfTL holding the USFS species code
@@ -91,6 +91,13 @@ NVEL_wtfactor = function(
   } else {
     # Convert input to data.table (creates a copy if it was a data.frame)
     dt_internal <- data.table::as.data.table(dfTL)
+    # Fail clearly if the mapped columns are absent rather than letting mapply
+    # die later with the cryptic "zero-length inputs cannot be mixed".
+    miss <- setdiff(c(regionNm, forestNm, spcdNm), names(dt_internal))
+    if (length(miss)) {
+      stop("NVEL_wtfactor: dfTL is missing required column(s): ",
+           paste(miss, collapse = ", "))
+    }
   }
 
   # 3. Load NVEL DLL

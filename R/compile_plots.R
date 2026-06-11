@@ -166,10 +166,8 @@ compile_plots=function(
 
 ){
 
-  warning("developer note: add compile summary table to sqlite outputs (date of load, arguments, #records, # errors etc)!!")
-  warning("sqlite output approach still new: check your results!!")
-  warning("sqlite output approach still new: check your results!!")
-  warning("option to append to existing table still being debugged - results!!")
+  message("compile_plots: sqlite output and append-to-existing-table are still ",
+          "relatively new - please check your results.")
 
 
   proc_start = format(Sys.time(),"%Y%b%d_%H%M%S")
@@ -261,9 +259,11 @@ compile_plots=function(
 
 	if(do_debug) print("completed sql subset queries on data")
 
-	#merge trees and plots
+	#merge trees and plots. Use the FILTERED tables (df_plot_in/df_tree_in), not
+	#the originals - otherwise tree_filter/plot_filter are silently ignored
+	#whenever a df_plot table is supplied.
 	if(("df_plot_in" %in% ls()) & ("df_tree_in" %in% ls())){
-		dat_in = merge(x=df_plot, y = df_tree, by = plot_ids_in, all.x=T, all.y=T)
+		dat_in = merge(x=df_plot_in, y = df_tree_in, by = plot_ids_in, all.x=T, all.y=T)
 		rm("df_tree_in");gc()
 		rm("df_plot_in");gc()
 	}
@@ -392,11 +392,19 @@ compile_plots=function(
       fni = fns_compute[[i]]
       #if(nrow(trs_i) > 0 ) browser()
       resi = try(fni(df_tree = trs_i, tree_nms = tree_nms , ... ))
-      if(class(resi) == "try-error") return(NULL)
+      if(inherits(resi, "try-error")) return(NULL)
 
-      #append tree id fields onto single plot's results
-      if(i==1) res_in = data.frame(id, resi)
-      if(i>1) res_in = data.frame(res_in, resi)
+      #append compute-function results horizontally. Some functions already
+      #return the plot id columns (e.g. spp_y_plot); only prepend the id when
+      #they are absent, and drop any duplicate id columns from later functions,
+      #to avoid plot/plot.1 duplication.
+      has_ids = all(tree_nms[["plot_ids"]] %in% names(resi))
+      if(i==1){
+        res_in = if(has_ids) resi else data.frame(id, resi)
+      } else {
+        dup = names(resi) %in% names(res_in)
+        res_in = data.frame(res_in, resi[, !dup, drop=FALSE])
+      }
 
     }
 
@@ -418,7 +426,7 @@ compile_plots=function(
       DBI::dbDisconnect(con_i)
 
       #test for write error
-      is_ok = as.character( !class(err_i) == "try-error" )
+      is_ok = as.character( !inherits(err_i, "try-error") )
 
       #write error results to log file
       file_log_pid = paste0(dir_logs,"/load_sqlite_messages_", Sys.getpid(), ".txt")
@@ -440,16 +448,6 @@ compile_plots=function(
 	for(i in classes_df){
 		data_i = data[[i]][!is.na(data[[i]][,"PLT_CN"]) ,	]
 		data[[i]] = data_i [data_i[,"PLT_CN"] == cn,	]
-	}
-	return(data)
-}
-
-
-.subset_ids = function(data,ids){
-	classes_df = which(sapply(data,is.data.frame))
-	for(i in classes_df){
-		ids_ok_i = names(ids)[names(ids) %in% names(data[[i]])]
-		data[[i]] = merge(ids,data[[i]],by = ids_ok_i)
 	}
 	return(data)
 }
@@ -514,38 +512,62 @@ plot_lor_qmd = function(
 	,...
 ){
 
+	#ensure an expansion (tree weight) column exists BEFORE subsetting; default
+	#to 1 per tree when no expansion mapping is supplied
+	if(! "expansion" %in% names(tree_nms)) tree_nms[["expansion"]] = NA
+	if(is.na(tree_nms[["expansion"]])){
+	  tree_nms[["expansion"]] = "tree_weight"
+	  df_tree[,tree_nms[["expansion"]]] = 1
+	}
+	exp_col = tree_nms[["expansion"]]
+
 	#remove trees without ID fields
 	bad_ids = apply(is.na(df_tree[,tree_nms[["plot_ids"]],drop=F]),1,function(x) TRUE %in% x )
 	tr_in = df_tree[!bad_ids,]
 
-	#catch empty tree weight (counts) field
-	if(! "expansion" %in% names(tree_nms)) tree_nms[["expansion"]] = NA
-	if(is.na(tree_nms[["expansion"]])){
-	  tree_nms[["expansion"]] = "tree_weight"
-    df_tree[,tree_nms[["expansion"]]] = 1
-	}
-	#fix bad tree weights
-	tr_in[is.na(tr_in[,tree_nms[["expansion"]]]),] = 1
+	#fix bad (NA) tree weights -> 1, scoped to the expansion column ONLY
+	#(the old code assigned 1 to every column of NA-weight rows)
+	tr_in[is.na(tr_in[,exp_col]), exp_col] = 1
 
 	if(nrow(tr_in) > 0){
 
+		w  = tr_in[,exp_col]
+		d  = tr_in[,tree_nms[["dbh"]]]
+		h  = tr_in[,tree_nms[["ht"]]]
+
 		smry_in = data.frame(
-		  mean_dbh = sum(tr_in[,tree_nms[["expansion"]]]*tr_in[,tree_nms[["dbh"]]],na.rm=T) / sum(tr_in[,tree_nms[["expansion"]]],na.rm=T)
-			,qmd = sqrt(sum(tr_in[,tree_nms[["expansion"]]]*tr_in[,tree_nms[["dbh"]]]^2,na.rm=T) / sum(tr_in[,tree_nms[["expansion"]]],na.rm=T))
-			,lorht = sum(tr_in[,tree_nms[["ht"]]] * tr_in[,tree_nms[["expansion"]]] * tr_in[,tree_nms[["dbh"]]]^2,na.rm=T)/ sum(tr_in[,tree_nms[["expansion"]]] * tr_in[,tree_nms[["dbh"]]]^2,na.rm=T)
-			,meanht = sum(tr_in[,tree_nms[["ht"]]] * tr_in[,tree_nms[["expansion"]]] ,na.rm=T)/ sum(tr_in[,tree_nms[["expansion"]]] ,na.rm=T)
-			,medianht = median(rep(tr_in[,tree_nms[["ht"]]], tr_in[,tree_nms[["expansion"]]]) ,na.rm=T)
-			,ht95 = quantile(rep(tr_in[,tree_nms[["ht"]]], tr_in[,tree_nms[["expansion"]]]),0.95 ,na.rm=T)
+		  mean_dbh = sum(w*d,na.rm=T) / sum(w,na.rm=T)
+			,qmd = sqrt(sum(w*d^2,na.rm=T) / sum(w,na.rm=T))
+			,lorht = sum(h * w * d^2,na.rm=T)/ sum(w * d^2,na.rm=T)
+			,meanht = sum(h * w ,na.rm=T)/ sum(w ,na.rm=T)
+			#weighted quantiles that honor fractional expansion (variable-radius
+			#plots) instead of rep(), which truncates non-integer weights
+			,medianht = .wtd_quantile(h, w, 0.50)
+			,ht95 = .wtd_quantile(h, w, 0.95)
 			)
 
 	}else{
 
-		smry_in = data.frame(ntree = 0, qmd = NA, lorht = NA )
+		#return the SAME schema as the non-empty branch (all NA) so rbind.fill
+		#does not produce ragged columns across stocked/empty plots
+		smry_in = data.frame(mean_dbh = NA, qmd = NA, lorht = NA,
+		                     meanht = NA, medianht = NA, ht95 = NA)
 
 	}
 
 	return( smry_in )
 
+}
+
+#weighted quantile (type-5-style interpolation on the weighted ECDF). Handles
+#fractional weights, unlike rep(x, w) which coerces `times` to integer.
+.wtd_quantile = function(x, w, probs){
+  ok = !is.na(x) & !is.na(w) & w > 0
+  x = x[ok]; w = w[ok]
+  if(length(x) == 0) return(rep(NA_real_, length(probs)))
+  o = order(x); x = x[o]; w = w[o]
+  cw = (cumsum(w) - 0.5*w) / sum(w)
+  as.numeric(stats::approx(cw, x, xout = probs, rule = 2, ties = "ordered")$y)
 }
 
 #'@export
@@ -574,14 +596,18 @@ spp_y_plot = function(
   #get data holder for results
   res_in = tr_in[1,tree_nms[["plot_ids"]],drop=F]
 
+  #response field(s) to rank dominant species by. Use the documented `spp_y`
+  #argument; fall back to a legacy tree_nms[["domspp_y"]] mapping if provided.
+  resp_vars = if(!missing(spp_y) && !is.null(spp_y)) spp_y else tree_nms[["domspp_y"]]
+
   #iterate across response fields
-  for(i in 1:length(tree_nms[["domspp_y"]])){
+  for(i in 1:length(resp_vars)){
 
     #compute weighted values
-    if(!is.na(tree_nms[["expansion"]])) tr_in[,tree_nms[["domspp_y"]][i]] = tr_in[,tree_nms[["domspp_y"]][i]] * tr_in[,tree_nms[["expansion"]]]
+    if(!is.na(tree_nms[["expansion"]])) tr_in[,resp_vars[i]] = tr_in[,resp_vars[i]] * tr_in[,tree_nms[["expansion"]]]
 
     #cast and aggregate
-    mi = reshape2::melt( tr_in[,c(tree_nms[["plot_ids"]],tree_nms[["spp"]],tree_nms[["domspp_y"]][i]) ] , id.vars = c(tree_nms[["plot_ids"]],tree_nms[["spp"]]) )
+    mi = reshape2::melt( tr_in[,c(tree_nms[["plot_ids"]],tree_nms[["spp"]],resp_vars[i]) ] , id.vars = c(tree_nms[["plot_ids"]],tree_nms[["spp"]]) )
     fi = as.formula(paste("variable  + ", paste(tree_nms[["plot_ids"]],collapse = "+")," ~ ",tree_nms[["spp"]], sep=""))
     dfi = reshape2::dcast( mi , formula =  fi , fun.aggregate = sum )[,-1]
 
@@ -592,8 +618,8 @@ spp_y_plot = function(
     dom_order = order(spp_vals, decreasing = TRUE)
     n_dom = min(length(spp_nms), n_dom_spp)
 
-    nms_mx      = paste("dom",      tree_nms[["spp"]], tree_nms[["domspp_y"]][i], 1:n_dom, sep="_")
-    nms_mx_prop = paste("dom_prop", tree_nms[["spp"]], tree_nms[["domspp_y"]][i], 1:n_dom, sep="_")
+    nms_mx      = paste("dom",      tree_nms[["spp"]], resp_vars[i], 1:n_dom, sep="_")
+    nms_mx_prop = paste("dom_prop", tree_nms[["spp"]], resp_vars[i], 1:n_dom, sep="_")
 
     #names of the top n_dom species and their share of the plot total
     dfi[, nms_mx]      = as.list(spp_nms[dom_order][1:n_dom])

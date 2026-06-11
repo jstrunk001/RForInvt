@@ -23,10 +23,10 @@ testthat::test_that("NVEL_volume returns volume columns", {
   testthat::expect_true(all(c("TCFV", "BFV_GRS") %in% names(res)))
 })
 
-# ---- .formatTL2NVEL (pure R, WORKS) ----------------------------------------
+# ---- .formatTL2NVEL2 (pure R, WORKS) ---------------------------------------
 
-testthat::test_that(".formatTL2NVEL standardizes columns (no DLL)", {
-  r <- RForInvt:::.formatTL2NVEL(
+testthat::test_that(".formatTL2NVEL2 standardizes columns (no DLL)", {
+  r <- RForInvt:::.formatTL2NVEL2(
     dfTL0     = data.frame(region = 6, forest = "01", district = "01",
                            dbh = 12, ht = 70, spcd = 202),
     voleq     = NA,

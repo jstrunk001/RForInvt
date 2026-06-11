@@ -7,7 +7,7 @@
 NVEL_buck(
   dfTL = data.table::data.table(dbh = 5, ht = 5),
   voleq = NA,
-  region = 1,
+  region = NA,
   forest = NA,
   district = NA,
   voleqNm = "voleq",
