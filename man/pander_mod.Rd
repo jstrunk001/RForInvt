@@ -7,13 +7,9 @@
 pander_mod(x, ...)
 }
 \arguments{
-\item{x}{inpute model or list of models (lm objects)}
+\item{x}{input model or list of models (lm objects)}
 
-\item{...}{additional arguments passed to methods}
-
-\item{df0}{optional dataframe for validation (out of box validation)}
-
-\item{return_df}{T/F should the function return a data.frame}
+\item{...}{additional arguments passed to methods (e.g. \code{df0}, \code{return_df}; see Details)}
 }
 \value{
 data.frame or pander table
@@ -25,8 +21,12 @@ simple output, and accepts a list of lm objects
 Builds a compact one-row summary (response, n, residual std error, R^2, adjusted R^2,
  inverse design effect, and predictor list) for a fitted model and either returns it as a
  data.frame or prints it via \code{pander}. Methods are provided for \code{lm}, \code{simex},
- and a \code{list} of models (the list method row-binds the per-model summaries). When a
- validation data.frame \code{df0} is supplied, the statistics are computed out-of-sample.
+ and a \code{list} of models (the list method row-binds the per-model summaries).
+
+ Method arguments: \code{df0} is an optional validation data.frame - when
+ supplied the statistics are computed out-of-sample (\code{pander_mod.simex}
+ requires it); \code{return_df} (T/F) controls whether the one-row summary is
+ returned as a data.frame or printed via \code{pander}.
 
 \cr
 Revision History
@@ -46,7 +46,7 @@ Revision History
 
 }
 \seealso{
-\code{\link{pander}}\cr
+\code{\link[pander]{pander}}\cr
 }
 \author{
 Jacob Strunk <Jstrunk@fs.fed.us>

@@ -28,19 +28,25 @@
 #'@param y second data.frame
 #'@param str_max number of characters per name to display
 #'@param oneLine T/F add one to one line?
-#'@param mai_edge "mai" parameters for composite figure
-#'@param tile optional figure title
+#'@param mai_fig "mai" (inner) margins applied to each panel
+#'@param mai_edge "mai" (outer) margins for the composite figure
+#'@param title optional figure title
+#'@param pdf_out optional path to write the figure to a pdf (NA to use the active device)
+#'@param pdf_ht pdf height (inches) when pdf_out is supplied
+#'@param pdf_wd pdf width (inches) when pdf_out is supplied
+#'@param xlab_fig optional overall x-axis label for the composite figure
+#'@param ylab_fig optional overall y-axis label for the composite figure
 #'@param combination T/F combinations of x and y inputs or x[,1] vs y[,1] and x[,2] vs y[,2]
 #'@param square T/F force graphs to be square (same x and y lims), only use if units match
 #'@param ... additional arguments to plot
 #'
 #'@return
-#'<Delete and Replace>
+#'  (invisibly) NULL; called for its side effect of drawing the paired-scatterplot figure
 #'
 #'@examples
 #'
-#' pairs2(mtcars,mtcars,combination=T)
-#' pairs2(mtcars[,1:4],mtcars[5:8],combination=F)
+#' pairs2(mtcars,mtcars,combination=TRUE)
+#' pairs2(mtcars[,1:4],mtcars[5:8],combination=FALSE)
 #'
 #'@seealso \code{\link{plot}}\cr
 #'

@@ -73,7 +73,6 @@ search_text=function(
   ,recursive=T
   ,clus=NA
 ){
-  require(plyr)
 
 
   if(is.na(file)){
@@ -90,7 +89,6 @@ search_text=function(
 
     }else{
 
-      require(parallel)
       if(is.numeric(clus)) clus_in=makeCluster(clus)
       else clus_in=clus
 

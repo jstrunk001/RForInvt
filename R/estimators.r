@@ -1,13 +1,13 @@
-#'
-#'  This program is free software but it is provided WITHOUT WARRANTY
-#'  and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
-#'  you can redistribute it and/or modify it under the terms of the GNU
-#'  General Public License as published by the Free Software Foundation;
-#'  either version 2 of the License, or (at your option) any later version.
-#'
-#'
-#functions to perform estimation
+#  This program is free software but it is provided WITHOUT WARRANTY
+#  and with ABSOLUTELY NO GUARANTEE of fitness or functionality for any purpose;
+#  you can redistribute it and/or modify it under the terms of the GNU
+#  General Public License as published by the Free Software Foundation;
+#  either version 2 of the License, or (at your option) any later version.
+#
+#functions to perform estimation (internal design-based estimators)
 
+#' @keywords internal
+#' @noRd
 .estimate=function(
   x
   ,resp_nm="volcfgrs"
@@ -121,7 +121,6 @@
 #use the with-replacement framing, so no finite-population correction is applied.
 .rand=function(x,resp_nm,wt_nm,ef_nm,pop,N,type,var_type,n_bs=400){
 
-  require(survey)
   n = as.numeric(nrow(x))
   N = as.numeric(N)
 
@@ -160,9 +159,9 @@
     x[, wt_nm] = x[, wt_nm] * (N / n) / mean(x[, wt_nm])
 
     #use survey package
-    svy_srs = svydesign(ids=~1, data=x, weights = x[, wt_nm])
+    svy_srs = survey::svydesign(ids=~1, data=x, weights = x[, wt_nm])
     form_svy=as.formula(paste(resp_nm, " ~ 1" ))
-    t_svy=data.frame(svytotal(form_svy,svy_srs,deff=T))
+    t_svy=data.frame(survey::svytotal(form_svy,svy_srs,deff=T))
     v_t_rs = t_svy[,2]^2
     t_rs = t_svy[,1]
 
@@ -238,22 +237,21 @@
   }
   if(var_type[1] ==  "svypkg"){
 
-    require(survey)
 
     pop_svy=c("(Intercept)" = N  ,unlist(pop) )
 
     svy_wts=as.formula(paste("~",wt_nm))
-    svy_srs = svydesign(ids=~1,weights=svy_wts,data=x)
-    svy_reg = svyglm(reg_form,svy_srs)
+    svy_srs = survey::svydesign(ids=~1,weights=svy_wts,data=x)
+    svy_reg = survey::svyglm(reg_form,svy_srs)
 
     #pd_m = data.frame(predict(svy_reg , newdata= pop / N,deff=T))
 
     form_y=as.formula(paste("~",resp_nm))
-    cb=try(calibrate(svy_srs,reg_form,population =  pop_svy))
+    cb=try(survey::calibrate(svy_srs,reg_form,population =  pop_svy))
     if(inherits(cb, "try-error")){
       stop(cb,"\n\n","Cause of Error: \nYou likely included an interaction in your model,but not a column for the interaction in your population totals: \ne.g. pop = data.frame( x1 = 50, x2 = 60, 'x1:x2' = 5000 ) notice the required x1:x2 column... ")
     }
-    pd_m = data.frame(svymean(form_y,cb,deff=T))
+    pd_m = data.frame(survey::svymean(form_y,cb,deff=T))
 
     v_t_reg = (N*pd_m[,2])^2
     t_reg=N*pd_m[,1]
@@ -295,7 +293,6 @@
 
 .str=function(x,resp_nm,strata_nm,wt_nm,ef_nm,pop,N,type,var_type){
 
-  require("plyr")
 
 
   if(!inherits(pop, "data.frame")) stop("pop should be a 2 column data frame with strata names and strata sizes: data.frame(str=c(1,3,4,5),Ni=c(500,5000,500,5000) ) ")
@@ -372,8 +369,8 @@
 
       form_str=as.formula(paste("~",strata_nm))
       form_y=as.formula(paste("~",resp_nm))
-      svy_str = svydesign(ids=~1, strata=x1[,strata_nm], data=x1, weights = x1[, wt_nm]  )
-      m_svy = data.frame(svymean(form_y,svy_str,deff=T))
+      svy_str = survey::svydesign(ids=~1, strata=x1[,strata_nm], data=x1, weights = x1[, wt_nm]  )
+      m_svy = data.frame(survey::svymean(form_y,svy_str,deff=T))
       t_svy = N * m_svy
       v_t_str = t_svy[,2]^2
       t_str = t_svy[,1]

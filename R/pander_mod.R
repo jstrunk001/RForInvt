@@ -8,8 +8,12 @@
 #'  Builds a compact one-row summary (response, n, residual std error, R^2, adjusted R^2,
 #'  inverse design effect, and predictor list) for a fitted model and either returns it as a
 #'  data.frame or prints it via \code{pander}. Methods are provided for \code{lm}, \code{simex},
-#'  and a \code{list} of models (the list method row-binds the per-model summaries). When a
-#'  validation data.frame \code{df0} is supplied, the statistics are computed out-of-sample.
+#'  and a \code{list} of models (the list method row-binds the per-model summaries).
+#'
+#'  Method arguments: \code{df0} is an optional validation data.frame - when
+#'  supplied the statistics are computed out-of-sample (\code{pander_mod.simex}
+#'  requires it); \code{return_df} (T/F) controls whether the one-row summary is
+#'  returned as a data.frame or printed via \code{pander}.
 #'
 #'\cr
 #'Revision History
@@ -21,10 +25,8 @@
 #'
 #'Jacob Strunk <Jstrunk@@fs.fed.us>
 #'
-#'@param x inpute model or list of models (lm objects)
-#'@param df0 optional dataframe for validation (out of box validation)
-#'@param return_df T/F should the function return a data.frame
-#'@param ... additional arguments passed to methods
+#'@param x input model or list of models (lm objects)
+#'@param ... additional arguments passed to methods (e.g. \code{df0}, \code{return_df}; see Details)
 #'
 #'@return
 #'  data.frame or pander table
@@ -43,7 +45,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{pander}}\cr
+#'@seealso \code{\link[pander]{pander}}\cr
 
 pander_mod=function(x,...){
 

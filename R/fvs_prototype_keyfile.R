@@ -21,6 +21,9 @@
 #'
 #'
 #'@param title item in keyword file to replace - st to NULL to omit keyword
+#'@param std_id stand identifier line / token (defaults to the @@std_id@@ placeholder)
+#'@param std_cn stand control-number line / token (defaults to the @@std_id@@ placeholder)
+#'@param mgmt_id management identifier
 #'@param invyr item in keyword file to replace
 #'@param timeint item in keyword file to replace
 #'@param numcycle item in keyword file to replace
@@ -28,6 +31,8 @@
 #'@param nodgl item in keyword file to replace
 #'@param dgstdev item in keyword file to replace
 #'@param treelist item in keyword file to replace
+#'@param cutlist keyword line controlling cut-list output (set to NULL to omit)
+#'@param where_std optional WHERE clause appended to the stand SELECT (set to NULL to omit)
 #@param compute item in keyword file to replace
 #'@param other_keywords add additional keyword as separate strings, e.g, other_keywords = c("thiskey 1","thatkey 0")
 #'

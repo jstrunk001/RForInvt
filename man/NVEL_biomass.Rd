@@ -30,15 +30,21 @@ NVEL_biomass(
 \arguments{
 \item{dfTL}{tree list with a minimum of diamter and height columns}
 
-\item{bioeq}{(optional) use single equation for all trees}
+\item{bioeq}{(optional) force a single biomass equation for all trees}
 
-\item{bioeqNm}{(optional) column name in DFTL: provide region, forest, district for every tree in dfTL}
+\item{geosub}{(optional) force a single geographic subregion for all trees}
+
+\item{bioeqNm}{(optional) column name in dfTL holding the biomass equation for each tree}
+
+\item{geosubNm}{(optional) column name in dfTL holding the geographic subregion for each tree}
 
 \item{spcdNm}{(required) column name in DFTL: USFS species code}
 
 \item{dbhNm}{(required) column name in DFTL: dbh in inches}
 
 \item{htNm}{(required) column name in DFTL: height in feet}
+
+\item{stemsNm}{(optional) column name in dfTL holding the number of stems}
 
 \item{clNm}{(optional) column name in DFTL: crown length in feet}
 
@@ -48,17 +54,15 @@ NVEL_biomass(
 
 \item{htPrd2Nm}{(optional) column name in DFTL: Height to the minimum top diameter inside bark for secondary product (ft)}
 
+\item{cv4Nm}{(optional) column name in dfTL holding merchantable cubic volume to a 4-inch top}
+
 \item{dll_64}{path to 64bit dll}
 
-\item{dll_32}{path to 64bit dll}
+\item{dll_32}{path to 32bit dll}
 
 \item{load_dll}{T/F should dll be loaded (in case it is already loaded)}
 
-\item{dll_func_vol}{name of volume prediction function call in NVEL .dll}
-
-\item{dll_func_bioeq}{name of volume equation chooser function call in NVEL .dll}
-
-\item{nclus}{number of cores to use}
+\item{dll_func_bio}{name of the biomass prediction function call in the NVEL .dll}
 }
 \value{
 a data.frame reformatted to include all of the original columns, any missing columns for the NVEL .dll, 15 columns of predicted volumes, and an error column

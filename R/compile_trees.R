@@ -49,6 +49,8 @@
 #' results (e.g. ba) are available to later functions. Every function should accept an elipsis.
 #'
 #'@param ... arguments to functions in fns_compute
+#'@param do_debug if TRUE, print progress as each compute function is applied
+#'@param x (compute-function helpers ba_ft/tpa/tph/dbcl/...) the tree data.frame passed in by compile_trees
 #'@param db_breaks <...>  argument passed to optional dbcl_y function,  passed generically by compile_trees through '...'
 #'@param vars_group <...>  argument passed to optional dbcl_y, dbcl_spp_y, spp_y functions,  passed generically by compile_trees through '...'
 #'
@@ -59,7 +61,7 @@
 #'@examples
 #'
 #'    #generate data
-#'       test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1,ntrees=1)
+#'       test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,replace=TRUE),acres=0.1,ntrees=1)
 #'       test0$ht = abs(75*test0$dbh/12 + rnorm(nrow(test0))*3)
 #'
 #'     #compile trees : processes A and B are equivalent
@@ -96,17 +98,17 @@
 #'     df_tree = test5
 #'     , tree_nms = list(plot_ids = c("plot") , tr_ids = c("id") , dbh = "dbh" , ht = "ht" , spp = "spp" , expansion = "TPA" )
 #'     , plot_nms = list( plot_ids = c( "plot" ), plt_wt = NA )
-#'     , dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
+#'     , dir_out= NA #set to a directory path to also write csv/rds/sqlite outputs
 #'     , fns_compute = list(
 #'       plot_lor_qmd
 #'        ,plot_wtsum
 #'     )
-#'     ,return = T
-#'     ,do_debug = F
+#'     ,return = TRUE
+#'     ,do_debug = FALSE
 #'     ,nclus = 1
 #'     #arguments to custom functions - in this case plot_wtsum
-#'     ,sum_nms = c("ntrees",grep("^ba",names(test5),value=T))
-#'     ,append = F
+#'     ,sum_nms = c("ntrees",grep("^ba",names(test5),value=TRUE))
+#'     ,append = FALSE
 #'
 #'   )
 #'
@@ -115,7 +117,7 @@
 #'@import reshape2
 #'
 
-#'@seealso \code{\link{dcast}}\cr \code{\link{melt}}\cr \code{\link{compile_plots}}\cr
+#'@seealso \code{\link[reshape2]{dcast}}\cr \code{\link[reshape2]{melt}}\cr \code{\link{compile_plots}}\cr
 
 #updates to do:
 # more examples
@@ -206,7 +208,6 @@ dbcl = function(x , tree_nms, db_breaks=c(seq(0,32,4),50,1000) , ...){
 #'@rdname compile_trees
 dbcl_y = function(x,tree_nms,vars_group,...){
 
-  require("reshape2")
   x_in = x
 
   for(i in 1:length(vars_group)){
@@ -232,7 +233,6 @@ dbcl_y = function(x,tree_nms,vars_group,...){
 #'@rdname compile_trees
 spp_y = function(x,tree_nms,vars_group,...){#tr_id,spp_y,spp_nm,...){
 
-  require("reshape2")
   x_in = x
 
   for(i in 1:length(vars_group)){
@@ -260,7 +260,6 @@ spp_y = function(x,tree_nms,vars_group,...){#tr_id,spp_y,spp_nm,...){
 #'@rdname compile_trees
 dbcl_spp_y = function(x,tree_nms,vars_group,...){
 
-  require("reshape2")
   x_in = x
 
   for(i in 1:length(vars_group)){

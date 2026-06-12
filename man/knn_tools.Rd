@@ -67,63 +67,76 @@ yai_cv(
 )
 }
 \arguments{
-\item{idNm}{name of id field}
+\item{xNms}{character vector of auxiliary (predictor) column names}
 
-\item{data}{input data}
+\item{yNms}{character vector of response column names}
 
-\item{omity}{optional: records to omit}
+\item{idNm}{name of the id column (used as row names internally)}
 
-\item{...}{other arguments to ??}
+\item{data}{data to use for knn}
+
+\item{omity}{optional vector of ROW indices to omit (e.g. for cross-validation)}
+
+\item{dup_ids_remove}{T/F drop records with duplicated ids (which break yaImpute)}
+
+\item{...}{additional arguments to \code{yaImpute::yai} / downstream functions
+
+\cr\cr
+\bold{newtargets_id() parameters:}}
 
 \item{yai_mod}{model returned by yai_id}
 
-\item{k}{?number of neighbors?}
+\item{k}{number of neighbors}
 
-\item{ann}{T/Fsee yai documentation
+\item{ann}{T/F see yai documentation
 
 \cr\cr
 \bold{impute_id() parameters:}}
 
-\item{newtargs_id}{?}
-
-\item{yaimod}{model returned by yai_id}
-
-\item{dtype}{distance type}
-
-\item{wts}{weights from ?}
-
-\item{cols_knn_id}{col names of knn ids}
-
-\item{cols_knn_wt}{col names of knn wts}
-
-\item{debug}{T/F}
-
-\item{omit}{observation to omit at time i}
-
-\item{yNm}{?names of response fields}
-
-\item{iter_max}{number of iterations max}
-
-\item{method}{? distance approach?}
-
-\item{id_x}{vector of auxiliary variable column names led by id variable}
-
-\item{id_y}{vector of response variable column names led by id variable}
-
-\item{id}{id column}
-
-\item{zero_dist()}{how to deal with zero distances (e.g. when everything is zero)
+\item{newtargs_id}{object returned by newtargets_id()
 
 \cr\cr
-\bold{tl_impute parameters:}}
+\bold{yai_weights() parameters:}}
 
-\item{env}{environment with weights in it}
+\item{yaimod}{model returned by yai_id / newtargets_id}
 
-\item{tr_pl}{tree records}
+\item{dtype}{distance-to-weight type: "invdist", "invdist2", or "eq"}
 
-\item{x}{?}
+\item{zero_dist}{how to handle zero distances: "small", "min", or "NA"
 
-\item{max_comb}{??}
+\cr\cr
+\bold{tl_impute() / tl_impute_2() parameters:}}
+
+\item{wts}{weights structure returned by yai_weights()}
+
+\item{cols_knn_id}{(reserved) name of the id-columns element in wts}
+
+\item{cols_knn_wt}{(reserved) name of the weight-columns element in wts}
+
+\item{trees}{tree-list records keyed by idNm}
+
+\item{sort_targets}{T/F sort the output by target id}
+
+\item{debug}{T/F drop into browser()
+
+\cr\cr
+\bold{yai_cv() parameters:}}
+
+\item{omit}{number of observations to omit per cross-validation iteration}
+
+\item{xNm}{character vector of auxiliary (predictor) column names}
+
+\item{yNm}{character vector of response column names}
+
+\item{pdNm}{columns to impute/predict (defaults to yNm)}
+
+\item{iter_max}{maximum number of cross-validation iterations}
+
+\item{method}{yai distance/imputation method (e.g. "msn","euclidean","rf")}
+
+\item{min_rows}{minimum number of rows required to run cross-validation}
+
+\item{method_impute}{imputation method passed to \code{yaImpute::impute}}
 }
 \value{
 yai_id: \cr
@@ -198,8 +211,10 @@ Revision History
 
 }
 \seealso{
-\code{\link{yaImpute}}\cr
+\code{\link[yaImpute]{yai}}\cr
 }
 \author{
 Jacob Strunk <Jacob.strunk@usgda.gov>
+
+\bold{yai_id() parameters:}
 }

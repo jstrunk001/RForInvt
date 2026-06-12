@@ -27,6 +27,8 @@ file_version(
 
 \item{return_all_versions}{(optional) return a data.frame with all versions and details}
 
+\item{update_path}{(optional) T/F repair stale file/version paths in the tracking ledger (e.g. after the folder was copied or moved)}
+
 \item{purge_missing_versions}{(optional) T/F Delete version information if there is no accompanying files}
 
 \item{version_markers}{(optional) names to use for version number and date in verion}
@@ -85,34 +87,25 @@ Revision History
 }
 \examples{
 
+ #use a session-temp folder so the example writes nowhere permanent
+ d = file.path(tempdir(), "file_version_demo")
 
  #edit on the same file over and over
- vs_test1 = file_version("c:/temp/dataNoIncrement.txt" , note="editing on single version", increment=F); vs_test1
- writeLines(letters,vs_test1)
- file_version("c:/temp/dataNoIncrement.txt" , increment=F , return_all_versions = T)
-
+ vs_test1 = file_version(file.path(d, "dataNoIncrement.txt"), note="single version", increment=FALSE)
+ writeLines(letters, vs_test1)
+ file_version(file.path(d, "dataNoIncrement.txt"), increment=FALSE, return_all_versions = TRUE)
 
  #update version every time
- vs_test2 = file_version("c:/temp/dataIncrement.txt" , note="new version and file every time",  increment=T); vs_test2
- writeLines(letters,vs_test2)
- file_version("c:/temp/dataIncrement.txt" , increment=F , return_all_versions = T)
+ vs_test2 = file_version(file.path(d, "dataIncrement.txt"), note="new version each time", increment=TRUE)
+ writeLines(letters, vs_test2)
+ file_version(file.path(d, "dataIncrement.txt"), increment=FALSE, return_all_versions = TRUE)
 
-
-#create folder version instead of file version
-#update every time - into new folder
-#first time
-vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T); vs_test2
-dir.create(vs_test2)
-writeLines(letters,file.path(vs_test2,"letters.txt"))
-
-#second time, but use simple internal naming convention
-vs_test2 = file_version("c:/temp/FVSTest" , note="new version and file every time",  increment=T, internal_simple=T); vs_test2
-dir.create(vs_test2)
-writeLines(letters,file.path(vs_test2,"letters.txt"))
-
-#view results
-file_version("c:/temp/FVSTest" , increment=F , return_all_versions = T , purge_missing_versions = F)
-
+\dontrun{
+#folder versioning (creates a new folder per version)
+vs_dir = file_version(file.path(d, "FVSTest"), note="folder version", increment=TRUE)
+dir.create(vs_dir)
+writeLines(letters, file.path(vs_dir, "letters.txt"))
+}
 
 }
 \seealso{

@@ -40,11 +40,16 @@
 #'@return
 #'  depends on function
 #'
+#'@importFrom grDevices dev.off pdf
+#'@importFrom graphics layout lines mtext par
+#'@importFrom stats aggregate as.formula coef fitted getCall lm median na.omit quantile residuals rnorm update var
+#'@importFrom utils download.file file_test read.csv unzip write.csv
+#'
 #'@examples
-#'\donttest{
+#'\dontrun{
 #'#FVS EXAMPLE (requires a local FVS executable and input database)
 #'
-#'           clus1 = parallel::makeCluster(4)
+#'           clus1 = parallel::makeCluster(2)
 #'
 #'           #assume a typical inventory dataset and prepare fvs parameters
 #'           stand_data = data.frame(stand=1:10, year=2000:2009)

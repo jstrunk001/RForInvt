@@ -245,7 +245,7 @@ NVEL_buck = function(
 
     vol_list_raw <- parallel::parLapply(cl_in, chunks, function(dt_chunk) {
       # Load data.table inside worker
-      library(data.table)
+      requireNamespace("data.table", quietly = TRUE)
 
       #load the NVEL DLL inside each worker (package is loaded via clusterEvalQ above)
       .nvel_load_dll(dll_64 = dll_64, dll_32 = dll_32)

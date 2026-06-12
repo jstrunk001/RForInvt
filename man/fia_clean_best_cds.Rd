@@ -38,6 +38,8 @@ fia_clean_best_cds(
 \item{crs_out}{what projection should the output geometry be in (doesn't have to be named vector)}
 
 \item{nms_cds}{a named list with two elements where each element is a named vector of coordinate columns. The output coordinates are placed in columns with the list names, see defaults for example}
+
+\item{...}{unused; reserved for future arguments}
 }
 \value{
 a list with up to 5 components:
@@ -96,7 +98,7 @@ Revision History
 
 }
 \seealso{
-\code{\link{dplyr::filter}}\cr \code{\link{data.table::melt}}\cr
+\code{\link[dplyr]{filter}}\cr \code{\link[data.table]{melt}}\cr
 }
 \author{
 Jacob Strunk <some.body@somewhere.com>

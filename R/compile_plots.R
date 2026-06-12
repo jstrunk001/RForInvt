@@ -29,6 +29,7 @@
 #'Jacob Strunk <someone@@somewhere.com>
 #'
 #'
+#'@param cl optional pre-built parallel cluster object (placeholder; clusters are currently created internally from nclus)
 #'@param df_tree data frame of tree records
 #'@param df_plot data frame of plot records
 #'@param tree_nms map expected tree column names onto df_tree. These are the minimum expected names: c( plot_ids = "?", tr_ids = c("?","?") , dbh = "?" , ht = "?" , spp = "?" , expansion  = "?"). Feel free to provide others used by custom functions.
@@ -36,12 +37,15 @@
 #'@param plot_filter sqldf string to filter out plots
 #'@param tree_filter sqldf string to filter out trees
 #'@param dir_out where to write results of plot level compilation
+#'@param nm_out base name (no extension) for the output csv/rds/sqlite files
+#'@param sql_tbl table name used when writing plot metrics to the sqlite database
+#'@param append T/F append to an existing sqlite table (skip plot ids already loaded) instead of overwriting
 #'@param fns_compute list of optional functions to compute plot level attributes.
 #' Optional functions must accept "df_tree" and "..." arguments and generally also (typically) accept "tree_nms"
 #' argument, e.g.,
 #' \cr
 #' \cr
-#'      >fn_ba_ac = function(df_tree, tree_nms, ...){ sum(df_tree[,tree_nms["ba_ac"]]) }
+#'      \code{fn_ba_ac = function(df_tree, tree_nms, ...) sum(df_tree[, tree_nms["ba_ac"]])}
 #' \cr
 #' \cr
 #' This example also uses a custom value "ba_ac" value in the tree_nms argument, e.g.,
@@ -56,7 +60,7 @@
 #'@param nclus if nclus > 1 then nclus parallel nodes are split off to process in parallel
 #'@param do_debug stop and debug function
 #'
-#'@param ... additional arguments provided to fns_compute e.g textString="hello" argument in silly function someFun = function(tl,tlNms,textString){data.frame(note=textString)}
+#'@param ... additional arguments provided to fns_compute e.g textString="hello" argument in a silly function \code{someFun = function(tl, tlNms, textString) data.frame(note = textString)}
 #'@param sum_nms <...> argument passed to optional plot_wtsum function,  passed generically by compile_plots through '...'
 #'@param n_dom_spp <...>  argument passed to optional spp_y_plot function,  passed generically by compile_plots through '...'
 #'@param spp_y <...>  argument passed to optional spp_y_plot function,  passed generically by compile_plots through '...'
@@ -69,7 +73,7 @@
 #'
 #'
 #'    #generate data
-#'       test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1,ntrees=1)
+#'       test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,replace=TRUE),acres=0.1,ntrees=1)
 #'       test0$ht = abs(75*test0$dbh/12 + rnorm(nrow(test0))*3)
 #'
 #'     #compile trees : processes A and B are equivalent
@@ -106,17 +110,17 @@
 #'     df_tree = test5
 #'     , tree_nms = list(plot_ids = c("plot") , tr_ids = c("id") , dbh = "dbh" , ht = "ht" , spp = "spp" , expansion = "TPA" )
 #'     , plot_nms = list( plot_ids = c( "plot" ), plt_wt = NA )
-#'     , dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
+#'     , dir_out= NA #set to a directory path to also write csv/rds/sqlite outputs
 #'     , fns_compute = list(
 #'       plot_lor_qmd
 #'        ,plot_wtsum
 #'     )
-#'     ,return = T
-#'     ,do_debug = F
+#'     ,return = TRUE
+#'     ,do_debug = FALSE
 #'     ,nclus = 1
 #'     #arguments to custom functions - in this case plot_wtsum
-#'     ,sum_nms = c("ntrees",grep("^ba",names(test5),value=T))
-#'     ,append = F
+#'     ,sum_nms = c("ntrees",grep("^ba",names(test5),value=TRUE))
+#'     ,append = FALSE
 #'
 #'   )
 #'

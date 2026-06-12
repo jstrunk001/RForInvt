@@ -307,7 +307,6 @@
      #run bootstraps
        if(n_clus>1){
 
-           require(parallel)
            clus_in=makeCluster(n_clus)
            bs_err_in=do.call(rbind,parLapply(clus_in,boots,lm_boot_in,model,idx_all,dat_in,...))
            stopCluster(cl=clus_in)
@@ -364,16 +363,14 @@
                      ,...
                      ){
     form_y=form_y[1]
-    require(leaps)
     x_vars=names(data)[!names(data)%in% y_vars ]
 
     c_fn=function(y,data,x_vars,form_y,n_v_max,n_best,really_big,...){
 
         print(paste("response is ",y))
-        require(leaps)
         #substitute ONLY the leading response placeholder, not every literal "y"
         #(gsub("y", y, ...) would corrupt predictors/templates containing "y")
-        rg_i=regsubsets(x=as.formula(sub("^\\s*y\\s*~", paste0(y, " ~"), form_y)),data=data[,c(y,x_vars)],nvmax=n_v_max,nbest=n_best,really.big=really_big,...)
+        rg_i=leaps::regsubsets(x=as.formula(sub("^\\s*y\\s*~", paste0(y, " ~"), form_y)),data=data[,c(y,x_vars)],nvmax=n_v_max,nbest=n_best,really.big=really_big,...)
         rg_i[["response"]]=y
         rg_i
 
@@ -382,7 +379,6 @@
      #run bootstraps
        if(n_clus>1){
 
-           require(parallel)
            clus_in=makeCluster(n_clus)
 
            rgs=parLapply(clus_in,y_vars,c_fn,data,x_vars,form_y,n_v_max=n_v_max,n_best=n_best,really_big=really_big,...)
@@ -591,7 +587,6 @@ pred_multi=function(
       #run pred function
        if(n_clus>1){
 
-           require(parallel)
 
            if(is.na(clus[1]))clus_in=makeCluster(n_clus)
            else clus_in=clus
@@ -687,7 +682,6 @@ multi_bs=function(
       #run pred function
        if(n_clus>1){
 
-           require(parallel)
            clus_in=makeCluster(n_clus)
 
            res=parLapply(clus_in,1:length(mods_list),lm_boot_in,mods_list,n_boot,lm_boot)

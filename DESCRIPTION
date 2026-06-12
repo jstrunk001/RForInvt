@@ -11,28 +11,21 @@ Description: A collection of data processing tools and helpers primarily motivat
         either version 2 of the License, or (at your option) any later version: https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 License: GPL (>= 2)
 Encoding: UTF-8
-LazyData: true
 Imports:
         bootstrap,
-        caret,
         data.table,
         DBI,
         dplyr,
-        flextable,
         flock,
         jsonlite,
         knitr,
         leaps,
-        MLmetrics,
-        mltools,
-        odbc,
         openxlsx,
         pander,
         parallel,
         plyr,
         randomForest,
         reshape2,
-        RODBC,
         RSQLite,
         sf,
         sqldf,
@@ -41,7 +34,11 @@ Imports:
         tools,
         yaImpute
 Suggests:
+        butcher,
+        lavaan,
+        lme4,
         simex,
         testthat (>= 3.0.0),
-        withr
+        withr,
+        xgboost
 Config/roxygen2/version: 8.0.0

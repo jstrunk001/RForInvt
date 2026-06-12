@@ -42,53 +42,50 @@
 #'@author
 #'Jacob Strunk <Jacob.strunk@@usgda.gov>
 #'
-#'@param id_x vector of auxiliary variable column names led by id variable
-#'@param id_y vector of response variable column names led by id variable
-#'@param omity optional: records to omit
+#' \bold{yai_id() parameters:}
+#'@param xNms character vector of auxiliary (predictor) column names
+#'@param yNms character vector of response column names
+#'@param idNm name of the id column (used as row names internally)
 #'@param data data to use for knn
-#'@param ... additional arguments to yai in yaImpute package
+#'@param omity optional vector of ROW indices to omit (e.g. for cross-validation)
+#'@param dup_ids_remove T/F drop records with duplicated ids (which break yaImpute)
+#'@param ... additional arguments to \code{yaImpute::yai} / downstream functions
 #'
 #'\cr\cr
 #' \bold{newtargets_id() parameters:}
 #'@param yai_mod model returned by yai_id
-#'@param id id column
-#'@param data dataset with new xy variables
-#'@param ann T/Fsee yai documentation
+#'@param k number of neighbors
+#'@param ann T/F see yai documentation
 #'
 #' \cr\cr
 #' \bold{impute_id() parameters:}
-#'@param newtargs_id ?
-#'@param ...
+#'@param newtargs_id object returned by newtargets_id()
 #'
 #'\cr\cr
 #'\bold{yai_weights() parameters:}
-#'@param yaimod model returned by yai_id
-#'@param dtype distance type
-#'@param zero_dist() how to deal with zero distances (e.g. when everything is zero)
+#'@param yaimod model returned by yai_id / newtargets_id
+#'@param dtype distance-to-weight type: "invdist", "invdist2", or "eq"
+#'@param zero_dist how to handle zero distances: "small", "min", or "NA"
 #'
 #'\cr\cr
-#'\bold{tl_impute parameters:}
-#'@param wts weights from ?
-#'@param env environment with weights in it
-#'@param idNm name of id field
-#'@param cols_knn_id col names of knn ids
-#'@param cols_knn_wt col names of knn wts
-#'@param tr_pl tree records
-#'@param debug T/F debug?
+#'\bold{tl_impute() / tl_impute_2() parameters:}
+#'@param wts weights structure returned by yai_weights()
+#'@param cols_knn_id (reserved) name of the id-columns element in wts
+#'@param cols_knn_wt (reserved) name of the weight-columns element in wts
+#'@param trees tree-list records keyed by idNm
+#'@param sort_targets T/F sort the output by target id
+#'@param debug T/F drop into browser()
 #'
 #'\cr\cr
 #'\bold{yai_cv() parameters:}
-#'@param omit observation to omit at time i
-#'@param idNm name of id field
-#'@param x ?
-#'@param yNm ?names of response fields
-#'@param data input data
-#'@param iter_max number of iterations max
-#'@param max_comb ??
-#'@param k ?number of neighbors?
-#'@param debug T/F
-#'@param method ? distance approach?
-#'@param ... other arguments to ??
+#'@param omit number of observations to omit per cross-validation iteration
+#'@param xNm character vector of auxiliary (predictor) column names
+#'@param yNm character vector of response column names
+#'@param pdNm columns to impute/predict (defaults to yNm)
+#'@param iter_max maximum number of cross-validation iterations
+#'@param min_rows minimum number of rows required to run cross-validation
+#'@param method_impute imputation method passed to \code{yaImpute::impute}
+#'@param method yai distance/imputation method (e.g. "msn","euclidean","rf")
 #'
 #'
 #'@return
@@ -131,7 +128,7 @@
 #'  head(wts$wts)
 #'}
 #'
-#'@seealso \code{\link{yaImpute}}\cr
+#'@seealso \code{\link[yaImpute]{yai}}\cr
 #'
 #'
 #'

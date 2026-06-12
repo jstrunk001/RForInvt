@@ -35,6 +35,7 @@
 #'@param crs_in what is the projection of input coordinates - the coords_best table (as of 10/08/2024) has NAD83 2011 LAT/LON (doesn't have to be named vector)
 #'@param crs_out what projection should the output geometry be in (doesn't have to be named vector)
 #'@param nms_cds a named list with two elements where each element is a named vector of coordinate columns. The output coordinates are placed in columns with the list names, see defaults for example
+#'@param ... unused; reserved for future arguments
 #'
 #'@return
 #'  a list with up to 5 components:
@@ -75,7 +76,7 @@
 #'
 #'@export
 #
-#'@seealso \code{\link{dplyr::filter}}\cr \code{\link{data.table::melt}}\cr
+#'@seealso \code{\link[dplyr]{filter}}\cr \code{\link[data.table]{melt}}\cr
 
 #the code below with a single comment symbol is not part of the official roxygen code
 #

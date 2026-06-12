@@ -31,18 +31,30 @@ pairs2(
 
 \item{oneLine}{T/F add one to one line?}
 
-\item{mai_edge}{"mai" parameters for composite figure}
+\item{mai_fig}{"mai" (inner) margins applied to each panel}
+
+\item{mai_edge}{"mai" (outer) margins for the composite figure}
+
+\item{title}{optional figure title}
+
+\item{pdf_out}{optional path to write the figure to a pdf (NA to use the active device)}
+
+\item{pdf_ht}{pdf height (inches) when pdf_out is supplied}
+
+\item{pdf_wd}{pdf width (inches) when pdf_out is supplied}
+
+\item{xlab_fig}{optional overall x-axis label for the composite figure}
+
+\item{ylab_fig}{optional overall y-axis label for the composite figure}
 
 \item{combination}{T/F combinations of x and y inputs or x[,1] vs y[,1] and x[,2] vs y[,2]}
 
 \item{square}{T/F force graphs to be square (same x and y lims), only use if units match}
 
 \item{...}{additional arguments to plot}
-
-\item{tile}{optional figure title}
 }
 \value{
-<Delete and Replace>
+(invisibly) NULL; called for its side effect of drawing the paired-scatterplot figure
 }
 \description{
 Prepare pair plots for two dataframes x,y: figure columns from x and rows from y. This results in fewer combinations than plot(xy_df)
@@ -60,8 +72,8 @@ Revision History
 }
 \examples{
 
-pairs2(mtcars,mtcars,combination=T)
-pairs2(mtcars[,1:4],mtcars[5:8],combination=F)
+pairs2(mtcars,mtcars,combination=TRUE)
+pairs2(mtcars[,1:4],mtcars[5:8],combination=FALSE)
 
 }
 \seealso{

@@ -43,7 +43,11 @@ Feel free to provide others used by custom functions.}
 \item{fns_compute}{sequential list of functions to apply to tree data, earlier
 results (e.g. ba) are available to later functions. Every function should accept an elipsis.}
 
+\item{do_debug}{if TRUE, print progress as each compute function is applied}
+
 \item{...}{arguments to functions in fns_compute}
+
+\item{x}{(compute-function helpers ba_ft/tpa/tph/dbcl/...) the tree data.frame passed in by compile_trees}
 
 \item{db_breaks}{<...>  argument passed to optional dbcl_y function,  passed generically by compile_trees through '...'}
 
@@ -91,7 +95,7 @@ Revision History
 \examples{
 
    #generate data
-      test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,T),acres=0.1,ntrees=1)
+      test0 = data.frame(plot=1:10, id=1:50,dbh=1:50,spp=sample(letters[1:5],50,replace=TRUE),acres=0.1,ntrees=1)
       test0$ht = abs(75*test0$dbh/12 + rnorm(nrow(test0))*3)
 
     #compile trees : processes A and B are equivalent
@@ -128,17 +132,17 @@ Revision History
     df_tree = test5
     , tree_nms = list(plot_ids = c("plot") , tr_ids = c("id") , dbh = "dbh" , ht = "ht" , spp = "spp" , expansion = "TPA" )
     , plot_nms = list( plot_ids = c( "plot" ), plt_wt = NA )
-    , dir_out= file.path("c:/temp/RSForInvt/Compile",format(Sys.Date()))
+    , dir_out= NA #set to a directory path to also write csv/rds/sqlite outputs
     , fns_compute = list(
       plot_lor_qmd
        ,plot_wtsum
     )
-    ,return = T
-    ,do_debug = F
+    ,return = TRUE
+    ,do_debug = FALSE
     ,nclus = 1
     #arguments to custom functions - in this case plot_wtsum
-    ,sum_nms = c("ntrees",grep("^ba",names(test5),value=T))
-    ,append = F
+    ,sum_nms = c("ntrees",grep("^ba",names(test5),value=TRUE))
+    ,append = FALSE
 
   )
 
@@ -146,7 +150,7 @@ Revision History
 
 }
 \seealso{
-\code{\link{dcast}}\cr \code{\link{melt}}\cr \code{\link{compile_plots}}\cr
+\code{\link[reshape2]{dcast}}\cr \code{\link[reshape2]{melt}}\cr \code{\link{compile_plots}}\cr
 }
 \author{
 Jacob Strunk <jacob@somewhere.something>

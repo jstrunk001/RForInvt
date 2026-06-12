@@ -40,10 +40,10 @@ Revision History
 }
 }
 \examples{
-\donttest{
+\dontrun{
 #FVS EXAMPLE (requires a local FVS executable and input database)
 
-          clus1 = parallel::makeCluster(4)
+          clus1 = parallel::makeCluster(2)
 
           #assume a typical inventory dataset and prepare fvs parameters
           stand_data = data.frame(stand=1:10, year=2000:2009)

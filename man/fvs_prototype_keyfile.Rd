@@ -24,6 +24,12 @@ fvs_prototype_keyfile(
 \arguments{
 \item{title}{item in keyword file to replace - st to NULL to omit keyword}
 
+\item{std_id}{stand identifier line / token (defaults to the @std_id@ placeholder)}
+
+\item{std_cn}{stand control-number line / token (defaults to the @std_id@ placeholder)}
+
+\item{mgmt_id}{management identifier}
+
 \item{invyr}{item in keyword file to replace}
 
 \item{timeint}{item in keyword file to replace}
@@ -37,6 +43,10 @@ fvs_prototype_keyfile(
 \item{dgstdev}{item in keyword file to replace}
 
 \item{treelist}{item in keyword file to replace}
+
+\item{cutlist}{keyword line controlling cut-list output (set to NULL to omit)}
+
+\item{where_std}{optional WHERE clause appended to the stand SELECT (set to NULL to omit)}
 
 \item{other_keywords}{add additional keyword as separate strings, e.g, other_keywords = c("thiskey 1","thatkey 0")}
 }

@@ -22,21 +22,23 @@
 #'
 #'
 #'@param dfTL tree list with a minimum of diamter and height columns
-#'@param bioeq (optional) use single equation for all trees
-#'@param bioeqNm  (optional) column name in DFTL: provide region, forest, district for every tree in dfTL
+#'@param bioeq (optional) force a single biomass equation for all trees
+#'@param geosub (optional) force a single geographic subregion for all trees
+#'@param bioeqNm  (optional) column name in dfTL holding the biomass equation for each tree
+#'@param geosubNm (optional) column name in dfTL holding the geographic subregion for each tree
 #'@param spcdNm (required) column name in DFTL: USFS species code
 #'@param dbhNm  (required) column name in DFTL: dbh in inches
 #'@param htNm (required) column name in DFTL: height in feet
+#'@param stemsNm (optional) column name in dfTL holding the number of stems
 #'@param clNm (optional) column name in DFTL: crown length in feet
 #'@param merchDbNm  (optional) column name in DFTL: upper db miminum for saw (in)
 #'@param htPrd1Nm (optional) column name in DFTL: Height to the minimum top diameter inside bark for primary product (ft)
 #'@param htPrd2Nm (optional) column name in DFTL: Height to the minimum top diameter inside bark for secondary product (ft)
+#'@param cv4Nm (optional) column name in dfTL holding merchantable cubic volume to a 4-inch top
 #'@param dll_64  path to 64bit dll
-#'@param dll_32  path to 64bit dll
+#'@param dll_32  path to 32bit dll
 #'@param load_dll T/F should dll be loaded (in case it is already loaded)
-#'@param dll_func_vol name of volume prediction function call in NVEL .dll
-#'@param dll_func_bioeq name of volume equation chooser function call in NVEL .dll
-#'@param nclus number of cores to use
+#'@param dll_func_bio name of the biomass prediction function call in the NVEL .dll
 #'
 #'@return
 #'  a data.frame reformatted to include all of the original columns, any missing columns for the NVEL .dll, 15 columns of predicted volumes, and an error column
