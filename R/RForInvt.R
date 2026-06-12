@@ -42,7 +42,7 @@
 #'
 #'@importFrom grDevices dev.off pdf
 #'@importFrom graphics layout lines mtext par
-#'@importFrom stats aggregate as.formula coef fitted getCall lm median na.omit quantile residuals rnorm update var
+#'@importFrom stats aggregate as.formula coef fitted getCall lm median na.omit quantile residuals rnorm setNames update var
 #'@importFrom utils download.file file_test read.csv unzip write.csv
 #'
 #'@examples

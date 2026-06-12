@@ -83,6 +83,11 @@
 #'  trees; \code{list(plot_wtsum, plot_lor_qmd)} for plots).
 #'@param region,forest NVEL region/forest used when \code{vol_source = "nvel"}
 #'  (PNW default region 6).
+#'@param voleq optional NVEL volume-equation code forced for all trees in
+#'  \code{fia_nvel_volume()} (NA selects an equation per region/forest/species).
+#'@param plot_nms named list mapping plot id columns for
+#'  \code{fia_compile_plots()} (passed to \code{compile_plots()}; default
+#'  \code{list(plot_ids = "PLT_CN")}).
 #'@param sum_nms columns to weight-sum to per-acre values in
 #'  \code{fia_compile_plots()}; \code{NULL} auto-detects the tidy per-tree
 #'  metric columns (and any species/diameter-class component columns derived
@@ -117,7 +122,6 @@
 #'  }
 #'}
 #'
-#'@import plyr reshape2
 #'
 #'@seealso \code{\link{compile_trees}}\cr \code{\link{compile_plots}}\cr
 #'  \code{\link{fia_trees}}\cr \code{\link{NVEL_volume}}\cr

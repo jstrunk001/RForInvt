@@ -54,6 +54,9 @@ vollib DLL).}
 \item{region, forest}{NVEL region/forest used when \code{vol_source = "nvel"}
 (PNW default region 6).}
 
+\item{voleq}{optional NVEL volume-equation code forced for all trees in
+\code{fia_nvel_volume()} (NA selects an equation per region/forest/species).}
+
 \item{df_tree}{a tree frame from \code{fia_trees()} (\code{fia_compile_trees};
 must contain the columns named in \code{tree_nms}). For
 \code{fia_compile_plots()}, the compiled tree frame returned by
@@ -68,6 +71,10 @@ trees; \code{list(plot_wtsum, plot_lor_qmd)} for plots).}
 
 \item{df_plot}{a condition- or plot-level frame from \code{fia_plots()}, used
 by \code{fia_compile_plots()} to define the full plot list and design columns.}
+
+\item{plot_nms}{named list mapping plot id columns for
+\code{fia_compile_plots()} (passed to \code{compile_plots()}; default
+\code{list(plot_ids = "PLT_CN")}).}
 
 \item{sum_nms}{columns to weight-sum to per-acre values in
 \code{fia_compile_plots()}; \code{NULL} auto-detects the tidy per-tree
@@ -158,6 +165,7 @@ Revision History
    head(pl_c[, c("PLT_CN", "COUNTYCD", "stems", "ba_ft", "vol_cf_net")])
  }
 }
+
 
 }
 \seealso{

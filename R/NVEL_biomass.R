@@ -63,7 +63,6 @@
 #'}
 #'
 #'
-#'@import plyr
 #'
 #'@export
 #

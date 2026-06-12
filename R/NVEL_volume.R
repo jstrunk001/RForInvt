@@ -93,7 +93,6 @@
 #'         NVEL_volume(dfTL = df_fake)
 #'}
 #'
-#'@import plyr
 #'
 
 #

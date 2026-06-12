@@ -152,6 +152,7 @@ Revision History
         NVEL_volume(dfTL = df_fake)
 }
 
+
 }
 \seealso{
 \code{\link{NVEL_voleq}}\cr

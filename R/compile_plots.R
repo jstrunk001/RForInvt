@@ -127,7 +127,7 @@
 #'
 #'
 #'
-#'@import plyr parallel sqldf reshape2 RSQLite flock DBI
+#'@import parallel sqldf reshape2 RSQLite flock DBI
 #'
 #'@seealso \code{\link{compile_trees}}\cr \code{\link{parLapplyLB}}\cr
 

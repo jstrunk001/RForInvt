@@ -61,7 +61,7 @@
 #'    names(res)
 #'}
 #'
-#'@import dplyr plyr sf
+#'@import sf
 #'
 #'@export
 #

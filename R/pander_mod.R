@@ -41,7 +41,7 @@
 #'  # summarize a list of models (row-bound)
 #'  pander_mod(list(a = fit1, b = fit2), return_df = TRUE)
 #'
-#'@import plyr pander knitr
+#'@import pander knitr
 #'
 #'@export
 #
@@ -146,11 +146,11 @@ pander_mod.simex=function(x
     Resp.               = resp_nm,
     'n'                 = n,
     n0                  = n0,
-    'Resis. Std. Error' = sigma_in,
+    'Resid. Std. Error' = sigma_in,
     '$R^2$'             = round(r2,3),
     'Adjusted $R^2$'    = round(r2_adj,3),
     '$DE^{-1}$'         = definv,
-    Predictors          = paste(as.character(attr(y$terms,"term.labels")),collapse=" "),
+    Predictors          = paste(as.character(attr(y$terms,"term.labels")),collapse=" + "),
     check.names = FALSE)
 
   if(return_df) return(df_in)

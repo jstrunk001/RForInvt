@@ -60,6 +60,8 @@ Revision History
  #clean up
  unlink(tmp_dir, recursive = TRUE)
 
+
+
 }
 \seealso{
 \code{\link{makeCluster}}\cr \code{\link{list.files}}\cr  \code{\link{readLines}}\cr \code{\link{grepl}}\cr

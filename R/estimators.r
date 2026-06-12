@@ -54,15 +54,15 @@
   }
   if(type[1]=="two-stage"){
     stop("\"two-stage\" Not Yet Implemented")
-    res=.ts(x,resp_nm,aux_nm,wt_nm,ef_name,pop,N,strata_cuts,var_type[1])
+    res=.ts(x,resp_nm,aux_nm,wt_nm,ef_nm,pop,N,strata_cuts,var_type[1])
   }
   if(type[1]=="multi-stage"){
     stop("\"multi-stage\" Not Yet Implemented")
-    res=.ms(x,resp_nm,aux_nm,wt_nm,ef_name,pop,N,strata_cuts,var_type[1])
+    res=.ms(x,resp_nm,aux_nm,wt_nm,ef_nm,pop,N,strata_cuts,var_type[1])
   }
   if(type[1]=="calibrate"){
     stop("\"calibrate\" Not Yet Implemented")
-    res=.cb(x,resp_nm,aux_nm,wt_nm,ef_name,pop,N,strata_cuts,var_type[1])
+    res=.cb(x,resp_nm,aux_nm,wt_nm,ef_nm,pop,N,strata_cuts,var_type[1])
   }
 
   return(.summary(res,res0))
@@ -342,7 +342,7 @@
 
     #push variance estimation to .estimate (per stratum); returns a 1-row
     #summary data.frame each, so rbind.fill can stack them
-    vars_str = rbind.fill(mapply(.estimate,spl_x,N=spl_Ni,MoreArgs=list(resp_nm=resp_nm,wt_nm=wt_nm,var_type=var_type),SIMPLIFY = F))
+    vars_str = plyr::rbind.fill(mapply(.estimate,spl_x,N=spl_Ni,MoreArgs=list(resp_nm=resp_nm,wt_nm=wt_nm,var_type=var_type),SIMPLIFY = F))
     v_t_str = sum(vars_str$se_t^2)
     t_str = sum(vars_str$total)
 
@@ -364,7 +364,7 @@
         return(xi)
       }
 
-      x1=rbind.fill(mapply(wt_fn,spl_x,spl_Ni,wt_nm,SIMPLIFY = F))
+      x1=plyr::rbind.fill(mapply(wt_fn,spl_x,spl_Ni,wt_nm,SIMPLIFY = F))
 
 
       form_str=as.formula(paste("~",strata_nm))
@@ -384,7 +384,7 @@
       spl_Ni=split(Ni_mt[,Ni_nm],Ni_mt[,strata_nm])
 
       #push variance estimation to .rand function for each stratum
-      vars_str = rbind.fill(mapply(estimate,spl_x,N=spl_Ni,MoreArgs=list(resp_nm=resp_nm,wt_nm=wt_nm,var_type=var_type),SIMPLIFY = F))
+      vars_str = plyr::rbind.fill(mapply(.estimate,spl_x,N=spl_Ni,MoreArgs=list(resp_nm=resp_nm,wt_nm=wt_nm,var_type=var_type),SIMPLIFY = F))
       v_t_str = sum(vars_str$se_t^2)
       t_str = sum(vars_str$total)
 
@@ -740,7 +740,7 @@ if(F){
 
 
   #view results
-  res2=rbind.fill(res1)
+  res2=plyr::rbind.fill(res1)
   print(
     cbind(res2[,c("type","n_str","n")],round(res2[,c("mean","se_m")],1)
         ,res2[,c("rsq"),drop=F]

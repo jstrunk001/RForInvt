@@ -60,7 +60,6 @@
 #'  #clean up
 #'  unlink(tmp_dir, recursive = TRUE)
 #'
-#'@import plyr
 #'
 #'
 #'@export
@@ -100,7 +99,7 @@ search_text=function(
       if(is.numeric(clus)) stopCluster(clus_in)
     }
 
-      res=rbind.fill(res)
+      res=plyr::rbind.fill(res)
       if(is.null(res[1])) res=read.csv(text=c("file,matches"),header=T)#empty_df(c("file","matches"))
 
   }else{
