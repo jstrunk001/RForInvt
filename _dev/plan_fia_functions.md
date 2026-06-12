@@ -1,7 +1,11 @@
 # Plan: FIA-specific wrapper functions for RForInvt
 
-Date: 2026-06-11
-Status: Phase 1 IMPLEMENTED; Phase 2 IN PROGRESS; Phases 3-6 PROPOSED
+Date: 2026-06-11 (updated 2026-06-12)
+Status: Phases 1-3 IMPLEMENTED; Phases 4-6 PROPOSED
+  - Phase 3 estimators are internally validated on the synthetic fixture
+    (post-stratified total == direct EXPNS-weighted total; per-acre == total/area;
+    components sum to the whole). EVALIDator agreement on REAL data is still
+    outstanding (needs a real state SQLite; see Open Q1).
 
 ## Phase 1 — implemented 2026-06-11
 
@@ -339,8 +343,8 @@ introducing a new modeling engine.
 | Phase | Deliverable | Depends on |
 |---|---|---|
 | 1 ✅ | `fia_db`, `fia_evalid`, `fia_plots`, `fia_trees` + `FIADB_demo.db` + tests | — |
-| 2 | `fia_vol`, `fia_nvel_volume`, `fia_nvel_biomass`, `fia_compile_trees`, `fia_compile_plots` | 1 |
-| 3 | `fia_estimate`, `fia_components_long`, `fia_estimate_annual`, `fia_estimate_change` + EVALIDator validation tests | 2 |
+| 2 ✅ | `fia_vol`, `fia_nvel_volume`, `fia_nvel_biomass`, `fia_compile_trees`, `fia_compile_plots` | 1 |
+| 3 ✅ | `fia_estimate`, `fia_components_long`, `fia_estimate_annual`, `fia_estimate_change` (B&P 2005 post-stratified) | 2 |
 | 4 | `fia_fvs_input`, `fia_fvs_run`, `fia_fvs_compile` | 1 |
 | 5 | `fia_annual_panel`, `fia_growth_model`, `fia_annualize_resid`, `fia_estimate_greg`, `fia_estimate_model` (annualized estimation, Layer 5) | 3, 4 |
 | 6 | `FIA_WWA_Example.Rmd` vignette (incl. annualized-estimation comparison) + README section | 3, 4, 5 |
