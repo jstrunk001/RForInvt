@@ -1,7 +1,7 @@
 # Plan: FIA-specific wrapper functions for RForInvt
 
 Date: 2026-06-11
-Status: Phase 1 IMPLEMENTED; Phases 2-5 PROPOSED
+Status: Phase 1 IMPLEMENTED; Phase 2 IN PROGRESS; Phases 3-6 PROPOSED
 
 ## Phase 1 — implemented 2026-06-11
 
@@ -25,8 +25,10 @@ A family of `fia_*` functions that wrap `compile_trees()`, `compile_plots()`, th
 `NVEL_*` functions, and the `fvs_*` functions so that a user can go from a raw
 FIADB SQLite download (DataMart) to design-based, EVALIDator-compatible estimates
 in a few calls. Examples/vignette demonstrate county-level estimates for
-Washington state (STATECD = 53): single year, multiple years, change, and
-components (volume by species and diameter class).
+**western Washington** (STATECD = 53; westside timber counties such as King,
+Lewis, Grays Harbor): single year, multiple years, change, components (volume by
+species and diameter class), and a dedicated comparison of design-based vs
+model-based **annualized** estimation.
 
 ## Design principles
 
@@ -185,16 +187,18 @@ in `fia_compile_plots()` + `fia_estimate()`.
 
 ### Example data
 
-- Raw-table examples need PLOT/COND/TREE/POP_* tables; the bundled
-  `FIADB_RI.db` has only FVS_* tables. Add `FIADB_RI_mini.db`: one recent RI
-  EXPVOL + EXPCURR evaluation (and the prior one, for change), columns
-  trimmed to what the functions touch, target < 5 MB. Rhode Island keeps it
-  tiny; the API is identical for WA. Used by roxygen `\donttest{}` examples
-  and tests.
-- The WA walkthrough lives in a vignette/Rmd with `eval = FALSE` chunks
-  (WA SQLite from DataMart is ~1 GB): `inst/examples/FIA_WA_Example.Rmd`.
+- Runnable examples/tests use the bundled `inst/extdata/FIADB_demo.db`
+  (Phase 1): a synthetic, schema-faithful western-WA fixture (STATECD 53;
+  King/Lewis/Grays Harbor; PNW species; EVALIDs 531901/532101 with 2021
+  remeasuring 2019). Small enough to bundle; identical API to a real
+  DataMart download. The synthetic numbers do NOT match EVALIDator — that
+  is what the real-data step below is for.
+- The western-WA walkthrough lives in a vignette/Rmd with `eval = FALSE`
+  chunks (the real WA SQLite from DataMart is ~1 GB):
+  `inst/examples/FIA_WWA_Example.Rmd`. Phase 3 EVALIDator validation pulls a
+  real state SQLite there (and/or a trimmed real extract — see Open Q1).
 
-### Vignette outline: "County-level estimation in Washington"
+### Vignette outline: "County-level estimation in western Washington"
 
 1. **Setup** — download pointer for `SQLite_FIADB_WA.db`; `fia_db()`;
    `fia_evalid(statecd = 53, eval_type = "EXPVOL", most_recent = TRUE)`.
@@ -220,6 +224,116 @@ in `fia_compile_plots()` + `fia_estimate()`.
    (custom merch spec via NVEL_merch), and a 1-cycle FVS projection with
    `fia_fvs_*` ending in projected county volume.
 
+## Annualized estimation: design-based vs model-based (Layer 5 + example)
+
+### Motivation
+
+FIA's annual inventory measures only ~1 panel per year (~1 in 10 plots in the
+West). A design-based estimate for a *single* year therefore rests on ~10% of
+the plots and is noisy. Several strategies trade bias for precision by bringing
+the other ~90% of plots (and their previous measurements, FVS growth, or fitted
+models) to bear. This section compares four, side by side, on western-WA county
+volume per acre for one target year (e.g. 2017), so the strengths/weaknesses are
+explicit rather than asserted.
+
+Let `Y` = target year, `t1` = a plot's previous measurement, `t2` = its current
+measurement, `T = t2 - t1` the remeasurement interval, `k = Y - t1` the offset
+from the previous measurement to the target year.
+
+### The four approaches
+
+**(1) Design-based, single-panel (the honest baseline).**
+Use only plots whose measurement falls in `Y` (one EVALID / annual panel),
+expand with EXPNS via the standard `fia_estimate()`.
+- *Strength:* design-unbiased, no model, reproduces EVALIDator's annual-panel
+  logic; the reference every other approach is judged against.
+- *Weakness:* ~1/10 of the plots -> large SE; unusable for small domains
+  (single county-year may have a handful of plots).
+- *Function:* `fia_annual_panel(db, statecd, year)` -> the single-panel plot set;
+  then existing `fia_estimate()`.
+
+**(2) Model-assisted regression estimator with annualized residuals (GREG-style).**
+Fit a model predicting the current attribute (or its increment) from the plot's
+**previous-measurement** attributes and site covariates: years of growth `k`,
+TPA, volume, Lorey's height, QMD, plus slope, aspect, elevation. Predict ALL
+plots forward to `Y`, then bias-correct with design-weighted residuals on the
+measured plots:
+```
+y_hat_GREG(Y) = mean_all( y_pred_i(Y) ) + design_weighted_mean( resid_i(Y) )
+```
+The novel piece is how residuals are put on a common annual footing. A plot
+remeasured over `T` years yields a *periodic* residual `e_T = y_obs(t2) -
+y_pred(t2)`. Annualize it, then rescale to the target horizon `k`:
+```
+e_annual = e_T / T            # per-year residual
+e_k      = k * e_annual       # residual expected at the target offset
+```
+e.g. measurements in 2010 and 2020 (`T = 10`) and target 2017 (`k = 7`):
+`e_annual = e_10 / 10`, `e_7y = 7 * e_annual`. This pools residual information
+across plots with different remeasurement intervals onto the year scale, giving a
+larger, horizon-matched residual sample for the correction term and its variance.
+- *Strength:* uses all plots -> much lower SE than (1); the residual correction
+  keeps it (approximately) design-consistent, so model misspecification inflates
+  variance rather than biasing the mean.
+- *Weakness:* assumes residual growth is ~linear in time (the `/T`, `*k`
+  scaling); needs remeasured plots to fit the model and estimate residuals;
+  heteroscedastic residual growth breaks the linear-annualization assumption.
+- *Functions:* `fia_growth_model(df_prev, df_curr, response, predictors, ...)`
+  (wraps the existing `ols_modeling` tools — `reg_model`/`lm_multi`),
+  `fia_annualize_resid(model, df_pairs, target_year)` (the e_T -> e_annual -> e_k
+  scaling), `fia_estimate_greg(df_pop, preds, resid, by, ...)`.
+
+**(3) Pure model-based, annualized predictions for all plots (no correction).**
+Same model as (2), but report the model predictions directly for every plot at
+`Y` with NO residual correction; characterize bias and precision empirically.
+- *Strength:* lowest variance, smoothest year-to-year series, needs no panel
+  measured in `Y` at all.
+- *Weakness:* fully exposed to model bias; not design-consistent. Bias and
+  precision must be *characterized*, not assumed — via cross-validation on
+  remeasured plots (leave-plot-out predicted vs observed, annualized) and by
+  comparison against (1) where panels exist.
+- *Function:* `fia_estimate_model(df_pop, preds, by, cv = TRUE, ...)` returns
+  the estimate plus CV bias/RMSE diagnostics.
+
+**(4) FVS projections for unmeasured plots.**
+Grow each plot's previous measurement to `Y` with FVS (the Phase-4 bridge),
+substitute projected tree lists for plots not measured in `Y`, compile and
+estimate through the same pipeline.
+- *Strength:* process-based growth (species, density, site), no statistical
+  growth model to fit; naturally produces full tree lists (any attribute, not
+  just the modeled one).
+- *Weakness:* FVS calibration bias for the region; heavier to run; still
+  model-based — projected estimates need the same bias characterization as (3).
+- *Functions:* Phase-4 `fia_fvs_input()` / `fia_fvs_run()` (project to `Y`) /
+  `fia_fvs_compile()`, then `fia_estimate()`.
+
+### What the example demonstrates
+
+A single table/plot for one county-year with, per approach: point estimate,
+SE / RMSE, n plots used, and bias relative to baseline (1). Narrative draws the
+contrast: (1) unbiased/noisy -> (2) nearly unbiased/precise -> (3)
+precise/possibly-biased -> (4) precise/process-based/calibration-bias. Predictor
+covariates (slope, aspect, elevation) are surfaced by `fia_plots(..., vars_keep =
+c("SLOPE","ASPECT","ELEV"))` (COND.SLOPE/ASPECT, PLOT.ELEV); `k` (years of
+growth) comes from `Y - MEASYEAR_prev`.
+
+### New functions (Layer 5)
+
+```r
+fia_annual_panel(db, statecd, year, eval_type = "EXPVOL")   # approach 1 plot set
+fia_growth_model(df_prev, df_curr, response, predictors,    # fit on remeasured plots
+                 increment = TRUE, engine = c("ols","rf"))
+fia_annualize_resid(model, df_pairs, target_year,           # e_T -> e_annual -> e_k
+                    prev_year = "MEASYEAR_prev")
+fia_estimate_greg(df_pop, preds, resid, by = "COUNTYCD", ...)   # approach 2
+fia_estimate_model(df_pop, preds, by = "COUNTYCD", cv = TRUE, ...) # approach 3
+# approach 4 reuses the Phase-4 fia_fvs_* bridge + fia_estimate()
+```
+
+These build on the existing `ols_modeling.R` (`reg_model`, `lm_multi`,
+`mod_multi`, `pred_multi`), `make_strata.R`, and `knn_tools.R` rather than
+introducing a new modeling engine.
+
 ## Implementation phases
 
 | Phase | Deliverable | Depends on |
@@ -228,11 +342,14 @@ in `fia_compile_plots()` + `fia_estimate()`.
 | 2 | `fia_vol`, `fia_nvel_volume`, `fia_nvel_biomass`, `fia_compile_trees`, `fia_compile_plots` | 1 |
 | 3 | `fia_estimate`, `fia_components_long`, `fia_estimate_annual`, `fia_estimate_change` + EVALIDator validation tests | 2 |
 | 4 | `fia_fvs_input`, `fia_fvs_run`, `fia_fvs_compile` | 1 |
-| 5 | `FIA_WA_Example.Rmd` vignette + README section | 3, 4 |
+| 5 | `fia_annual_panel`, `fia_growth_model`, `fia_annualize_resid`, `fia_estimate_greg`, `fia_estimate_model` (annualized estimation, Layer 5) | 3, 4 |
+| 6 | `FIA_WWA_Example.Rmd` vignette (incl. annualized-estimation comparison) + README section | 3, 4, 5 |
 
 Each phase is independently mergeable. Phase 3 acceptance test: per-acre and
-total net cubic volume for 2+ RI counties match EVALIDator within rounding;
-WA spot-check documented in the vignette.
+total net cubic volume for 2+ western-WA counties match EVALIDator within
+rounding (against a real state SQLite). Phase 5 acceptance: on the demo fixture,
+approaches (1)-(4) run end-to-end and the comparison table reproduces the
+expected ordering of SEs (1 highest); CV diagnostics for (3) are finite.
 
 ## Correctness pitfalls the wrappers must own (so users can't get them wrong)
 
@@ -251,16 +368,19 @@ WA spot-check documented in the vignette.
 
 - National-scale performance tuning (state SQLite scale is the target;
   `compile_plots` parallel/sqlite machinery already covers throughput).
-- Small-area estimation / model-assisted estimators (the existing
-  `make_strata`/`ols_modeling`/knn tools remain the route; a future
-  `fia_*` model-assisted layer could follow the same pattern).
+- Formal small-area estimation (EBLUP/area-level models). The Layer-5
+  annualized estimators (GREG, model-based, FVS) are in scope, but
+  unit-level SAE / mixed-model borrowing across domains is not.
 - Reimplementing rFIA; this stays integrated with RForInvt's compile +
   NVEL + FVS toolchain, which is the differentiator.
 
 ## Open questions
 
-1. Bundle `FIADB_RI_mini.db` (~3-5 MB) in the package, or host it and
-   download on demand in examples? (Plan assumes bundling.)
+1. Synthetic `FIADB_demo.db` (western WA) is bundled for examples/tests
+   (done, Phase 1). Still open: for Phase 3 EVALIDator validation, bundle a
+   trimmed *real* state extract (~3-5 MB) or download a real WA SQLite on
+   demand in the vignette? (Leaning: download-on-demand for the vignette,
+   keep the synthetic fixture for tests.)
 2. `fia_estimate` backend: direct B&P 2005 formulas (transparent, matches
    EVALIDator) vs `survey::svydesign` (more estimator options). Plan
    assumes direct formulas with a `var_method` switch left open.
