@@ -1,11 +1,22 @@
 # Plan: FIA-specific wrapper functions for RForInvt
 
 Date: 2026-06-11 (updated 2026-06-12)
-Status: Phases 1-3 IMPLEMENTED; Phases 4-6 PROPOSED
+Status: Phases 1-4 IMPLEMENTED; Phases 5-6 PROPOSED
   - Phase 3 estimators are internally validated on the synthetic fixture
     (post-stratified total == direct EXPNS-weighted total; per-acre == total/area;
     components sum to the whole). EVALIDator agreement on REAL data is still
     outstanding (needs a real state SQLite; see Open Q1).
+  - Phase 4 (FVS bridge) implemented 2026-06-12 in `R/fia_fvs.R`:
+    `fia_fvs_input()` (builds FVS_StandInit/FVS_TreeInit from PLOT/TREE/COND, or
+    filters DataMart FVS_*INIT_PLOT tables, to a project SQLite; STAND_CN=PLT_CN,
+    TREE_COUNT=TPA_UNADJ, SPECIES=SPCD with optional `spp_map`),
+    `fia_fvs_run()` (chains fvs_prototype_params/keyfile -> fvs_make_keyfiles ->
+    fvs_run, selecting each stand by Stand_CN; returns merged output db path),
+    `fia_fvs_compile()` (reads FVS_TreeList, renames onto fia_trees conventions
+    so projected tree lists flow through fia_compile_trees/plots; FVS per-acre
+    TPA is the expansion). Tests: `tests/testthat/test-fia_fvs.R`, 30 checks
+    (build, spp_map, DataMart-filter, compile + year filter). An actual FVS run
+    needs a local variant exe and is `\dontrun`. Full suite 575 pass / 0 fail.
 
 ## Phase 1 — implemented 2026-06-11
 
@@ -345,7 +356,7 @@ introducing a new modeling engine.
 | 1 ✅ | `fia_db`, `fia_evalid`, `fia_plots`, `fia_trees` + `FIADB_demo.db` + tests | — |
 | 2 ✅ | `fia_vol`, `fia_nvel_volume`, `fia_nvel_biomass`, `fia_compile_trees`, `fia_compile_plots` | 1 |
 | 3 ✅ | `fia_estimate`, `fia_components_long`, `fia_estimate_annual`, `fia_estimate_change` (B&P 2005 post-stratified) | 2 |
-| 4 | `fia_fvs_input`, `fia_fvs_run`, `fia_fvs_compile` | 1 |
+| 4 ✅ | `fia_fvs_input`, `fia_fvs_run`, `fia_fvs_compile` | 1 |
 | 5 | `fia_annual_panel`, `fia_growth_model`, `fia_annualize_resid`, `fia_estimate_greg`, `fia_estimate_model` (annualized estimation, Layer 5) | 3, 4 |
 | 6 | `FIA_WWA_Example.Rmd` vignette (incl. annualized-estimation comparison) + README section | 3, 4, 5 |
 
