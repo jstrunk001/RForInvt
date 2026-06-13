@@ -5,7 +5,14 @@ A collection of forest inventory related tools.
 falls into a few groups:
 
 - **`compile_*`** — compile plot- and tree-level inventory summaries (e.g. `compile_trees`, `compile_plots`).
-- **`fia_*`** — clean and geolocate FIA (Forest Inventory and Analysis) data (`fia_clean_best_cds`, `fia_make_geom`).
+- **`fia_*`** — an end-to-end FIA (Forest Inventory and Analysis) workflow: read a DataMart SQLite by
+  evaluation (`fia_db`, `fia_evalid`, `fia_plots`, `fia_trees`), compile per-tree and per-acre attributes
+  (`fia_compile_trees`, `fia_compile_plots`), produce post-stratified design-based estimates
+  (`fia_estimate`, `fia_estimate_annual`, `fia_estimate_change`, `fia_components_long`), compare
+  design- vs model-based annualized estimation (`fia_growth_model`, `fia_annualize_resid`,
+  `fia_estimate_greg`, `fia_estimate_model`), and project with FVS (`fia_fvs_*`). Also clean and
+  geolocate plot coordinates (`fia_clean_best_cds`, `fia_make_geom`). A runnable walkthrough on the
+  bundled demo database is in `inst/examples/FIA_WWA_Example.Rmd`.
 - **`fvs_*`** — build key files for and run the Forest Vegetation Simulator (`fvs_make_keyfiles`, `fvs_run`, ...).
 - **`NVEL_*`** — National Volume Estimator Library wrappers for volume, bucking, merchandizing, biomass, and weight factors.
 - **`model_archive_*` / `model_predict`** — save, list, load, and apply archived models. The package ships a
@@ -47,6 +54,38 @@ remotes::install_local("c:\\temp\\RForInvt.zip")
 ```
 
 Package usage is also fairly simple
+
+# RForInvt FIA estimation example
+
+The `fia_*` family turns a raw FIA DataMart SQLite into design-based, EVALIDator-style estimates in
+four steps: `fia_trees()`/`fia_plots()` -> `fia_compile_trees()` -> `fia_compile_plots()` -> `fia_estimate()`.
+The example below runs on the small synthetic western-Washington database bundled with the package
+(`FIADB_demo.db`); the code is identical on a real state download.
+
+```r
+  require(RForInvt)
+
+  #open the bundled demo database and pick the most recent volume evaluation
+    db <- fia_db(system.file("extdata", "FIADB_demo.db", package = "RForInvt"))
+    ev <- fia_evalid(db, statecd = 53, eval_type = "EXPVOL", most_recent = TRUE)
+
+  #assemble -> compile -> estimate
+    tr  <- fia_trees(db, evalid = ev)              # live trees with per-acre TPA_EXP
+    pl  <- fia_plots(db, evalid = ev)              # conditions + post-stratification design
+    trc <- fia_compile_trees(tr, vol_source = "fiadb")  # ba_ft, diameter class, vol_cf_net, ...
+    plc <- fia_compile_plots(trc, pl)              # per-acre, nonforest plots zero-filled
+
+  #net cubic-foot volume per forest acre, and total, by county
+    fia_estimate(plc, vars = "vol_cf_net", by = "COUNTYCD", type = "per_acre")
+    fia_estimate(plc, vars = "vol_cf_net", by = "COUNTYCD", type = "total")
+
+  #change between two evaluations (paired remeasured plots)
+    fia_estimate_change(db, statecd = 53, evalid_t1 = 531901, evalid_t2 = 532101,
+                        mode = "remeas", vars = "vol_cf_net", by = "COUNTYCD", type = "per_acre")
+```
+
+See `inst/examples/FIA_WWA_Example.Rmd` for multi-year trends, species/diameter-class components, and
+the design- vs model-based annualized-estimation comparison.
 
 # RForInvt FVS example
 ``` 

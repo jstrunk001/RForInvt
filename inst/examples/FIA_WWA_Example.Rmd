@@ -1,0 +1,299 @@
+---
+title: "County-level FIA estimation in western Washington"
+author: "RForInvt"
+date: "`r format(Sys.Date())`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", warning = FALSE, message = FALSE)
+```
+
+## What this shows
+
+A complete path from a raw FIA database (the FIA DataMart SQLite) to
+**design-based, EVALIDator-style estimates** for western Washington counties,
+and then a side-by-side comparison of **design-based vs model-based annualized
+estimation**. The pipeline is the same four steps every time:
+
+```
+fia_trees() + fia_plots()  ->  fia_compile_trees()  ->  fia_compile_plots()  ->  fia_estimate()
+   (data layer)                (per-tree attrs)         (per-acre, zero-filled)   (post-stratified)
+```
+
+Everything in the **runnable** chunks below uses the small synthetic fixture
+bundled with the package (`FIADB_demo.db`: STATECD 53, the westside timber
+counties King/Lewis/Grays Harbor, PNW species, a 2019 inventory remeasured in
+2021). It is schema-faithful to the DataMart so the code is identical to what
+you would run on a real state download — but the **numbers are synthetic and do
+not match EVALIDator**. The `eval=FALSE` chunks near the end show how to point
+the same code at a real western-WA SQLite and cross-check against EVALIDator.
+
+```{r load}
+library(RForInvt)
+library(DBI); library(RSQLite)
+
+db_path <- system.file("extdata", "FIADB_demo.db", package = "RForInvt")
+db <- fia_db(db_path)
+db
+
+# evaluations available in this database
+fia_evalid(db, statecd = 53, eval_type = "EXPVOL")
+```
+
+## 1. Single-year county estimates
+
+Pick the most recent volume evaluation, assemble the tree and plot frames,
+compile, and estimate net cubic-foot volume per forest acre and in total, by
+county.
+
+```{r single-year}
+ev <- fia_evalid(db, statecd = 53, eval_type = "EXPVOL", most_recent = TRUE)
+
+tr <- fia_trees(db, evalid = ev)          # live trees, with per-acre TPA_EXP
+pl <- fia_plots(db, evalid = ev)          # condition rows + design columns
+
+trc <- fia_compile_trees(tr, vol_source = "fiadb")   # ba_ft, dbcl, vol_cf_net, ...
+plc <- fia_compile_plots(trc, pl)                    # per-acre, nonforest plots zero-filled
+
+# volume per forest acre, and total, by county
+fia_estimate(plc, vars = "vol_cf_net", by = "COUNTYCD", type = "per_acre")
+fia_estimate(plc, vars = "vol_cf_net", by = "COUNTYCD", type = "total")
+
+# forest area by county (the ratio denominator)
+fia_estimate(plc, by = "COUNTYCD", type = "area")
+```
+
+`fia_estimate()` reports the estimate, its sampling variance, standard error,
+`se_pct`, and the plot counts, following the Bechtold & Patterson (2005)
+post-stratified estimator. The total is identically the EXPNS-weighted sum of
+the per-acre plot values; per-acre is the ratio of the volume total to the
+forest-area total.
+
+## 2. Multiple years (a trend)
+
+`fia_estimate_annual()` runs the whole pipeline across several annual
+evaluations and stacks the result into a long trend frame.
+
+```{r multi-year}
+trend <- fia_estimate_annual(db, statecd = 53, years = c(2019, 2021),
+                             vars = "vol_cf_net", by = "COUNTYCD",
+                             type = "per_acre")
+trend[, c("year", "COUNTYCD", "estimate", "se")]
+```
+
+```{r trend-plot, eval=FALSE}
+# a simple trend plot by county (base graphics)
+cts <- sort(unique(trend$COUNTYCD))
+plot(NA, xlim = range(trend$year), ylim = range(trend$estimate),
+     xlab = "year", ylab = "net cu-ft / forest acre")
+for (i in seq_along(cts)) {
+  d <- trend[trend$COUNTYCD == cts[i], ]
+  lines(d$year, d$estimate, type = "b", col = i)
+}
+legend("topleft", legend = cts, col = seq_along(cts), lty = 1, title = "county")
+```
+
+In real data these years are FIA *panels*; remember that consecutive EVALIDs are
+moving windows that share most plots, so a "trend" of overlapping evaluations is
+smoother (and more correlated) than a trend of independent annual panels.
+
+## 3. Change between two evaluations
+
+`fia_estimate_change(mode = "remeas")` pairs each current plot to its previous
+measurement (via `PREV_PLT_CN`), differences the per-acre attribute on the
+paired plots, and estimates the change with the current design — so the variance
+is a proper paired-plot variance, not the difference of two independent SEs.
+
+```{r change}
+chg <- fia_estimate_change(db, statecd = 53,
+                           evalid_t1 = 531901, evalid_t2 = 532101,
+                           mode = "remeas", vars = "vol_cf_net",
+                           by = "COUNTYCD", type = "per_acre")
+chg[, c("COUNTYCD", "estimate", "se")]
+```
+
+For a components view of change (net growth, removals, mortality), FIA ships
+growth-removal-mortality evaluations (`EXPGROW`/`EXPREMV`/`EXPMORT`) and the
+`TREE_GRM_COMPONENT` table. `mode = "grm"` is the place that will live; it is not
+yet implemented (it stops with a message).
+
+## 4. Components: volume by species and diameter class
+
+Recompile the trees with the species / diameter-class spreading functions so
+each tree carries wide component columns, then estimate every component column
+and tidy the result back to long form.
+
+```{r components}
+# species breakdown of net cubic volume
+trc_sp <- fia_compile_trees(tr, vol_source = "fiadb",
+                            fns_compute = list(ba_ft, dbcl, fia_vol, spp_y),
+                            vars_group  = c("vol_cf_net"))
+plc_sp <- fia_compile_plots(trc_sp, pl)
+
+comp <- fia_estimate(plc_sp, vars = "^vol_cf_net_SPCD_", by = "COUNTYCD",
+                     type = "total")
+comp <- fia_components_long(comp)
+head(comp[, c("COUNTYCD", "SPCD", "estimate", "se")])
+
+# components sum to the overall total (a useful check)
+agg <- aggregate(estimate ~ COUNTYCD, data = comp, FUN = sum)
+whole <- fia_estimate(plc_sp, vars = "vol_cf_net", by = "COUNTYCD", type = "total")
+merge(agg, whole[, c("COUNTYCD", "estimate")], by = "COUNTYCD",
+      suffixes = c("_components", "_whole"))
+```
+
+For a two-way species-by-diameter-class breakdown, add `dbcl_spp_y` to
+`fns_compute` and estimate `vars = "^vol_cf_net_SPCD_.*_dbcl_"`;
+`fia_components_long()` parses both the `SPCD` and `dbcl` out of the column name.
+
+## 5. Annualized estimation: design-based vs model-based
+
+This is the heart of the western-WA workflow. For a single target year, only a
+fraction of plots are measured (~1/10 in the West), so a design-based estimate
+for that year alone is noisy. Four strategies trade bias for precision:
+
+1. **Design-based, single panel** — only plots measured that year. Unbiased,
+   noisy. `fia_annual_panel()` selects the panel; `fia_estimate()` estimates it.
+2. **Model-assisted (GREG)** — fit a growth model on remeasured plots, predict
+   *all* plots forward to the target year, then bias-correct with the
+   design-weighted residuals on the measured plots. The residuals are put on a
+   common annual footing first (`fia_annualize_resid()`):
+   `e_annual = e_T / T`, then `e_k = (Y - t1) * e_annual`.
+   `fia_estimate_greg()` combines the two. Lower variance, ~design-consistent.
+3. **Pure model-based** — the model predictions for every plot, no correction
+   (`fia_estimate_model()`); characterize bias/precision by cross-validation
+   (`fia_growth_cv()`). Lowest variance, exposed to model bias.
+4. **FVS projection** — grow each plot's previous measurement to the target year
+   with FVS (`fia_fvs_*`), then compile and estimate through the same pipeline.
+   Process-based; carries FVS calibration bias.
+
+```{r annualized-setup}
+# current (2021) and previous (2019) compiled plot frames
+cur  <- fia_compile_plots(fia_compile_trees(fia_trees(db, evalid = 532101)),
+                          fia_plots(db, evalid = 532101))
+prev <- fia_compile_plots(fia_compile_trees(fia_trees(db, evalid = 531901)),
+                          fia_plots(db, evalid = 531901))
+
+# pair current plots to their previous measurement; build predictors + interval
+pr <- prev[, c("PLT_CN", "vol_cf_net", "ba_ft", "stems")]
+names(pr) <- c("PREV_PLT_CN", "vol_t1", "ba_t1", "stems_t1")
+pairs <- merge(cur, pr, by = "PREV_PLT_CN")
+pairs$prev_yr  <- 2019
+pairs$curr_yr  <- pairs$MEASYEAR
+pairs$interval <- pairs$curr_yr - pairs$prev_yr
+```
+
+```{r annualized-model}
+# fit a growth/projection model on the remeasured plots
+m <- fia_growth_model(pairs, response = "vol_cf_net",
+                      predictors = c("vol_t1", "ba_t1", "stems_t1", "interval"))
+m
+
+# cross-validated bias / RMSE / R^2 (approach-3 precision & bias)
+fia_growth_cv(pairs, response = "vol_cf_net",
+              predictors = c("vol_t1", "ba_t1", "stems_t1", "interval"),
+              k = 5, seed = 1)
+
+# predictions at the target year + annualized residuals
+target_year <- 2021
+pairs <- fia_annualize_resid(m, pairs, response = "vol_cf_net",
+                             prev_year_col = "prev_yr", curr_year_col = "curr_yr",
+                             target_year = target_year)
+head(pairs[, c("PLT_CN", "vol_cf_net", ".pred", ".resid_periodic", ".resid_target")])
+```
+
+```{r annualized-compare}
+# one statewide domain so each approach has all plots to work with
+pairs$ALL <- "wWA"
+
+# (ref) design-based using ALL measured plots -- the full-measurement reference
+ref <- fia_estimate(pairs, vars = "vol_cf_net", by = "ALL", type = "total")
+
+# (3) pure model-based: predictions for every plot
+mod <- fia_estimate_model(pairs, ".pred", by = "ALL", type = "total")
+
+# (2) GREG: predictions everywhere + design-weighted annualized residual
+pairs$.resid_obs <- pairs$vol_cf_net - pairs$.pred   # full residual here (demo)
+greg <- fia_estimate_greg(pairs, pred_col = ".pred", df_sample = pairs,
+                          resid_col = ".resid_obs", by = "ALL", type = "total")
+
+compare <- data.frame(
+  approach = c("design (all plots)", "model-based", "GREG"),
+  estimate = c(ref$estimate, mod$estimate, greg$estimate),
+  se       = c(ref$se,       mod$se,       greg$se)
+)
+compare
+```
+
+A caveat specific to this fixture: it is a **full remeasurement** (every plot
+measured in both years), not a true rotating panel, so the approaches largely
+agree and approach 1 here uses all plots. The headline trade-off — approach 1
+*noisy*, approach 3 *precise but possibly biased*, approach 2 *precise and
+bias-corrected* — only becomes visible when a single year is ~1/10 of the plots
+and each annual panel carries its own EXPNS. That is what the real-data section
+demonstrates.
+
+## 6. Pointing at real western-WA data (and checking EVALIDator)
+
+The code is identical; only the database changes. Download the Washington
+SQLite from the FIA DataMart
+(<https://apps.fs.usda.gov/fia/datamart/datamart.html>), then:
+
+```{r real-wwa, eval=FALSE}
+db_wa <- fia_db("SQLite_FIADB_WA.db")               # ~1 GB state download
+
+ev <- fia_evalid(db_wa, statecd = 53, eval_type = "EXPVOL", most_recent = TRUE)
+tr <- fia_trees(db_wa, evalid = ev)
+pl <- fia_plots(db_wa, evalid = ev,
+                vars_keep = c("SLOPE", "ASPECT", "ELEV"))  # site covariates for modeling
+plc <- fia_compile_plots(fia_compile_trees(tr), pl)
+
+# statewide and by-county net cubic volume -- compare to EVALIDator totals
+fia_estimate(plc, vars = "vol_cf_net", by = "COUNTYCD", type = "total")
+
+# EVALIDator: pick "Net cubic-foot volume of live trees (>= 5 in)" for the same
+# EVALID and confirm the per-county totals agree within rounding.
+```
+
+```{r wwa-map, eval=FALSE}
+# a county choropleth of volume per acre (needs a county polygon layer)
+library(sf)
+est  <- fia_estimate(plc, vars = "vol_cf_net", by = "COUNTYCD", type = "per_acre")
+cnty <- sf::st_read("wa_counties.shp")               # your county polygons
+cnty <- merge(cnty, est, by.x = "COUNTYFP", by.y = "COUNTYCD")
+plot(cnty["estimate"], main = "Net cu-ft / forest acre")
+```
+
+For the annualized comparison on real data, build the panel explicitly with
+`fia_annual_panel(plc, year = 2017)` (one measured panel), fit
+`fia_growth_model()` on remeasured plots from earlier evaluations, predict the
+full plot set at 2017, and run approaches 1-3 exactly as above. Because each
+single-year panel has its own EXPNS, the design-only SE (approach 1) will be
+visibly larger than the GREG and model-based SEs.
+
+## 7. Optional: NVEL volumes and FVS projection
+
+Swap `vol_source = "nvel"` to recompute volumes with the National Volume
+Estimator Library instead of using the FIADB columns (useful for custom merch
+specs or consistency with a non-FIA inventory). This requires the bundled vollib
+DLL.
+
+```{r nvel, eval=FALSE}
+trc_nvel <- fia_compile_trees(tr, vol_source = "nvel", region = 6)
+plc_nvel <- fia_compile_plots(trc_nvel, pl)
+fia_estimate(plc_nvel, vars = "vol_cf_net", by = "COUNTYCD", type = "per_acre")
+```
+
+And the FVS bridge projects plots forward, then re-enters the same compile +
+estimate pipeline (requires an installed FVS variant executable):
+
+```{r fvs, eval=FALSE}
+db_fvs_in  <- fia_fvs_input(db_wa, evalid = ev, dir_out = "c:/temp/fia_fvs",
+                            variant = "PN")
+db_fvs_out <- fia_fvs_run(db_fvs_in, fvs_path = "C:/FVSbin/FVSpn.exe",
+                          numcycle = 1, timeint = 10)
+proj <- fia_fvs_compile(db_fvs_out, year = 2031)
+# proj flows straight into fia_compile_plots() + fia_estimate() for a projected
+# county estimate -- "current" and "projected" estimates are symmetric.
+```
