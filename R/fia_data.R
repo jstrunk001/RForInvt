@@ -215,6 +215,16 @@ print.fia_db = function(x, ...){
   unique(evalid)
 }
 
+# coerce the named columns (those present) to numeric. Real FIADB SQLite can
+# hand back numeric columns as character (e.g. mostly-NULL columns), which breaks
+# numeric comparisons/arithmetic downstream.
+.fia_as_numeric = function(df, cols){
+  for(cc in intersect(cols, names(df))){
+    if(!is.numeric(df[[cc]])) df[[cc]] = suppressWarnings(as.numeric(as.character(df[[cc]])))
+  }
+  df
+}
+
 # apply an optional SQL WHERE-clause string to a data.frame via sqldf.
 .fia_apply_filter = function(df, where, alias = "df"){
   if(length(where) == 0 || is.na(where[1]) || !nzchar(where[1])) return(df)
@@ -310,6 +320,11 @@ fia_plots = function(db, evalid, cond_filter = NA, vars_keep = NULL, ...){
   #optional filter on the assembled condition frame
   out = .fia_apply_filter(out, cond_filter, alias = "df_cond")
 
+  #coerce numeric design columns (real FIADB SQLite may return some as character)
+  out = .fia_as_numeric(out, c("CONDPROP_UNADJ", "EXPNS", "ADJ_FACTOR_SUBP",
+                               "ADJ_FACTOR_MICR", "ADJ_FACTOR_MACR", "AREA_USED",
+                               "MACRO_BREAKPOINT_DIA", "LAT", "LON"))
+
   #standard column ordering, then any extras the caller asked to keep
   std = c("EVALID", "PLT_CN", "COND_CN", "CONDID", "COND_STATUS_CD",
           "CONDPROP_UNADJ", "PROP_BASIS", "STATECD", "COUNTYCD", "UNITCD",
@@ -364,6 +379,14 @@ fia_trees = function(db, evalid, tree_filter = "STATUSCD == 1",
   st = strat[, strat_keep, drop = FALSE]
   names(st)[names(st) == "CN"] = "STRATUM_CN"
   out = merge(out, st, by = "STRATUM_CN", all.x = TRUE)
+
+  #coerce numeric design/measurement columns: real FIADB SQLite can return
+  #columns (notably the mostly-NULL MACRO_BREAKPOINT_DIA) as character, which
+  #would make `DIA >= MACRO_BREAKPOINT_DIA` a STRING comparison ("7.8" >= "30.0"
+  #is TRUE) and mis-assign the adjustment factor.
+  out = .fia_as_numeric(out, c("DIA", "HT", "TPA_UNADJ", "VOLCFNET", "VOLCSNET",
+                               "DRYBIO_AG", "MACRO_BREAKPOINT_DIA", "EXPNS",
+                               "ADJ_FACTOR_SUBP", "ADJ_FACTOR_MICR", "ADJ_FACTOR_MACR"))
 
   #--- choose the per-tree adjustment factor by plot design ------------------
   adj = out$ADJ_FACTOR_SUBP

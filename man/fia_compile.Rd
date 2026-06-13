@@ -67,7 +67,9 @@ to FIA 2-inch classes.}
 
 \item{fns_compute}{optional list of \code{compile_*}-compatible functions;
 \code{NULL} uses the FIA defaults (\code{list(ba_ft, dbcl, fia_vol)} for
-trees; \code{list(plot_wtsum, plot_lor_qmd)} for plots).}
+trees; \code{list(plot_wtsum)} for plots). Add \code{plot_lor_qmd} to the
+plot list for QMD / Lorey's height when tree heights are populated (it errors
+on plots with all-NA heights, which would drop those plots).}
 
 \item{df_plot}{a condition- or plot-level frame from \code{fia_plots()}, used
 by \code{fia_compile_plots()} to define the full plot list and design columns.}

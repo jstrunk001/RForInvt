@@ -80,7 +80,9 @@
 #'  to FIA 2-inch classes.
 #'@param fns_compute optional list of \code{compile_*}-compatible functions;
 #'  \code{NULL} uses the FIA defaults (\code{list(ba_ft, dbcl, fia_vol)} for
-#'  trees; \code{list(plot_wtsum, plot_lor_qmd)} for plots).
+#'  trees; \code{list(plot_wtsum)} for plots). Add \code{plot_lor_qmd} to the
+#'  plot list for QMD / Lorey's height when tree heights are populated (it errors
+#'  on plots with all-NA heights, which would drop those plots).
 #'@param region,forest NVEL region/forest used when \code{vol_source = "nvel"}
 #'  (PNW default region 6).
 #'@param voleq optional NVEL volume-equation code forced for all trees in
@@ -229,6 +231,19 @@ fia_compile_trees = function(df_tree,
   vol_source = match.arg(vol_source)
   df_tree = as.data.frame(df_tree)
 
+  #drop trees with no per-acre expansion (NA TPA_UNADJ -> NA TPA_EXP): FIADB has
+  #such records (non-tally / volume-excluded trees) and they cannot carry a
+  #per-acre weight. EVALIDator likewise sums only trees with a valid TPA.
+  exp_col = unname(tree_nms["expansion"])
+  if(!is.na(exp_col) && exp_col %in% names(df_tree)){
+    bad = is.na(df_tree[[exp_col]])
+    if(any(bad)){
+      warning("fia_compile_trees: dropping ", sum(bad),
+              " tree(s) with missing expansion (", exp_col, ")")
+      df_tree = df_tree[!bad, , drop = FALSE]
+    }
+  }
+
   #a per-tree constant so plot_wtsum can produce trees-per-acre (stems)
   if(!"stems" %in% names(df_tree)) df_tree[["stems"]] = 1
 
@@ -264,15 +279,26 @@ fia_compile_trees = function(df_tree,
       "LAT", "LON", "MACRO_BREAKPOINT_DIA"),
     names(df))
 
-  spl = split(df, df$PLT_CN)
-  out = do.call(rbind, lapply(spl, function(d){
-    row = d[1, c("PLT_CN", const_cols), drop = FALSE]
-    #total forested condition proportion on the plot (0 for fully nonforest)
-    if(all(c("CONDPROP_UNADJ", "COND_STATUS_CD") %in% names(d))){
-      row[["CONDPROP_FOR"]] = sum(d$CONDPROP_UNADJ[d$COND_STATUS_CD == 1], na.rm = TRUE)
+  #design columns are constant within a plot -> take the first condition row
+  out = df[!duplicated(df$PLT_CN), c("PLT_CN", const_cols), drop = FALSE]
+
+  #adjusted forested proportion per plot: sum over forest conditions of
+  #CONDPROP_UNADJ * (condition adjustment factor, by PROP_BASIS). The adjustment
+  #is what makes forest-area / per-acre estimates match FIADB EVALIDator.
+  if(all(c("CONDPROP_UNADJ", "COND_STATUS_CD") %in% names(df))){
+    fr = df[!is.na(df$COND_STATUS_CD) & df$COND_STATUS_CD == 1, , drop = FALSE]
+    fa = setNames(numeric(0), character(0))
+    if(nrow(fr)){
+      adj = if("ADJ_FACTOR_SUBP" %in% names(fr)) fr$ADJ_FACTOR_SUBP else rep(1, nrow(fr))
+      if(all(c("PROP_BASIS", "ADJ_FACTOR_MACR") %in% names(fr))){
+        macr = !is.na(fr$PROP_BASIS) & fr$PROP_BASIS == "MACR"
+        adj[macr] = fr$ADJ_FACTOR_MACR[macr]
+      }
+      fa = tapply(fr$CONDPROP_UNADJ * adj, as.character(fr$PLT_CN), sum, na.rm = TRUE)
     }
-    row
-  }))
+    out$CONDPROP_FOR = as.numeric(fa[as.character(out$PLT_CN)])
+    out$CONDPROP_FOR[is.na(out$CONDPROP_FOR)] = 0   # fully nonforest -> 0
+  }
   rownames(out) = NULL
   out
 }
@@ -291,7 +317,12 @@ fia_compile_plots = function(df_tree, df_plot,
 
   df_tree = as.data.frame(df_tree)
 
-  if(is.null(fns_compute)) fns_compute = list(plot_wtsum, plot_lor_qmd)
+  #Default to plot_wtsum only. compile_plots drops an ENTIRE plot if any compute
+  #function errors, and plot_lor_qmd fails on plots whose tree heights are all NA
+  #(common in real FIADB, where HT is frequently modeled/absent) -- which would
+  #silently drop those plots and bias estimates. Add plot_lor_qmd via fns_compute
+  #when heights are populated and qmd/Lorey's height are wanted.
+  if(is.null(fns_compute)) fns_compute = list(plot_wtsum)
 
   #auto-detect tidy per-tree metric columns (+ component columns) to weight-sum
   if(is.null(sum_nms)){

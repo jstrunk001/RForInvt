@@ -55,7 +55,7 @@
 #'
 #'@param df a compiled per-plot frame from \code{fia_compile_plots()} (one row
 #'  per plot) carrying the metric columns to estimate plus the design columns
-#'  named by \code{strata_col} / \code{eu_col} / \code{area_used_col} and the
+#'  named by \code{strata_col} / \code{eu_col} / \code{expns_col} and the
 #'  forest-area column \code{area_var}.
 #'@param vars metric column(s) to estimate. Exact names, or regular-expression
 #'  patterns matched against \code{names(df)} (e.g. \code{"^vol_cf_net_SPCD_"} to
@@ -66,8 +66,11 @@
 #'  \code{"total"} (EXPNS-weighted total), or \code{"area"} (forest area).
 #'@param area_var per-plot forested-proportion column used as the area / ratio
 #'  denominator; default \code{"CONDPROP_FOR"} (from \code{fia_compile_plots()}).
-#'@param strata_col,eu_col,area_used_col design columns: post-stratum id,
-#'  estimation-unit id, and the stratum area (acres) used for the stratum weight.
+#'@param strata_col,eu_col,expns_col design columns: post-stratum id,
+#'  estimation-unit id, and the per-acre expansion (\code{EXPNS}, acres
+#'  represented per plot). The stratum area used for the post-stratification
+#'  weight is recovered as \code{EXPNS * n_h}, matching FIADB (which carries
+#'  \code{EXPNS} on \code{POP_STRATUM}, not a stratum area column).
 #'@param var_method variance estimator; currently \code{"BP2005"}.
 #'@param db,statecd,years,eval_type,vol_source arguments for
 #'  \code{fia_estimate_annual()}: the database, state, target years, evaluation
@@ -121,14 +124,18 @@ NULL
 
 # post-stratified totals/variances for ONE estimation unit.
 # z = per-acre response (already zeroed outside domain), x = per-acre forest
-# area indicator (ditto), strata = stratum id per plot, area_h = named vector of
-# stratum area (acres) keyed by stratum id. Returns the unit's total and
-# variance for z and x, and their covariance (for ratios).
-.fia_ps_eu = function(z, x, strata, area_h){
+# area indicator (ditto), strata = stratum id per plot, expns_h = named vector of
+# the per-acre expansion EXPNS (acres represented per plot) keyed by stratum id.
+# The stratum area is recovered as A_h = EXPNS_h * n_h (acres/plot * plots), so
+# nothing beyond EXPNS and the plot counts is needed -- this matches FIADB, where
+# POP_STRATUM carries EXPNS (not a stratum AREA_USED column). Returns the unit's
+# total and variance for z and x, and their covariance (for ratios).
+.fia_ps_eu = function(z, x, strata, expns_h){
   strata = as.character(strata)
   n = length(z)
   us = unique(strata)
-  A_h = area_h[us]
+  nh_v = setNames(as.integer(table(strata)[us]), us)
+  A_h  = expns_h[us] * nh_v                 # stratum area = EXPNS_h * n_h
   A_eu = sum(A_h, na.rm = TRUE)
   W = A_h / A_eu
 
@@ -162,7 +169,7 @@ NULL
 
 # estimate one (domain, variable) cell across the estimation units it touches
 .fia_estimate_cell = function(df, var, area_var, type, by_cols, dom_vals,
-                              strata_col, eu_col, area_used_col){
+                              strata_col, eu_col, expns_col){
   #domain membership
   in_dom = rep(TRUE, nrow(df))
   for(b in by_cols) in_dom = in_dom & (df[[b]] == dom_vals[[b]])
@@ -175,9 +182,9 @@ NULL
     for(b in by_cols) dom = dom & (sub[[b]] == dom_vals[[b]])
     z = if(is.na(var)) rep(0, nrow(sub)) else ifelse(dom, sub[[var]], 0)
     x = ifelse(dom, sub[[area_var]], 0)
-    area_h = tapply(sub[[area_used_col]], as.character(sub[[strata_col]]),
-                    function(v) v[1])
-    ps = .fia_ps_eu(z, x, sub[[strata_col]], area_h)
+    expns_h = tapply(sub[[expns_col]], as.character(sub[[strata_col]]),
+                     function(v) v[1])
+    ps = .fia_ps_eu(z, x, sub[[strata_col]], expns_h)
     acc$T_z = acc$T_z + ps$T_z; acc$V_z = acc$V_z + ps$V_z
     acc$T_x = acc$T_x + ps$T_x; acc$V_x = acc$V_x + ps$V_x
     acc$C   = acc$C   + ps$C
@@ -211,13 +218,13 @@ fia_estimate = function(df, vars = NULL, by = "COUNTYCD",
                         type = c("per_acre", "total", "area"),
                         area_var = "CONDPROP_FOR",
                         strata_col = "STRATUM_CN", eu_col = "ESTN_UNIT",
-                        area_used_col = "AREA_USED",
+                        expns_col = "EXPNS",
                         var_method = "BP2005", ...){
   type = match.arg(type)
   df = as.data.frame(df)
 
   #checks
-  need = c(strata_col, eu_col, area_used_col, by)
+  need = c(strata_col, eu_col, expns_col, by)
   miss = need[!need %in% names(df)]
   if(length(miss)) stop("df is missing required column(s): ", paste(miss, collapse = ", "))
   if(type %in% c("area", "per_acre") && !area_var %in% names(df))
@@ -238,7 +245,7 @@ fia_estimate = function(df, vars = NULL, by = "COUNTYCD",
     dom_vals = as.list(doms[i, by, drop = FALSE])
     for(var in vcols){
       cell = .fia_estimate_cell(df, var, area_var, type, by, dom_vals,
-                                strata_col, eu_col, area_used_col)
+                                strata_col, eu_col, expns_col)
       out[[length(out) + 1]] = data.frame(doms[i, by, drop = FALSE], cell,
                                           row.names = NULL, stringsAsFactors = FALSE)
     }

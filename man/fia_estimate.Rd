@@ -15,7 +15,7 @@ fia_estimate(
   area_var = "CONDPROP_FOR",
   strata_col = "STRATUM_CN",
   eu_col = "ESTN_UNIT",
-  area_used_col = "AREA_USED",
+  expns_col = "EXPNS",
   var_method = "BP2005",
   ...
 )
@@ -50,7 +50,7 @@ fia_estimate_change(
 \arguments{
 \item{df}{a compiled per-plot frame from \code{fia_compile_plots()} (one row
 per plot) carrying the metric columns to estimate plus the design columns
-named by \code{strata_col} / \code{eu_col} / \code{area_used_col} and the
+named by \code{strata_col} / \code{eu_col} / \code{expns_col} and the
 forest-area column \code{area_var}.}
 
 \item{vars}{metric column(s) to estimate. Exact names, or regular-expression
@@ -66,8 +66,11 @@ grab every species component). Ignored when \code{type = "area"}.}
 \item{area_var}{per-plot forested-proportion column used as the area / ratio
 denominator; default \code{"CONDPROP_FOR"} (from \code{fia_compile_plots()}).}
 
-\item{strata_col, eu_col, area_used_col}{design columns: post-stratum id,
-estimation-unit id, and the stratum area (acres) used for the stratum weight.}
+\item{strata_col, eu_col, expns_col}{design columns: post-stratum id,
+estimation-unit id, and the per-acre expansion (\code{EXPNS}, acres
+represented per plot). The stratum area used for the post-stratification
+weight is recovered as \code{EXPNS * n_h}, matching FIADB (which carries
+\code{EXPNS} on \code{POP_STRATUM}, not a stratum area column).}
 
 \item{var_method}{variance estimator; currently \code{"BP2005"}.}
 
