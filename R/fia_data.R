@@ -297,9 +297,13 @@ fia_plots = function(db, evalid, cond_filter = NA, vars_keep = NULL, ...){
   cond  = .fia_table(src, "COND", "PLT_CN", assgn$PLT_CN)
 
   #--- merge: cond <- plot <- assgn <- stratum -------------------------------
+  #In FIADB, COND also carries plot identifiers (STATECD/COUNTYCD/PLOT/INVYR/
+  #UNITCD). Only pull the PLOT columns COND lacks, so the merge doesn't create
+  #COUNTYCD.x/.y and drop the plain identifier columns (which by= grouping needs).
   plot_keep = c("CN", "STATECD", "UNITCD", "COUNTYCD", "PLOT", "INVYR",
                 "MEASYEAR", "PREV_PLT_CN", "LAT", "LON", "MACRO_BREAKPOINT_DIA")
   plot_keep = intersect(plot_keep, names(plot))
+  plot_keep = c("CN", setdiff(plot_keep, c("CN", names(cond))))
   pl = plot[, plot_keep, drop = FALSE]
   names(pl)[names(pl) == "CN"] = "PLT_CN"
 
@@ -363,9 +367,12 @@ fia_trees = function(db, evalid, tree_filter = "STATUSCD == 1",
     warning("no trees remain after tree_filter")
   }
 
-  #attach plot design info (macro breakpoint, county, year)
+  #attach plot design info (macro breakpoint, county, year). TREE also carries
+  #plot identifiers in FIADB, so only pull PLOT columns TREE lacks (e.g.
+  #MACRO_BREAKPOINT_DIA, MEASYEAR) to avoid COUNTYCD.x/.y collisions.
   plot_keep = intersect(c("CN", "COUNTYCD", "INVYR", "MEASYEAR",
                           "MACRO_BREAKPOINT_DIA", "STATECD"), names(plot))
+  plot_keep = c("CN", setdiff(plot_keep, c("CN", names(tree))))
   pl = plot[, plot_keep, drop = FALSE]
   names(pl)[names(pl) == "CN"] = "PLT_CN"
   out = merge(tree, pl, by = "PLT_CN", all.x = TRUE)
